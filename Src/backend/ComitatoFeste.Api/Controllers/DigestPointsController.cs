@@ -1,5 +1,6 @@
 using System.Text;
 using ComitatoFeste.Api.Contracts;
+using ComitatoFeste.Api.Filters;
 using ComitatoFeste.Api.Services;
 using ComitatoFeste.Data;
 using ComitatoFeste.Domain;
@@ -32,6 +33,7 @@ public sealed class DigestPointsController : ControllerBase
     /// esplicito mostra invece tutto ciò che corrisponde, inclusi quei vocali.
     /// </summary>
     [HttpGet]
+    [TokenAuth]
     public async Task<ActionResult<IReadOnlyList<DigestPointDto>>> GetByDay(
         [FromQuery] DateOnly? date,
         [FromQuery] string? author,
@@ -143,6 +145,7 @@ public sealed class DigestPointsController : ControllerBase
     /// Markdown salvato, senza nuove chiamate); <c>refresh=true</c> rigenera il testo.
     /// </summary>
     [HttpGet("recap")]
+    [TokenAuth]
     public async Task<IActionResult> GetDailyRecap(
         [FromQuery] DateOnly? date,
         [FromQuery] bool refresh,

@@ -41,6 +41,15 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     (una classe Fluent API per entità: vincoli, indici, CHECK, 1:1) +
     `Migrations/` + `ComitatoFesteDbContextFactory` (design-time).
   - `ComitatoFeste.Api` — Web API ASP.NET Core.
+    - **Login "casereccio"** (`AuthService` + `TokenAuthAttribute`):
+      `GET /api/auth/status` → `{enabled}`; `POST /api/auth/login
+      {username,password}` → `{token,username}`. Username = `iniziale.cognome`
+      di un `Member` (derivato a runtime, niente colonna DB), password =
+      passphrase condivisa (env `COMITATOFESTE_AUTH_PASSWORD` o config
+      `Auth:Password`; vuota → login disattivato). Token HMAC firmato
+      (`username|scadenza`, 30 gg) rimandato come `Authorization: Bearer`.
+      `[TokenAuth]` protegge **solo** i due endpoint JSON qui sotto; gli
+      endpoint binari (foto/media) restano aperti per `<img>/<audio>/<video>`.
     - `GET /api/digestpoints?date=yyyy-MM-dd` (+ filtri `author`, `type`) →
       lista `DigestPointDto`; **`date` opzionale**, se omesso restituisce
       tutti i giorni (non paginato). Ogni punto porta `authorId` +
@@ -100,7 +109,12 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     `--group <nome>`. Ritenta su HTTP 429/5xx, Ctrl+C esce pulito dopo il
     vocale in corso.
 - `Src/frontend/` — `index.html` self-contained (vanilla JS, nessun build),
-  "Comitato feste 87 — Agenda". Consuma `GET /api/digestpoints` **senza
+  "Comitato feste 87 — Agenda". All'avvio chiama `GET /api/auth/status`: se
+  `enabled` e non c'è token in `localStorage` (`cf87_token`) mostra un
+  overlay di login (username membro + passphrase → `POST /api/auth/login`),
+  altrimenti carica; il token va in `Authorization: Bearer` su ogni fetch
+  JSON, un 401 riporta al login, il bottone "esci" in topbar lo cancella.
+  Consuma `GET /api/digestpoints` **senza
   `date`** (tutti i giorni) e li raggruppa lato client per giorno Roma in
   un **accordion**: una `<section class="day">` per data, collassata, con
   la timeline verticale (righe alternate sx/dx, badge per tipo) nel

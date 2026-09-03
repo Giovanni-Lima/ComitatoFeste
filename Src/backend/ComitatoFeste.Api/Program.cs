@@ -14,6 +14,9 @@ builder.Services.AddDbContext<ComitatoFesteDbContext>(options =>
 // Client Groq per il verbale giornaliero (chiave da env GROQ_API_KEY o config Groq:ApiKey).
 builder.Services.AddHttpClient<GroqRecapClient>(c => c.Timeout = TimeSpan.FromMinutes(2));
 
+// Login "casereccio": passphrase condivisa da env COMITATOFESTE_AUTH_PASSWORD o config Auth:Password.
+builder.Services.AddSingleton<AuthService>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

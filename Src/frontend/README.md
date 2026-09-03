@@ -28,6 +28,14 @@ Apri `http://localhost:5173/`.
   (default: oggi, fuso Roma)
 - `?api=http://host:porta` — base URL dell'API (default `http://localhost:5065`)
 
+## Login
+
+Se l'API ha `COMITATOFESTE_AUTH_PASSWORD` impostata, il sito chiede il
+login: **utente** = `iniziale.cognome` di un membro (es. `g.lima`,
+`d.caniglia`), **password** = la passphrase condivisa. Il token dura 30
+giorni in `localStorage`; "esci" in alto a destra lo cancella. Senza quella
+variabile d'ambiente il login è disattivato e il sito è aperto.
+
 ## Note
 
 - Il CORS dell'API in Development ammette solo `http://localhost:5173` e

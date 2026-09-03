@@ -101,6 +101,25 @@
     .media .doc{display:inline-block;padding:6px 10px;background:var(--bg);border-radius:6px;text-decoration:none}
     .media.muted{color:var(--muted);font-style:italic;font-size:13px}
 
+    .logout{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;
+      font-size:12px;color:var(--ink-soft);cursor:pointer}
+    .logout:hover{background:var(--bg)}
+
+    .login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+      background:var(--bg);padding:20px}
+    .login[hidden]{display:none}
+    .login-box{background:#fff;border:1px solid var(--cardline);border-radius:12px;
+      box-shadow:0 2px 12px rgba(38,50,56,.12);padding:26px 24px;width:100%;max-width:340px;
+      display:flex;flex-direction:column;gap:12px}
+    .login-box h2{margin:0;font-size:17px}
+    .login-box p{margin:0;color:var(--muted);font-size:13px}
+    .login-box label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--ink-soft)}
+    .login-box input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-weight:400}
+    .login-box button{margin-top:4px;border:0;border-radius:8px;padding:9px;background:var(--domanda);
+      color:#fff;font:inherit;font-weight:700;cursor:pointer}
+    .login-box button:disabled{opacity:.5;cursor:default}
+    .login-err{color:#c62828;font-size:12px}
+
     @media (max-width:680px){
       .rail::before{left:19px}
       .row,.row.left,.row.right{justify-content:flex-start}
@@ -121,13 +140,40 @@
     </div>
     <div class="filters" id="filters"></div>
     <div class="summary" id="summary"></div>
+    <button id="logout" class="logout" hidden title="Esci">esci</button>
   </header>
 
   <main class="timeline" id="timeline"></main>
 
+  <div id="login" class="login" hidden>
+    <form class="login-box" id="loginForm">
+      <h2>Comitato feste 87</h2>
+      <p>Accesso riservato ai membri del gruppo.</p>
+      <label>Utente <input id="lgUser" autocomplete="username" placeholder="es. g.lima" autocapitalize="none" spellcheck="false"></label>
+      <label>Password <input id="lgPass" type="password" autocomplete="current-password"></label>
+      <div class="login-err" id="lgErr" hidden></div>
+      <button type="submit" id="lgBtn">Entra</button>
+    </form>
+  </div>
+
   <script>
     const qs = new URLSearchParams(location.search);
     const API = (qs.get("api") || "http://localhost:5065").replace(/\/$/, "");
+
+    // --- auth ---------------------------------------------------------------
+    const TOKEN_KEY = "cf87_token";
+    let token = null;
+    try { token = localStorage.getItem(TOKEN_KEY); } catch (e) { /* private mode */ }
+
+    const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
+
+    function setToken(t){
+      token = t;
+      try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    }
+    function showLogin(){ el("login").hidden = false; el("logout").hidden = true; el("lgUser").focus(); }
+    function hideLogin(){ el("login").hidden = true; el("logout").hidden = false; }
+    function logout(){ setToken(null); location.reload(); }
 
     const TYPES = {
       decisione: { color: "var(--decisione)" },
@@ -294,7 +340,8 @@
     async function load(){
       el("timeline").innerHTML = `<div class="loading">Carico…</div>`;
       try {
-        const r = await fetch(`${API}/api/digestpoints`);
+        const r = await fetch(`${API}/api/digestpoints`, { headers: authHeaders() });
+        if (r.status === 401) { setToken(null); showLogin(); return; }
         if (!r.ok) { el("timeline").innerHTML = `<div class="error">Errore API: HTTP ${r.status}</div>`; return; }
         data = await r.json();
       } catch (e) {
@@ -337,7 +384,8 @@
       if (btn.classList.contains("busy")) return;
       btn.classList.add("busy");
       try {
-        const r = await fetch(`${API}/api/digestpoints/recap?date=${day}`);
+        const r = await fetch(`${API}/api/digestpoints/recap?date=${day}`, { headers: authHeaders() });
+        if (r.status === 401) { setToken(null); showLogin(); return; }
         if (!r.ok) {
           const msg = (await r.text()) || `HTTP ${r.status}`;
           alert(`Verbale non disponibile:\n${msg}`);
@@ -365,9 +413,54 @@
       render();
     };
 
+    el("logout").onclick = logout;
+
+    el("loginForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = el("lgBtn"), err = el("lgErr");
+      err.hidden = true;
+      btn.disabled = true;
+      try {
+        const r = await fetch(`${API}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: el("lgUser").value.trim(), password: el("lgPass").value }),
+        });
+        if (!r.ok) {
+          err.textContent = r.status === 401 ? "Utente o password non validi." : `Errore: HTTP ${r.status}`;
+          err.hidden = false;
+          return;
+        }
+        const { token: t } = await r.json();
+        setToken(t);
+        el("lgPass").value = "";
+        hideLogin();
+        load();
+      } catch (_) {
+        err.textContent = `API non raggiungibile su ${API}.`;
+        err.hidden = false;
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
     el("day").value = qs.get("date") || todayRome();
     buildFilters();
-    load();
+
+    (async () => {
+      let enabled = true;
+      try {
+        const r = await fetch(`${API}/api/auth/status`);
+        if (r.ok) enabled = (await r.json()).enabled;
+      } catch (_) { /* API giù: lascia provare a load() che mostrerà l'errore */ }
+
+      if (enabled && !token) {
+        showLogin();
+      } else {
+        if (enabled) hideLogin();   // mostra il bottone "esci"
+        load();   // load() gestisce un 401 (token scaduto) mostrando il login
+      }
+    })();
   </script>
 </body>
 </html>
