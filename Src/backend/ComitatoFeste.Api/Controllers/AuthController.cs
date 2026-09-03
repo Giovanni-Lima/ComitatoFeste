@@ -19,7 +19,7 @@ public sealed class AuthController : ControllerBase
     }
 
     public sealed record LoginRequest(string? Username, string? Password);
-    public sealed record LoginResponse(string Token, string Username);
+    public sealed record LoginResponse(string Token, string Username, int MemberId, string DisplayName);
 
     /// <summary>Il frontend lo chiama all'avvio: se <c>enabled</c> è false salta la schermata di login.</summary>
     [HttpGet("status")]
@@ -39,17 +39,17 @@ public sealed class AuthController : ControllerBase
         if (!_auth.PasswordOk(req.Password))
             return Unauthorized("Credenziali non valide.");
 
-        var names = await _db.Members
+        var members = await _db.Members
             .Where(m => m.DisplayName != "Sistema")
-            .Select(m => m.DisplayName)
+            .Select(m => new { m.Id, m.DisplayName })
             .ToListAsync(ct);
 
-        var match = names.FirstOrDefault(n =>
-            string.Equals(AuthService.NormalizeUsername(n), username, StringComparison.Ordinal));
+        var match = members.FirstOrDefault(m =>
+            string.Equals(AuthService.NormalizeUsername(m.DisplayName), username, StringComparison.Ordinal));
 
         if (match is null)
             return Unauthorized("Credenziali non valide.");
 
-        return Ok(new LoginResponse(_auth.IssueToken(username), username));
+        return Ok(new LoginResponse(_auth.IssueToken(username), username, match.Id, match.DisplayName));
     }
 }
