@@ -16,8 +16,11 @@ artifacts/
 Thumbs.db
 .DS_Store
 
-## Locale (dati sorgente pipeline e volumi Postgres)
+## Locale (dati sorgente pipeline, segreti e volumi Postgres)
 data/postgres/
+key.txt
+*.key
+appsettings.*.local.json
 
 Chat WhatsApp con Il branco dei pazzi 87/
 

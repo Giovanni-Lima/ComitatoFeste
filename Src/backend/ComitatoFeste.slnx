@@ -4,5 +4,6 @@
     <Project Path="ComitatoFeste.Data/ComitatoFeste.Data.csproj" />
     <Project Path="ComitatoFeste.Domain/ComitatoFeste.Domain.csproj" />
     <Project Path="ComitatoFeste.Importer/ComitatoFeste.Importer.csproj" />
+    <Project Path="ComitatoFeste.Transcriber/ComitatoFeste.Transcriber.csproj" />
   </Folder>
 </Solution>

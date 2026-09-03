@@ -13,4 +13,5 @@ public class Group
     public ICollection<Member> Members { get; set; } = new List<Member>();
     public ICollection<IngestionRun> IngestionRuns { get; set; } = new List<IngestionRun>();
     public ICollection<DigestPoint> DigestPoints { get; set; } = new List<DigestPoint>();
+    public ICollection<Verbale> Verbali { get; set; } = new List<Verbale>();
 }

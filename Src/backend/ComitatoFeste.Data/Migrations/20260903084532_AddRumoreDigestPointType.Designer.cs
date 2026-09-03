@@ -3,6 +3,7 @@ using System;
 using ComitatoFeste.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ComitatoFeste.Data.Migrations
 {
     [DbContext(typeof(ComitatoFesteDbContext))]
-    partial class ComitatoFesteDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260903084532_AddRumoreDigestPointType")]
+    partial class AddRumoreDigestPointType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -276,46 +279,6 @@ namespace ComitatoFeste.Data.Migrations
                     b.ToTable("MemberProfilePhotos", (string)null);
                 });
 
-            modelBuilder.Entity("ComitatoFeste.Domain.Verbale", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
-
-                    b.Property<DateTimeOffset>("GeneratedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<int>("GroupId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
-                    b.Property<int>("PointCount")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GroupId", "Date")
-                        .IsUnique()
-                        .HasDatabaseName("UX_Verbali_Group_Date");
-
-                    b.ToTable("Verbali", (string)null);
-                });
-
             modelBuilder.Entity("ComitatoFeste.Domain.DigestPoint", b =>
                 {
                     b.HasOne("ComitatoFeste.Domain.Group", "Group")
@@ -398,17 +361,6 @@ namespace ComitatoFeste.Data.Migrations
                     b.Navigation("Member");
                 });
 
-            modelBuilder.Entity("ComitatoFeste.Domain.Verbale", b =>
-                {
-                    b.HasOne("ComitatoFeste.Domain.Group", "Group")
-                        .WithMany("Verbali")
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Group");
-                });
-
             modelBuilder.Entity("ComitatoFeste.Domain.DigestPoint", b =>
                 {
                     b.Navigation("MediaAsset");
@@ -421,8 +373,6 @@ namespace ComitatoFeste.Data.Migrations
                     b.Navigation("IngestionRuns");
 
                     b.Navigation("Members");
-
-                    b.Navigation("Verbali");
                 });
 
             modelBuilder.Entity("ComitatoFeste.Domain.IngestionRun", b =>

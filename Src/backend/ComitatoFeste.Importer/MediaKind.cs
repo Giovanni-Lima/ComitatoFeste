@@ -21,6 +21,15 @@ public static class MediaKind
         [".wav"] = (MediaType.Audio, "audio/wav"),
         [".aac"] = (MediaType.Audio, "audio/aac"),
 
+        // Nessun MediaType "video" a schema: i video restano "documento" ma con MIME corretto,
+        // così l'endpoint li serve riproducibili e il frontend può mostrarli in un <video>.
+        [".mp4"] = (MediaType.Documento, "video/mp4"),
+        [".mov"] = (MediaType.Documento, "video/quicktime"),
+        [".webm"] = (MediaType.Documento, "video/webm"),
+        [".mkv"] = (MediaType.Documento, "video/x-matroska"),
+        [".3gp"] = (MediaType.Documento, "video/3gpp"),
+        [".avi"] = (MediaType.Documento, "video/x-msvideo"),
+
         [".pdf"] = (MediaType.Documento, "application/pdf"),
         [".doc"] = (MediaType.Documento, "application/msword"),
         [".docx"] = (MediaType.Documento, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
