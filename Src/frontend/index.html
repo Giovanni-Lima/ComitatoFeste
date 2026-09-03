@@ -33,18 +33,17 @@
     .layout{max-width:1240px;margin:0 auto;padding:24px 12px 90px;display:flex;gap:22px;align-items:flex-start}
     .timeline{flex:1;min-width:0}
 
-    .stats{flex:none;width:190px;position:sticky;top:78px;display:flex;flex-direction:column;gap:12px}
-    .stat{background:color-mix(in srgb, var(--domanda) 8%, #fff);
-      border:1px solid color-mix(in srgb, var(--domanda) 16%, #fff);border-radius:14px;padding:14px 16px}
-    .stat .k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-      color:color-mix(in srgb, var(--domanda) 50%, var(--muted))}
-    .stat .v{margin-top:10px;font-size:27px;font-weight:800;color:var(--ink);line-height:1}
+    .stats{flex:none;width:208px;position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
+    .stat{background:color-mix(in srgb, var(--domanda) 7%, #fff);border-radius:12px;padding:16px 18px 18px}
+    .stat .k{font-size:12px;font-weight:500;color:var(--ink-soft)}
+    .stat .s{font-size:11px;color:var(--muted);margin-top:1px}
+    .stat .v{margin-top:16px;font-size:26px;font-weight:600;color:var(--ink-soft);line-height:1}
 
     @media (max-width:900px){
       .layout{flex-direction:column;gap:14px}
       .stats{flex-direction:row;position:static;width:auto}
       .stat{flex:1}
-      .stat .v{font-size:22px}
+      .stat .v{margin-top:12px;font-size:22px}
     }
 
     .day{margin:0 auto 14px;border:1px solid var(--line);border-radius:12px;background:#fff;
@@ -319,8 +318,12 @@
       if (!data.length) { el("stats").innerHTML = ""; return; }
       const media = data.filter(p => p.media).length;
       const days = new Set(data.map(p => romeDay(p.occurredAt))).size;
-      const card = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`;
-      el("stats").innerHTML = card("Punti", data.length) + card("Media", media) + card("Giorni", days);
+      const card = (k, s, v) =>
+        `<div class="stat"><div class="k">${k}</div><div class="s">${s}</div><div class="v">${v}</div></div>`;
+      el("stats").innerHTML =
+        card("Punti", "in archivio", data.length) +
+        card("Media", "scaricati", media) +
+        card("Giorni", "in agenda", days);
     }
 
     function render(){
