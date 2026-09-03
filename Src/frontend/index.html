@@ -72,10 +72,21 @@
     }
     @media (max-width:820px){
       .app{flex-direction:column;align-items:stretch}
-      .sidebar{width:auto;height:auto;position:static;border-right:0;border-bottom:1px solid var(--line)}
-      .sidebar .logout{margin-top:0}
+      /* la sidebar diventa una fascia in cima: brand + profilo + "esci" su una riga,
+         Data e Tipo sotto a tutta larghezza. Topbar e stat card spariscono. */
+      .sidebar{width:auto;height:auto;position:static;border-right:0;border-bottom:1px solid var(--line);
+        flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px}
+      .brand{border-bottom:0;padding-bottom:0;margin-right:auto;font-size:14px}
+      .sidebar .me{order:1;padding:4px 12px 4px 4px}
+      .sidebar .me .me-av{width:28px;height:28px}
+      .sidebar .logout{order:2;margin-top:0;align-self:center;width:auto;padding:5px 14px}
+      .side-sec{order:3;flex-basis:100%}
       .filters{flex-direction:row;flex-wrap:wrap}
       .fitem{width:auto}
+
+      .topbar{display:none}
+      .content{grid-template-columns:1fr;grid-template-areas:"timeline";padding:16px 12px 80px}
+      .stats{display:none}
     }
 
     .day{margin:0 auto 14px;border:1px solid var(--line);border-radius:12px;background:#fff;
@@ -253,7 +264,7 @@
         const box = el(id);
         if (!box) continue;
         if (!u) { box.innerHTML = ""; continue; }
-        const label = greet ? `Ciao ${esc(u.displayName.split(" ")[0])}` : esc(u.username);
+        const label = greet ? `Ciao ${esc(u.displayName.split(" ")[0])}` : esc(u.displayName);
         box.innerHTML =
           `<div class="me-av ph" style="background:hsl(${hue(u.displayName)} 42% 55%)">${esc(initials(u.displayName))}</div>` +
           `<span class="me-name">${label}</span>`;
