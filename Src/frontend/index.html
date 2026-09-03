@@ -81,8 +81,9 @@
       .sidebar .me .me-av{width:28px;height:28px}
       .sidebar .logout{order:2;margin-top:0;align-self:center;width:auto;padding:5px 14px}
       .side-sec{order:3;flex-basis:100%}
-      .filters{flex-direction:row;flex-wrap:wrap}
-      .fitem{width:auto}
+      /* 5 tipi: 3 sulla prima riga, 2 sulla seconda, entrambe centrate */
+      .filters{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px}
+      .fitem{width:calc(33.333% - 6px);justify-content:center}
 
       .topbar{display:none}
       .content{grid-template-columns:1fr;grid-template-areas:"timeline";padding:16px 12px 80px}
@@ -177,6 +178,13 @@
     .login-box button:disabled{opacity:.5;cursor:default}
     .login-err{color:#c62828;font-size:12px}
 
+    .to-top{position:fixed;right:18px;bottom:18px;z-index:50;width:42px;height:42px;border-radius:50%;
+      border:1px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer;
+      display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(38,50,56,.18);
+      opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .18s,transform .18s}
+    .to-top.show{opacity:1;pointer-events:auto;transform:none}
+    .to-top svg{width:20px;height:20px}
+
     @media (max-width:680px){
       .rail::before{left:19px}
       .row,.row.left,.row.right{justify-content:flex-start}
@@ -232,6 +240,11 @@
       <button type="submit" id="lgBtn">Entra</button>
     </form>
   </div>
+
+  <button id="toTop" class="to-top" aria-label="Torna su" title="Torna su">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+      stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+  </button>
 
   <script>
     const qs = new URLSearchParams(location.search);
@@ -535,6 +548,11 @@
     };
 
     el("logout").onclick = logout;
+
+    el("toTop").onclick = () => scrollTo({ top: 0, behavior: "smooth" });
+    addEventListener("scroll", () => {
+      el("toTop").classList.toggle("show", window.scrollY > 300);
+    }, { passive: true });
 
     el("loginForm").onsubmit = async (e) => {
       e.preventDefault();
