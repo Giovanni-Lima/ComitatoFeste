@@ -63,7 +63,12 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     fino alla radice del repo), poi config `Groq:ApiKey`.
   - `ComitatoFeste.Importer` — console: legge i `digest_*.json` da Export e
     li scrive a DB (`DigestImporter` è la classe riusabile);
-    `ImportProfilePhotosAsync` sincronizza `Export/profili/`. `MediaKind`
+    `ImportProfilePhotosAsync` sincronizza `Export/profili/`.
+    **⚠️ Dopo che il Transcriber ha girato NON rilanciare l'import completo**:
+    riscrive `DigestPoint.Text` (sintesi), il dedup esatto chiave su `Text`
+    non riconosce più i punti e li reinserisce duplicati. Per aggiungere
+    solo foto profilo usare `--photos-only` (salta l'import dei digest).
+    `MediaKind`
     mappa estensione → (`MediaType`, MIME): foto (jpg/png/webp/…), audio
     (ogg/opus/m4a/mp3/…), **video** (mp4/mov/webm/mkv/3gp/avi → restano
     `MediaType.Documento` ma con MIME `video/*`, vedi convenzione sotto),

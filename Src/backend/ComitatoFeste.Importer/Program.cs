@@ -13,6 +13,7 @@ var exportRoot = DefaultExportRoot;
 var fuzzy = true;
 var fuzzyThreshold = 0.6;
 var fuzzyWindowMin = 2.0;
+var photosOnly = false;
 
 for (var i = 0; i < args.Length; i++)
 {
@@ -27,6 +28,9 @@ for (var i = 0; i < args.Length; i++)
         case "--no-fuzzy":
             fuzzy = false;
             break;
+        case "--photos-only":
+            photosOnly = true;
+            break;
         case "--fuzzy-threshold" when i + 1 < args.Length:
             fuzzyThreshold = double.Parse(args[++i], System.Globalization.CultureInfo.InvariantCulture);
             break;
@@ -40,6 +44,9 @@ for (var i = 0; i < args.Length; i++)
             Console.WriteLine("  --no-fuzzy               disattiva il dedup fuzzy pg_trgm");
             Console.WriteLine("  --fuzzy-threshold <0..1> soglia similarity() (default: 0.6)");
             Console.WriteLine("  --fuzzy-window-min <n>   finestra ± minuti per il confronto (default: 2)");
+            Console.WriteLine("  --photos-only            salta l'import dei digest, sincronizza solo Export/profili/");
+            Console.WriteLine("                          (usare questo dopo che il Transcriber ha girato: un");
+            Console.WriteLine("                          reimport creerebbe duplicati, i testi non combaciano più)");
             Console.WriteLine("  senza target importa tutti i digest_*.json della cartella Export.");
             return 0;
         default:
@@ -79,6 +86,9 @@ var importer = new DigestImporter(db, exportRoot, new ImportOptions
     FuzzyWindow = TimeSpan.FromMinutes(fuzzyWindowMin),
 });
 
+// --- import digest (saltato con --photos-only) ----------------------------
+if (!photosOnly)
+{
 // --- risoluzione del target ------------------------------------------------
 List<string> files;
 if (target is null)
@@ -144,6 +154,7 @@ foreach (var file in files)
 Console.WriteLine($"\n== totale: {files.Count} file, {totInserted} punti, " +
                   $"{totDup} dup esatti, {totFuzzy} dup fuzzy, " +
                   $"{totMembers} membri, {totMedia} media ({totMissing} mancanti) ==");
+}
 
 // --- foto profilo ------------------------------------------------------------
 var photos = await importer.ImportProfilePhotosAsync(groupName);
