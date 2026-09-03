@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="ComitatoFeste.Api/ComitatoFeste.Api.csproj" />
+    <Project Path="ComitatoFeste.Data/ComitatoFeste.Data.csproj" />
+    <Project Path="ComitatoFeste.Domain/ComitatoFeste.Domain.csproj" />
+    <Project Path="ComitatoFeste.Importer/ComitatoFeste.Importer.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,24 @@
+## .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+project.lock.json
+artifacts/
+
+## IDE
+.vs/
+.idea/
+*.suo
+
+## OS
+Thumbs.db
+.DS_Store
+
+## Locale (dati sorgente pipeline e volumi Postgres)
+data/postgres/
+
+Chat WhatsApp con Il branco dei pazzi 87/
+
+Export/*
