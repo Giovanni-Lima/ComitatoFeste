@@ -58,7 +58,9 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     - `GET /api/digestpoints/media/{mediaId}/content` → byte del blob inline.
     - `GET /api/members/{memberId}/photo` → foto profilo inline.
     DTO in `Contracts/`, Swagger in Development, CORS dev `localhost:5173/3000`.
-    Env `GROQ_API_KEY` (o config `Groq:ApiKey`) serve solo per `recap`.
+    La chiave Groq (solo per `recap`) è risolta da `GroqKey.Resolve()`: env
+    `GROQ_API_KEY`, poi file `key.txt` (in `.gitignore`, cercato risalendo
+    fino alla radice del repo), poi config `Groq:ApiKey`.
   - `ComitatoFeste.Importer` — console: legge i `digest_*.json` da Export e
     li scrive a DB (`DigestImporter` è la classe riusabile);
     `ImportProfilePhotosAsync` sincronizza `Export/profili/`. `MediaKind`
@@ -87,8 +89,9 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     salva `TranscriptionText` ma lascia `TranscribedAt == null`, non tocca
     `Type`/`Text`. Così Whisper non si ripaga, il run dopo ritenta **solo**
     la classificazione, e la GUI (`GET /api/digestpoints` senza `type`)
-    nasconde il punto finché `TranscribedAt` è null. Serve env
-    `GROQ_API_KEY`. Opzioni: `--dry-run`, `--limit <n>`, `--delay-ms <n>`,
+    nasconde il punto finché `TranscribedAt` è null. Chiave via
+    `GroqKey.Resolve()` (env `GROQ_API_KEY` o file `key.txt`). Opzioni:
+    `--dry-run`, `--limit <n>`, `--delay-ms <n>`,
     `--group <nome>`. Ritenta su HTTP 429/5xx, Ctrl+C esce pulito dopo il
     vocale in corso.
 - `Src/frontend/` — `index.html` self-contained (vanilla JS, nessun build),

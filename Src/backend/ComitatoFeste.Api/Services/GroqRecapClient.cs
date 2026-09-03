@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using ComitatoFeste.Data;
 
 namespace ComitatoFeste.Api.Services;
 
@@ -22,10 +23,11 @@ public sealed class GroqRecapClient
     public GroqRecapClient(HttpClient http, IConfiguration config)
     {
         _http = http;
-        _apiKey = config["GROQ_API_KEY"] ?? config["Groq:ApiKey"];
+        // Env GROQ_API_KEY o file key.txt (vedi GroqKey), poi config Groq:ApiKey.
+        _apiKey = GroqKey.Resolve() ?? config["Groq:ApiKey"];
     }
 
-    /// <summary>La chiave Groq è disponibile (env <c>GROQ_API_KEY</c> o config <c>Groq:ApiKey</c>).</summary>
+    /// <summary>La chiave Groq è disponibile (env <c>GROQ_API_KEY</c>, file <c>key.txt</c> o config <c>Groq:ApiKey</c>).</summary>
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_apiKey);
 
     public string ModelName => Model;

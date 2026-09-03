@@ -45,11 +45,13 @@ for (var i = 0; i < args.Length; i++)
     }
 }
 
-var groqKey = Environment.GetEnvironmentVariable("GROQ_API_KEY");
+// Chiave Groq: prima l'env GROQ_API_KEY, poi un file key.txt (in .gitignore) cercato
+// risalendo dalla cartella corrente / dell'eseguibile fino alla radice del repo.
+var groqKey = GroqKey.Resolve();
 
 if (string.IsNullOrWhiteSpace(groqKey))
 {
-    Console.Error.WriteLine("variabile d'ambiente GROQ_API_KEY non impostata (chiave gratuita su https://console.groq.com/keys).");
+    Console.Error.WriteLine("chiave Groq assente: imposta l'env GROQ_API_KEY oppure crea C:\\Digest\\key.txt (chiave gratuita su https://console.groq.com/keys).");
     return 2;
 }
 
