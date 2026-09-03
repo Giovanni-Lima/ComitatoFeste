@@ -16,34 +16,52 @@
     a{color:var(--domanda)}
 
     .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);
-      padding:14px 20px;display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center}
+      padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
     .topbar h1{font-size:16px;margin:0;font-weight:700}
-    .daynav{display:flex;align-items:center;gap:6px}
-    .daynav button{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:7px;
-      font-size:16px;line-height:1;cursor:pointer;color:var(--ink-soft)}
-    .daynav button:hover{background:var(--bg)}
-    .daynav input{border:1px solid var(--line);border-radius:7px;padding:5px 8px;font:inherit}
-    .filters{display:flex;gap:8px;flex-wrap:wrap}
-    .chip{border:1px solid var(--c);color:var(--c);background:#fff;border-radius:14px;padding:3px 12px;
-      font-size:12px;font-weight:600;cursor:pointer;opacity:1;transition:.12s}
-    .chip.active{background:var(--c);color:#fff}
-    .filters.filtering .chip:not(.active){opacity:.3}
     .summary{margin-left:auto;color:var(--muted);font-size:12px}
 
-    .layout{max-width:1240px;margin:0 auto;padding:24px 12px 90px;display:flex;gap:22px;align-items:flex-start}
-    .timeline{flex:1;min-width:0}
+    .layout{max-width:1440px;margin:0 auto;padding:24px 14px 90px;display:grid;gap:22px;align-items:start;
+      grid-template-columns:224px 1fr 208px;grid-template-areas:"side timeline stats"}
+    .side{grid-area:side}
+    .timeline{grid-area:timeline;min-width:0}
+    .stats{grid-area:stats}
 
-    .stats{flex:none;width:208px;position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
+    .side{background:#fff;border:1px solid var(--cardline);border-radius:14px;padding:16px;
+      box-shadow:0 1px 3px rgba(38,50,56,.06);position:sticky;top:78px;
+      display:flex;flex-direction:column;gap:18px}
+    .side-sec{display:flex;flex-direction:column;gap:9px}
+    .side-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+    .daynav{display:flex;align-items:center;gap:6px}
+    .daynav button{width:30px;height:30px;flex:none;border:1px solid var(--line);background:#fff;border-radius:8px;
+      font-size:16px;line-height:1;cursor:pointer;color:var(--ink-soft)}
+    .daynav button:hover{background:var(--bg)}
+    .daynav input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit}
+
+    .filters{display:flex;flex-direction:column;gap:2px}
+    .fitem{display:flex;align-items:center;gap:9px;width:100%;padding:7px 10px;border:0;border-radius:8px;
+      background:none;text-align:left;font:inherit;font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer}
+    .fitem:hover{background:var(--bg)}
+    .fitem .dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
+    .fitem.active{background:var(--c);color:#fff}
+    .fitem.active .dot{background:#fff}
+
+    .stats{position:sticky;top:78px;display:flex;flex-direction:column;gap:14px}
     .stat{background:color-mix(in srgb, var(--domanda) 7%, #fff);border-radius:12px;padding:16px 18px 18px}
     .stat .k{font-size:12px;font-weight:500;color:var(--ink-soft)}
     .stat .s{font-size:11px;color:var(--muted);margin-top:1px}
     .stat .v{margin-top:16px;font-size:26px;font-weight:600;color:var(--ink-soft);line-height:1}
 
-    @media (max-width:900px){
-      .layout{flex-direction:column;gap:14px}
-      .stats{flex-direction:row;position:static;width:auto}
+    @media (max-width:1180px){
+      .layout{grid-template-columns:224px 1fr;grid-template-areas:"stats stats" "side timeline"}
+      .stats{flex-direction:row;position:static}
       .stat{flex:1}
       .stat .v{margin-top:12px;font-size:22px}
+    }
+    @media (max-width:760px){
+      .layout{grid-template-columns:1fr;grid-template-areas:"stats" "side" "timeline"}
+      .side{position:static}
+      .filters{flex-direction:row;flex-wrap:wrap}
+      .fitem{width:auto}
     }
 
     .day{margin:0 auto 14px;border:1px solid var(--line);border-radius:12px;background:#fff;
@@ -147,19 +165,29 @@
 <body>
   <header class="topbar" id="topbar">
     <h1>Comitato feste 87 — Agenda</h1>
-    <div class="daynav">
-      <button id="prev" title="Giorno precedente">‹</button>
-      <input type="date" id="day">
-      <button id="next" title="Giorno successivo">›</button>
-    </div>
-    <div class="filters" id="filters"></div>
     <div class="summary" id="summary"></div>
     <button id="logout" class="logout" hidden title="Esci">esci</button>
   </header>
 
   <div class="layout">
-    <aside class="stats" id="stats"></aside>
+    <aside class="side" id="side">
+      <div class="side-sec">
+        <div class="side-title">Data</div>
+        <div class="daynav">
+          <button id="prev" title="Giorno precedente">‹</button>
+          <input type="date" id="day">
+          <button id="next" title="Giorno successivo">›</button>
+        </div>
+      </div>
+      <div class="side-sec">
+        <div class="side-title">Tipo</div>
+        <div class="filters" id="filters"></div>
+      </div>
+    </aside>
+
     <main class="timeline" id="timeline"></main>
+
+    <aside class="stats" id="stats"></aside>
   </div>
 
   <div id="login" class="login" hidden>
@@ -231,15 +259,20 @@
     let data = [];
     let filterType = null;   // null = mostra tutti i tipi
 
+    const TYPE_LABELS = { decisione: "Decisioni", domanda: "Domande", media: "Media", info: "Info" };
+
     function buildFilters(){
-      el("filters").innerHTML = Object.keys(TYPES).map(k =>
-        `<button class="chip" data-k="${k}" style="--c:${TYPES[k].color}">${k}</button>`).join("");
+      const item = (k, c, label) =>
+        `<button class="fitem" data-k="${k}" style="--c:${c}"><span class="dot"></span>${label}</button>`;
+      el("filters").innerHTML =
+        item("", "var(--ink-soft)", "Tutti") +
+        Object.keys(TYPES).map(k => item(k, TYPES[k].color, TYPE_LABELS[k])).join("");
       syncChips();
     }
 
     function syncChips(){
-      for (const b of el("filters").children) b.classList.toggle("active", b.dataset.k === filterType);
-      el("filters").classList.toggle("filtering", filterType !== null);
+      for (const b of el("filters").children)
+        b.classList.toggle("active", b.dataset.k === (filterType || ""));
     }
 
     function rowHtml(p, i){
@@ -435,9 +468,10 @@
       }
     }
     el("filters").onclick = (e) => {
-      const b = e.target.closest(".chip");
+      const b = e.target.closest(".fitem");
       if (!b) return;
-      filterType = (filterType === b.dataset.k) ? null : b.dataset.k;   // riclicca = tutti
+      const k = b.dataset.k || null;
+      filterType = (k === filterType) ? null : k;   // "Tutti" o riclicca = mostra tutto
       syncChips();
       render();
     };
