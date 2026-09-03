@@ -63,11 +63,11 @@
     .timeline{grid-area:timeline;min-width:0}
 
     .stats{grid-area:stats;position:sticky;top:82px;display:flex;flex-direction:column;gap:14px}
-    .stat{background:color-mix(in srgb, var(--yellow) 16%, #fff);
-      border:1px solid color-mix(in srgb, var(--yellow) 40%, #fff);border-radius:12px;padding:16px 18px 18px}
-    .stat .k{font-size:12px;font-weight:500;color:var(--ink-soft)}
-    .stat .s{font-size:11px;color:var(--muted);margin-top:1px}
-    .stat .v{margin-top:16px;font-size:26px;font-weight:600;color:var(--ink-soft);line-height:1}
+    .stat{background:var(--yellow);
+      border:1px solid color-mix(in srgb, var(--yellow) 72%, #7a6b00);border-radius:12px;padding:16px 18px 18px}
+    .stat .k{font-size:12px;font-weight:700;color:var(--ink)}
+    .stat .s{font-size:11px;color:var(--ink-soft);margin-top:1px}
+    .stat .v{margin-top:16px;font-size:26px;font-weight:700;color:var(--ink);line-height:1}
 
     @media (max-width:1080px){
       .content{grid-template-columns:1fr;grid-template-areas:"stats" "timeline"}
