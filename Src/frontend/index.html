@@ -9,7 +9,7 @@
       /* palette dalla maglietta del comitato: giallo, sole arancio, triangolo rosa→viola */
       --bg:#f4f2e8; --card:#ffffff; --line:#e3ddca; --cardline:#e9e3d1;
       --ink:#2b2420; --ink-soft:#4b423b; --muted:#9b9282;
-      --accent:#7c3aed; --yellow:#ecd91b;
+      --accent:#7c3aed; --yellow:#f2e11c;
       --decisione:#7c3aed; --domanda:#e23b8c; --media:#e0820c; --info:#8b7fae;
     }
     *{box-sizing:border-box}
@@ -48,11 +48,13 @@
     .fitem.active .dot{background:#fff}
 
     .main{flex:1;min-width:0;display:flex;flex-direction:column}
-    .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);
+    .topbar{position:sticky;top:0;z-index:10;background:var(--yellow);
+      border-bottom:2px solid color-mix(in srgb, var(--yellow) 72%, #7a6b00);
       padding:12px 24px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
-    .topbar h1{font-size:16px;margin:0;font-weight:700}
+    .topbar h1{font-size:16px;margin:0;font-weight:800;letter-spacing:.01em}
     .summary{margin-left:auto;color:var(--muted);font-size:12px}
-    .topbar .me.sm{margin-left:12px;padding:4px 12px 4px 4px;gap:8px}
+    .topbar .summary{color:var(--ink-soft)}
+    .topbar .me.sm{margin-left:12px;padding:4px 12px 4px 4px;gap:8px;background:#fff}
     .topbar .me.sm .me-av{width:28px;height:28px}
     .topbar .me.sm .me-name{font-weight:600}
 
@@ -182,7 +184,7 @@
     .login-err{color:#c62828;font-size:12px}
 
     .to-top{position:fixed;right:18px;bottom:18px;z-index:50;width:42px;height:42px;border-radius:50%;
-      border:1px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer;
+      border:1px solid color-mix(in srgb, var(--yellow) 72%, #7a6b00);background:var(--yellow);color:var(--ink);cursor:pointer;
       display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(38,50,56,.18);
       opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .18s,transform .18s}
     .to-top.show{opacity:1;pointer-events:auto;transform:none}
