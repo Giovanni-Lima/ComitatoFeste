@@ -30,7 +30,22 @@
     .filters.filtering .chip:not(.active){opacity:.3}
     .summary{margin-left:auto;color:var(--muted);font-size:12px}
 
-    .timeline{max-width:980px;margin:0 auto;padding:26px 12px 90px}
+    .layout{max-width:1240px;margin:0 auto;padding:24px 12px 90px;display:flex;gap:22px;align-items:flex-start}
+    .timeline{flex:1;min-width:0}
+
+    .stats{flex:none;width:190px;position:sticky;top:78px;display:flex;flex-direction:column;gap:12px}
+    .stat{background:color-mix(in srgb, var(--domanda) 8%, #fff);
+      border:1px solid color-mix(in srgb, var(--domanda) 16%, #fff);border-radius:14px;padding:14px 16px}
+    .stat .k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      color:color-mix(in srgb, var(--domanda) 50%, var(--muted))}
+    .stat .v{margin-top:10px;font-size:27px;font-weight:800;color:var(--ink);line-height:1}
+
+    @media (max-width:900px){
+      .layout{flex-direction:column;gap:14px}
+      .stats{flex-direction:row;position:static;width:auto}
+      .stat{flex:1}
+      .stat .v{font-size:22px}
+    }
 
     .day{margin:0 auto 14px;border:1px solid var(--line);border-radius:12px;background:#fff;
       overflow:hidden;scroll-margin-top:70px}
@@ -143,13 +158,16 @@
     <button id="logout" class="logout" hidden title="Esci">esci</button>
   </header>
 
-  <main class="timeline" id="timeline"></main>
+  <div class="layout">
+    <aside class="stats" id="stats"></aside>
+    <main class="timeline" id="timeline"></main>
+  </div>
 
   <div id="login" class="login" hidden>
     <form class="login-box" id="loginForm">
       <h2>Comitato feste 87</h2>
       <p>Accesso riservato ai membri del gruppo.</p>
-      <label>Utente <input id="lgUser" autocomplete="username" placeholder="es. g.lima" autocapitalize="none" spellcheck="false"></label>
+      <label>Utente <input id="lgUser" autocomplete="username" placeholder="es. e.caniglia" autocapitalize="none" spellcheck="false"></label>
       <label>Password <input id="lgPass" type="password" autocomplete="current-password"></label>
       <div class="login-err" id="lgErr" hidden></div>
       <button type="submit" id="lgBtn">Entra</button>
@@ -297,14 +315,21 @@
         </section>`;
     }
 
+    function renderStats(){
+      if (!data.length) { el("stats").innerHTML = ""; return; }
+      const media = data.filter(p => p.media).length;
+      const days = new Set(data.map(p => romeDay(p.occurredAt))).size;
+      const card = (k, v) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+      el("stats").innerHTML = card("Punti", data.length) + card("Media", media) + card("Giorni", days);
+    }
+
     function render(){
       const items = visibleItems();
       const groups = groupByDay(items);
-      const mediaCount = data.filter(p => p.media).length;
 
       el("summary").textContent = filterType
         ? `${items.length} / ${data.length} punti · filtro: ${filterType}`
-        : `${data.length} punti · ${mediaCount} media · ${groups.length} giorni`;
+        : "";
 
       if (!data.length) { el("timeline").innerHTML = `<div class="empty">Nessun punto.</div>`; return; }
       if (!groups.length) { el("timeline").innerHTML = `<div class="empty">Nessun punto "${filterType}".</div>`; return; }
@@ -344,6 +369,7 @@
         if (r.status === 401) { setToken(null); showLogin(); return; }
         if (!r.ok) { el("timeline").innerHTML = `<div class="error">Errore API: HTTP ${r.status}</div>`; return; }
         data = await r.json();
+        renderStats();
       } catch (e) {
         el("timeline").innerHTML = `<div class="error">API non raggiungibile su <code>${API}</code>.<br>Avvia <code>ComitatoFeste.Api</code>.</div>`;
         return;
