@@ -180,6 +180,8 @@
     @media (max-width:680px){
       .rail::before{left:19px}
       .row,.row.left,.row.right{justify-content:flex-start}
+      /* colonna unica: annulla il margine negativo pensato per le righe alternate */
+      .row + .row{margin-top:10px}
       .card{width:calc(100% - 44px);margin-left:44px}
       .row .card::before,.row .card::after{display:none}
       .badge{left:19px;transform:translateX(-50%)}
