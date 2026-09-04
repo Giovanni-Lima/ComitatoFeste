@@ -163,7 +163,10 @@
     .gallery img{width:100%;height:92px;object-fit:cover;border-radius:6px;border:1px solid #e0e0e0}
     .media video{width:100%;max-height:320px;border-radius:6px;border:1px solid #e0e0e0;display:block;background:#000}
     .media audio{width:100%;height:36px}
-    .media .doc{display:inline-block;padding:6px 10px;background:var(--bg);border-radius:6px;text-decoration:none}
+    .media .doc{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;background:var(--bg);
+      border-radius:6px;text-decoration:none;font-size:13px;line-height:1.3;word-break:break-all}
+    .media .doc svg{width:22px;height:22px;flex:none;color:var(--media)}
+    .media.doclist{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
     .media.muted{color:var(--muted);font-style:italic;font-size:13px}
 
     .logout{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;
@@ -361,26 +364,37 @@
     const isImage = (p) => p.media && p.media.contentUrl &&
       ((p.media.contentType || "").startsWith("image/") || p.media.mediaType === "foto");
 
-    // Accorpa immagini consecutive dello stesso autore arrivate nello stesso minuto
-    // (i burst di foto di WhatsApp) in un unico elemento { photoGroup: [...] }.
+    // "documento": media scaricato che non è immagine, video o audio (PDF e simili).
+    const isDoc = (p) => {
+      if (!p.media || !p.media.contentUrl) return false;
+      const ct = p.media.contentType || "";
+      return !ct.startsWith("image/") && p.media.mediaType !== "foto"
+          && !ct.startsWith("video/")
+          && !ct.startsWith("audio/") && p.media.mediaType !== "audio";
+    };
+
+    // Accorpa i media consecutivi dello stesso autore arrivati nello stesso minuto
+    // (i burst di WhatsApp): immagini -> { photoGroup }, documenti/PDF -> { docGroup }.
     function groupMedia(pts){
       const out = [];
       for (let i = 0; i < pts.length; i++) {
         const p = pts[i];
-        if (!isImage(p)) { out.push(p); continue; }
+        const same = isImage(p) ? isImage : isDoc(p) ? isDoc : null;
+        if (!same) { out.push(p); continue; }
         const minute = fmtTime(p.occurredAt);
         const grp = [p];
-        while (i + 1 < pts.length && isImage(pts[i + 1])
+        while (i + 1 < pts.length && same(pts[i + 1])
                && pts[i + 1].author === p.author
                && fmtTime(pts[i + 1].occurredAt) === minute) {
           grp.push(pts[++i]);
         }
-        out.push(grp.length > 1 ? { photoGroup: grp } : p);
+        if (grp.length > 1) out.push(same === isImage ? { photoGroup: grp } : { docGroup: grp });
+        else out.push(p);
       }
       return out;
     }
 
-    const GENERIC_CAPTION = /^(foto|immagine|video|sticker|gif)\b.*condivis/i;
+    const GENERIC_CAPTION = /^(foto|immagine|video|sticker|gif|documento|file|pdf)\b.*condivis/i;
 
     function photoGroupHtml(grp, i){
       const p0 = grp[0];
@@ -408,8 +422,35 @@
         </div>`;
     }
 
+    function docGroupHtml(grp, i){
+      const p0 = grp[0];
+      const c = (TYPES.media || TYPES.info).color;
+      const side = i % 2 ? "right" : "left";
+      const links = grp.map(p => {
+        const url = `${API}${p.media.contentUrl}`;
+        return `<a class="doc" href="${url}" target="_blank" rel="noopener">${ICONS.documento} ${esc(p.media.fileName)}</a>`;
+      }).join("");
+      const caps = [...new Set(grp.map(p => p.text).filter(t => t && !GENERIC_CAPTION.test(t)))];
+      const textHtml = caps.length ? caps.map(esc).join("<br>") : `${grp.length} documenti`;
+      return `
+        <div class="row ${side}">
+          <div class="badge" style="background:${c}">${ICONS.documento}</div>
+          <div class="card">
+            <span class="tag" style="background:color-mix(in srgb, ${c} 14%, #fff);color:${c}">media</span>
+            <div class="card-head">
+              ${avatarHtml(p0)}
+              <span class="name">${esc(p0.author)}</span>
+              <span class="time">${fmtTime(p0.occurredAt)}</span>
+            </div>
+            <div class="text">${textHtml}</div>
+            <div class="media doclist">${links}</div>
+          </div>
+        </div>`;
+    }
+
     function rowHtml(entry, i){
       if (entry.photoGroup) return photoGroupHtml(entry.photoGroup, i);
+      if (entry.docGroup) return docGroupHtml(entry.docGroup, i);
       const p = entry;
       const c = (TYPES[p.type] || TYPES.info).color;
       const side = i % 2 ? "right" : "left";
@@ -525,6 +566,11 @@
     function goToDay(day){
       const sec = document.getElementById("day-" + day);
       if (!sec) { el("summary").textContent = `Nessun punto per ${fmtDay(day)}`; return; }
+      // Navigazione da date picker / frecce: apri SOLO il giorno scelto. Se restano
+      // aperti giorni più recenti (che stanno sopra nel DOM) le loro immagini lazy si
+      // caricano dopo il primo paint, allungano la pagina e lo scroll finisce in mezzo
+      // a quel giorno invece che su quello scelto.
+      for (const d of [...openDays]) if (d !== day) toggleDay(d, false);
       toggleDay(day, true);
       // dopo il paint delle nuove righe, così lo scroll punta alla posizione giusta;
       // l'offset per la topbar sticky è gestito da scroll-margin-top su .day
