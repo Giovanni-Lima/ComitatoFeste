@@ -183,11 +183,17 @@ Il backend .NET compila pulito e gira contro Postgres locale.
 ## Generazione di `digest_<data>.json` dall'export WhatsApp
 
 Il repo intero (compreso l'export della chat) vive ora in `C:\ComitatoFeste`
-(spostato da `C:\Digest` il 4/9). I `digest_<data>.json` in `Export/` non
-sono generati dal codice del repo, ma da script Python ad-hoc scritti nella
-sessione device-linked che parsano il `.txt` esportato da WhatsApp
-Android ("esporta chat con media"). Regole stabili da seguire in ogni
-rigenerazione:
+(spostato da `C:\Digest` il 4/9). Gli script Python che generano i
+`digest_<data>.json` in `Export/` a partire dal `.txt` esportato da
+WhatsApp Android ("esporta chat con media") sono ora versionati nel repo
+in **`scripts/whatsapp-digest/`** (`parse_wa.py` + un `build_digest_MMGG.py`
+per ogni giorno già fatto, `README.md` con la procedura passo-passo) — sono
+lo storico affidabile di come è stato costruito ogni digest, copiali/
+adattali per un nuovo giorno invece di ripartire da zero. Restano da
+rigenerare ogni volta nella sessione device-linked (leggono/scrivono file
+nella home della VM, fuori dal repo) perché serve `ffprobe`/`ffmpeg` e
+l'accesso diretto ai file della chat sul PC dell'utente. Regole stabili da
+seguire in ogni rigenerazione (dettagliate anche nel README sopra):
 
 - **Ogni vocale (audio) va tenuto**, una entry per vocale, anche se simile a
   uno precedente — l'audio non va mai trattato come "rumore" in fase di
@@ -196,6 +202,15 @@ rigenerazione:
 - **Sticker e GIF vanno ignorati**: non generano una entry nel digest e non
   vanno copiati in `Export/<data>/` (regola aggiunta il 4/9/2026 — prima
   venivano trattati come media generico).
+- **Le GIF di reazione mascherate da `.mp4` vanno ignorate anch'esse**:
+  WhatsApp Android salva le GIF (di reazione o da tastiera) come file `.mp4`
+  muti e brevi, indistinguibili per estensione da un video vero. Prima di
+  includere un `.mp4` nel digest si controlla con `ffprobe` se ha una
+  traccia audio (`ffprobe -v error -select_streams a -show_entries
+  stream=codec_type -of csv=p=0 <file>`): se l'output è vuoto (nessun
+  audio) è una GIF e va scartata come sticker/GIF; se c'è audio è un video
+  vero e va tenuto (regola aggiunta il 4/9/2026, dopo che alcune GIF erano
+  finite nei digest come "video").
 - Il testo "rumore" (saluti, emoji, conferme brevi tipo "grandi", reazioni)
   va scartato in fase di curatela manuale (dict `CURATED`), non inserito nel
   digest.
