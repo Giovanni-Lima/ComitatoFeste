@@ -11,7 +11,7 @@ picker in alto che scrolla alla sezione e la apre.
 ## Avvio
 
 ```powershell
-# 1. API (da C:\Digest)
+# 1. API (dalla radice del repo, C:\ComitatoFeste)
 $env:ASPNETCORE_ENVIRONMENT="Development"
 dotnet run --project Src/backend/ComitatoFeste.Api --launch-profile http   # -> http://localhost:5065
 

@@ -26,12 +26,18 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `(GroupId, Date)`). Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
-- **Dati importati**: `dotnet run --project
-  Src/backend/ComitatoFeste.Importer` legge tutti i
-  `C:\Digest\Export\digest_*.json` e li persiste (19 punti: 17 del
-  2026-09-01 + 2 del 2026-09-02, 1 media), poi sincronizza le foto profilo
-  da `Export/profili/<Nome>.jpg` (9 su 12 membri). Import idempotente
-  (dedup esatto + fuzzy; foto aggiornate solo se cambia lo SHA-256).
+- **Dati importati** (gruppo `Comitato feste 87`, stato al 4/9/2026): 3
+  `IngestionRun` da `digest_2026-09-02.json` + `digest_2026-09-03.json`
+  (il `digest_2026-09-01.json` era stato importato prima ed è ora fuori da
+  `Export/`). A DB: **298 `DigestPoint`** (167 del 02-09, 131 del 03-09;
+  122 già classificati `rumore` dal Transcriber), **240 `MediaAsset`**,
+  **20 `Member`** (14 con foto profilo da `Export/profili/<Nome>.jpg`),
+  **2 `Verbale`** in cache. Il Transcriber ha già girato su tutti i 207
+  vocali (`TranscribedAt` valorizzato ovunque). Import idempotente (dedup
+  esatto + fuzzy; foto aggiornate solo se cambia lo SHA-256).
+  `dotnet run --project Src/backend/ComitatoFeste.Importer` legge tutti i
+  `C:\ComitatoFeste\Export\digest_*.json` — ma vedi l'avviso ⚠️ sotto:
+  **non** rilanciarlo intero dopo il Transcriber.
 
 ## Struttura
 
@@ -43,7 +49,8 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   - `ComitatoFeste.Api` — Web API ASP.NET Core.
     - **Login "casereccio"** (`AuthService` + `TokenAuthAttribute`):
       `GET /api/auth/status` → `{enabled}`; `POST /api/auth/login
-      {username,password}` → `{token,username}`. Username = `iniziale.cognome`
+      {username,password}` → `{token,username,memberId,displayName}`.
+      Username = `iniziale.cognome`
       di un `Member` (derivato a runtime, niente colonna DB), password =
       passphrase condivisa (env `COMITATOFESTE_AUTH_PASSWORD` o config
       `Auth:Password`; vuota → login disattivato). Token HMAC firmato
@@ -135,10 +142,41 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   (le sottocartelle `_da-attribuire` / `_conflitto-autore` /
   `_gia-in-db-senza-media` sono triage manuale dell'utente, l'import le
   ignora), e `profili/<Nome-con-trattini>.jpg` per le foto profilo.
-- `docs/sample-digest_2026-09-01.json` — sottoinsieme di `Export/digest_2026-09-01.json`,
-  utile per capire la forma del JSON sorgente (date/time/author/type/text/file).
-- `schema.reference.sql` / `docker-compose.yml` / `README.md` — citati come
-  passi previsti ma **non ancora presenti** nel repo.
+- `docs/sample-digest_2026-09-01.json` — sottoinsieme del digest del
+  2026-09-01 (non più in `Export/`), committato per mostrare la forma del
+  JSON sorgente (date/time/author/type/text/file).
+- `README.md` (radice) — prerequisiti + comandi di build/migration/import/
+  trascrizione/run, rimanda a questo file e a `docs/CONTEXT.md`.
+- `schema.reference.sql` / `docker-compose.yml` — citati come passi previsti
+  ma **non ancora presenti** nel repo.
+
+## Generazione di `digest_<data>.json` dall'export WhatsApp
+
+Il repo intero (compreso l'export della chat) vive ora in `C:\ComitatoFeste`
+(spostato da `C:\Digest` il 4/9). I `digest_<data>.json` in `Export/` non
+sono generati dal codice del repo, ma da script Python ad-hoc scritti nella
+sessione device-linked che parsano il `.txt` esportato da WhatsApp
+Android ("esporta chat con media"). Regole stabili da seguire in ogni
+rigenerazione:
+
+- **Ogni vocale (audio) va tenuto**, una entry per vocale, anche se simile a
+  uno precedente — l'audio non va mai trattato come "rumore" in fase di
+  generazione del digest (il filtro sul contenuto poco utile è compito del
+  Transcriber via Groq, non di questo script).
+- **Sticker e GIF vanno ignorati**: non generano una entry nel digest e non
+  vanno copiati in `Export/<data>/` (regola aggiunta il 4/9/2026 — prima
+  venivano trattati come media generico).
+- Il testo "rumore" (saluti, emoji, conferme brevi tipo "grandi", reazioni)
+  va scartato in fase di curatela manuale (dict `CURATED`), non inserito nel
+  digest.
+- Media effettivamente assenti dall'export (`<Media omessi>` nel `.txt`) si
+  segnalano come non recuperabili, non si inventano placeholder.
+- **Nome del gruppo**: la cartella grezza dell'export si chiama `Chat
+  WhatsApp con Il branco dei pazzi 87/` (nome corrente del gruppo su
+  WhatsApp), ma il gruppo canonico ovunque — DB, default dei tre eseguibili
+  CLI, questi documenti — è **`Comitato feste 87`**. Non allineare l'uno
+  all'altro senza chiedere: cambiare il default rinominerebbe di fatto il
+  gruppo in tutta la pipeline.
 
 ## Convenzioni già in uso — seguile per coerenza
 

@@ -3,7 +3,7 @@ using ComitatoFeste.Importer;
 using Microsoft.EntityFrameworkCore;
 
 const string DefaultGroup = "Comitato feste 87";
-const string DefaultExportRoot = @"C:\Digest\Export";
+const string DefaultExportRoot = @"C:\ComitatoFeste\Export";
 const string DefaultConnection = "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres";
 
 // --- parsing argomenti -------------------------------------------------------
@@ -40,7 +40,7 @@ for (var i = 0; i < args.Length; i++)
         case "--help" or "-h":
             Console.WriteLine("uso: ComitatoFeste.Importer [<file.json | yyyy-MM-dd>] [opzioni]");
             Console.WriteLine("  --group <nome>            gruppo WhatsApp (default: \"Comitato feste 87\")");
-            Console.WriteLine("  --export-root <dir>      cartella Export (default: C:\\Digest\\Export)");
+            Console.WriteLine("  --export-root <dir>      cartella Export (default: C:\\ComitatoFeste\\Export)");
             Console.WriteLine("  --no-fuzzy               disattiva il dedup fuzzy pg_trgm");
             Console.WriteLine("  --fuzzy-threshold <0..1> soglia similarity() (default: 0.6)");
             Console.WriteLine("  --fuzzy-window-min <n>   finestra ± minuti per il confronto (default: 2)");

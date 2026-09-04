@@ -33,15 +33,16 @@ con i relativi file scaricati e rinominati.
 2. **Persistenza** (questo repo) — i dati finiscono in Postgres via questo
    servizio .NET EF Core Code-First, invece che restare solo in file JSON
    sparsi sul filesystem dell'utente.
-3. **Trascrizione audio** (da fare) — Groq Whisper API (large-v3 o
-   large-v3-turbo, tier gratuito 2000 req/giorno) per trascrivere i vocali
-   non trascritti da WhatsApp; Claude non può ascoltare audio nativamente,
-   serve questo passaggio esterno prima che un LLM possa ragionarci sopra.
+3. **Trascrizione audio** (fatto — `ComitatoFeste.Transcriber`) — Groq
+   Whisper API (`whisper-large-v3`) trascrive i vocali non trascritti da
+   WhatsApp, poi `openai/gpt-oss-120b` li classifica; Claude non può
+   ascoltare audio nativamente, serve questo passaggio esterno prima che un
+   LLM possa ragionarci sopra.
 4. **API CRUD** (questo repo, base già scritta) — Web API .NET per leggere/
    scrivere i dati.
 5. **Deploy** (da fare) — `docker-compose` con Postgres + servizio API.
-6. **Frontend timeline** (da fare) — pagina HTML che mostra il digest in
-   ordine cronologico, filtrabile per autore e tipo; consuma
+6. **Frontend timeline** (fatto — `Src/frontend/index.html`) — pagina HTML
+   che mostra il digest in ordine cronologico, filtrabile per tipo; consuma
    `GET /api/digestpoints`.
 
 ## Limiti noti della fase di ingestion (non risolti, l'utente li ha accettati per ora)
@@ -62,17 +63,20 @@ con i relativi file scaricati e rinominati.
 
 ## Dove vivono oggi i dati sorgente (sul PC Windows dell'utente)
 
-- `C:\Digest\Export\digest_<data>.json` — un file per giorno, entry come
-  in `docs/sample-digest_2026-09-01.json` (esempio reale allegato a questo
-  repo).
-- `C:\Digest\Export\<data>\` — media scaricati e rinominati per quel
+Il repo intero (export della chat compreso) vive in `C:\ComitatoFeste`
+(spostato da `C:\Digest` il 4/9/2026).
+
+- `C:\ComitatoFeste\Export\digest_<data>.json` — un file per giorno, entry
+  come in `docs/sample-digest_2026-09-01.json` (esempio reale allegato a
+  questo repo).
+- `C:\ComitatoFeste\Export\<data>\` — media scaricati e rinominati per quel
   giorno (`HHMM_Autore_breve-descrizione.ext`).
 
-Import di questi JSON in Postgres: non ancora scritto. Un semplice script/
-endpoint che legge `digest_<data>.json`, risolve/crea `Group` e `Member`
-per `GroupId+DisplayName`, crea un `IngestionRun` per il batch, e inserisce
-un `DigestPoint` per entry (con `MediaAsset` collegato se `file != null`)
-è il prossimo passo naturale per collegare pipeline e database.
+Import di questi JSON in Postgres: fatto, `ComitatoFeste.Importer`
+(`DigestImporter`). Legge `digest_<data>.json`, risolve/crea `Group` e
+`Member` per `GroupId+DisplayName`, crea un `IngestionRun` per file, e
+inserisce un `DigestPoint` per entry (con `MediaAsset`+`MediaBlob` se
+`file != null`), con dedup esatto + fuzzy pg_trgm.
 
 ## Perché lo schema è fatto così
 

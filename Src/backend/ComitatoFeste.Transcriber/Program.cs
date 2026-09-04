@@ -10,7 +10,7 @@ const string DefaultConnection = "Host=localhost;Port=5432;Database=postgres;Use
 // --- parsing argomenti -----------------------------------------------------
 var groupName = DefaultGroup;
 // Pausa tra un vocale e il successivo, per restare sotto i limiti/minuto del tier gratuito
-// (Whisper turbo 20 req/min, gpt-oss-20b 8.000 token/min). Il retry con backoff assorbe
+// (whisper-large-v3 20 req/min, gpt-oss-120b 8.000 token/min). Il retry con backoff assorbe
 // comunque gli sforamenti occasionali; alzalo con --delay-ms se vedi troppi 429.
 var delayMs = 6000;
 var limit = 0;          // 0 = nessun limite
@@ -35,7 +35,7 @@ for (var i = 0; i < args.Length; i++)
         case "--help" or "-h":
             Console.WriteLine("uso: ComitatoFeste.Transcriber [opzioni]");
             Console.WriteLine("  --group <nome>   gruppo WhatsApp (default: \"Comitato feste 87\")");
-            Console.WriteLine("  --delay-ms <n>   pausa tra un vocale e il successivo (default: 4000)");
+            Console.WriteLine("  --delay-ms <n>   pausa tra un vocale e il successivo (default: 6000)");
             Console.WriteLine("  --limit <n>      elabora al massimo n vocali (default: tutti)");
             Console.WriteLine("  --dry-run        trascrive/classifica ma non scrive su DB");
             return 0;
@@ -51,7 +51,7 @@ var groqKey = GroqKey.Resolve();
 
 if (string.IsNullOrWhiteSpace(groqKey))
 {
-    Console.Error.WriteLine("chiave Groq assente: imposta l'env GROQ_API_KEY oppure crea C:\\Digest\\key.txt (chiave gratuita su https://console.groq.com/keys).");
+    Console.Error.WriteLine("chiave Groq assente: imposta l'env GROQ_API_KEY oppure crea C:\\ComitatoFeste\\key.txt (chiave gratuita su https://console.groq.com/keys).");
     return 2;
 }
 
