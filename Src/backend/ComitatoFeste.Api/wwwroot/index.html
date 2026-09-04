@@ -67,9 +67,7 @@
       border-bottom:2px solid color-mix(in srgb, var(--yellow) 72%, #7a6b00);
       min-height:70px;padding:8px 24px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
     .topbar h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.01em}
-    .summary{margin-left:auto;color:var(--muted);font-size:12px}
-    .topbar .summary{color:var(--ink-soft)}
-    .topbar .me.sm{margin-left:12px;padding:4px 12px 4px 4px;gap:8px;background:#fff}
+    .topbar .me.sm{margin-left:auto;padding:4px 12px 4px 4px;gap:8px;background:#fff}
     .topbar .me.sm .me-av{width:28px;height:28px}
     .topbar .me.sm .me-name{font-weight:600}
 
@@ -222,7 +220,6 @@
       .card{width:calc(100% - 44px);margin-left:44px}
       .row .card::before,.row .card::after{display:none}
       .badge{left:19px;transform:translateX(-50%)}
-      .summary{margin-left:0}
     }
   </style>
 </head>
@@ -252,7 +249,6 @@
           <input type="date" id="day">
           <button id="next" title="Giorno successivo">›</button>
         </div>
-        <div class="summary" id="summary"></div>
         <div class="me sm" id="meTop"></div>
       </header>
 
@@ -568,10 +564,6 @@
       const items = visibleItems();
       const groups = groupByDay(items);
 
-      el("summary").textContent = filterType
-        ? `${items.length} / ${data.length} punti · filtro: ${filterType}`
-        : "";
-
       if (!data.length) { el("timeline").innerHTML = `<div class="empty">Nessun punto.</div>`; return; }
       if (!groups.length) { el("timeline").innerHTML = `<div class="empty">Nessun punto "${filterType}".</div>`; return; }
 
@@ -596,7 +588,7 @@
 
     function goToDay(day){
       const sec = document.getElementById("day-" + day);
-      if (!sec) { el("summary").textContent = `Nessun punto per ${fmtDay(day)}`; return; }
+      if (!sec) return;
       // Navigazione da date picker / frecce: apri SOLO il giorno scelto. Se restano
       // aperti giorni più recenti (che stanno sopra nel DOM) le loro immagini lazy si
       // caricano dopo il primo paint, allungano la pagina e lo scroll finisce in mezzo
@@ -695,7 +687,6 @@
       el("daynav").hidden     = v !== "agenda";
       el("viewTitle").textContent = v === "media" ? "Media" : "Agenda";
       document.title = "Comitato feste 87 — " + el("viewTitle").textContent;
-      if (v !== "agenda") el("summary").textContent = "";
       for (const b of el("nav").children) b.classList.toggle("active", b.dataset.view === v);
       scrollTo({ top: 0 });
     }
