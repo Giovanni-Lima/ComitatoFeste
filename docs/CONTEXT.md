@@ -41,7 +41,7 @@ con i relativi file scaricati e rinominati.
 4. **API CRUD** (questo repo, base già scritta) — Web API .NET per leggere/
    scrivere i dati.
 5. **Deploy** (da fare) — `docker-compose` con Postgres + servizio API.
-6. **Frontend timeline** (fatto — `Src/frontend/index.html`) — pagina HTML
+6. **Frontend timeline** (fatto — `Src/backend/ComitatoFeste.Api/wwwroot/index.html`) — pagina HTML
    che mostra il digest in ordine cronologico, filtrabile per tipo; consuma
    `GET /api/digestpoints`.
 

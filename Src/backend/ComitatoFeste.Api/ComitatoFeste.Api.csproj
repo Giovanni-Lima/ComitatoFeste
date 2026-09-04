@@ -15,13 +15,7 @@
     <ProjectReference Include="..\ComitatoFeste.Data\ComitatoFeste.Data.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Il frontend è servito come file statico dall'API (stessa origine, niente CORS in
-         produzione). Sorgente unica: Src/frontend/index.html -> wwwroot/index.html sia in
-         'dotnet run' sia in 'dotnet publish'. -->
-    <Content Include="..\..\frontend\index.html" Link="wwwroot\index.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+  <!-- Il frontend (wwwroot/index.html) è servito come file statico dall'API: stessa
+       origine, niente CORS in produzione. Il Web SDK include wwwroot/** in build e publish. -->
 
 </Project>

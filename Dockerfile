@@ -13,7 +13,7 @@ COPY Src/backend/ComitatoFeste.Data/ComitatoFeste.Data.csproj      Src/backend/C
 COPY Src/backend/ComitatoFeste.Domain/ComitatoFeste.Domain.csproj  Src/backend/ComitatoFeste.Domain/
 RUN dotnet restore Src/backend/ComitatoFeste.Api/ComitatoFeste.Api.csproj
 
-# Poi il codice (backend + frontend/index.html referenziato dal .csproj dell'API).
+# Poi il codice (backend; il frontend è in ComitatoFeste.Api/wwwroot/).
 COPY Src/ Src/
 RUN dotnet publish Src/backend/ComitatoFeste.Api/ComitatoFeste.Api.csproj \
     -c Release -o /app --no-restore

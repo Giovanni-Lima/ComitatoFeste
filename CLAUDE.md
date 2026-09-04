@@ -89,10 +89,10 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     fallback `ConnectionStrings:ComitatoFeste`. All'avvio `Program.cs` esegue
     `Database.Migrate()` (primo boot su DB vuoto → crea lo schema; DB
     irraggiungibile → avvio fallito, voluto in deploy). **Frontend statico**:
-    `UseDefaultFiles`/`UseStaticFiles` servono `wwwroot/index.html` (link a
-    `Src/frontend/index.html` nel `.csproj`), stessa origine → in produzione
-    niente CORS. Porta di ascolto da env `PORT` se presente (Render), altrimenti
-    default Kestrel.
+    `UseDefaultFiles`/`UseStaticFiles` servono
+    `ComitatoFeste.Api/wwwroot/index.html` (incluso dal Web SDK), stessa
+    origine → in produzione niente CORS. Porta di ascolto da env `PORT` se
+    presente (Render), altrimenti default Kestrel.
   - `ComitatoFeste.Importer` — console: legge i `digest_*.json` da Export e
     li scrive a DB (`DigestImporter` è la classe riusabile);
     `ImportProfilePhotosAsync` sincronizza `Export/profili/`.
@@ -131,8 +131,11 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     `--dry-run`, `--limit <n>`, `--delay-ms <n>`,
     `--group <nome>`. Ritenta su HTTP 429/5xx, Ctrl+C esce pulito dopo il
     vocale in corso.
-- `Src/frontend/` — `index.html` self-contained (vanilla JS, nessun build),
-  "Comitato feste 87 — Agenda". All'avvio chiama `GET /api/auth/status`: se
+- `Src/backend/ComitatoFeste.Api/wwwroot/index.html` — frontend
+  self-contained (vanilla JS, nessun build), "Comitato feste 87 — Agenda",
+  servito dall'API stessa. Note operative in
+  `Src/backend/ComitatoFeste.Api/README.md`. All'avvio chiama
+  `GET /api/auth/status`: se
   `enabled` e non c'è token in `localStorage` (`cf87_token`) mostra un
   overlay di login (username membro + passphrase → `POST /api/auth/login`),
   altrimenti carica; il token va in `Authorization: Bearer` su ogni fetch
@@ -152,7 +155,8 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   comunque riprodotto); `<img loading="lazy">`. Base URL API: `?api=` se
   presente, altrimenti **stessa origine** (in produzione l'API serve questo
   file). In locale: `dotnet run` dell'API e apri `http://localhost:5065/`,
-  oppure servi il file a parte con `?api=`; vedi `Src/frontend/README.md`.
+  oppure servi il file a parte con `?api=`; vedi
+  `Src/backend/ComitatoFeste.Api/README.md`.
 - `Export/` — dati sorgente della pipeline sul PC dell'utente:
   `digest_<data>.json`, sottocartella `<data>/` con i media rinominati
   (le sottocartelle `_da-attribuire` / `_conflitto-autore` /
@@ -243,7 +247,7 @@ implementarlo.
 
 ## Prossimi passi noti
 
-1. Rifinire il frontend `Src/frontend/`: filtro autore, thumbnail ridotte
+1. Rifinire il frontend (`ComitatoFeste.Api/wwwroot/index.html`): filtro autore, thumbnail ridotte
    lato server, e — con giorni molto densi (~100 punti) — virtualizzazione
    o paginazione delle righe (la sezione espansa è pesante da renderizzare).
 2. Transcriber: girato sui dati 2026-09-02/03, prompt iterato. Da rifinire

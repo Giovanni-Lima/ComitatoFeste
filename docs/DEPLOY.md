@@ -177,4 +177,4 @@ docker compose up --build      # -> http://localhost:8080/
 
 Oppure, senza container per l'API: tieni `local-postgres` e lancia
 `dotnet run --project Src/backend/ComitatoFeste.Api` (vedi
-`Src/frontend/README.md`).
+`Src/backend/ComitatoFeste.Api/README.md`).

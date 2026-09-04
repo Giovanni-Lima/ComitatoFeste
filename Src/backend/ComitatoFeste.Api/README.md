@@ -1,7 +1,11 @@
-# Frontend — Agenda
+# ComitatoFeste.Api — API + frontend "Agenda"
 
-`index.html` self-contained (vanilla JS, nessun build). Consuma
-`ComitatoFeste.Api`: scarica **tutti** i punti (`GET /api/digestpoints`
+Web API ASP.NET Core che serve anche il frontend statico
+(`wwwroot/index.html`, vanilla JS, nessun build) sulla stessa origine.
+
+## Frontend
+
+`wwwroot/index.html` scarica **tutti** i punti (`GET /api/digestpoints`
 senza `date`) e li raggruppa per giorno in un accordion — ogni giorno è una
 sezione collassabile con la timeline verticale (righe alternate sx/dx,
 badge per tipo). All'apertura è espanso solo il giorno corrente (o quello
@@ -10,22 +14,21 @@ picker in alto che scrolla alla sezione e la apre.
 
 ## Avvio
 
-L'API serve `index.html` da `wwwroot` (link a questo file nel `.csproj`),
-quindi basta lei:
-
 ```powershell
 # dalla radice del repo, C:\ComitatoFeste
 $env:ASPNETCORE_ENVIRONMENT="Development"
 dotnet run --project Src/backend/ComitatoFeste.Api --launch-profile http
 ```
 
-Apri `http://localhost:5065/`.
+Apri `http://localhost:5065/`. Le modifiche a `wwwroot/index.html` si vedono
+con un semplice refresh (in Development `dotnet watch` ricarica, altrimenti
+riavvia).
 
-Per iterare solo sul frontend senza ricompilare l'API si può ancora servire
-il file a parte e puntare l'API con `?api=`:
+Per iterare sul solo frontend senza toccare l'API si può servire il file a
+parte e puntare l'API con `?api=`:
 
 ```powershell
-cd Src/frontend
+cd Src/backend/ComitatoFeste.Api/wwwroot
 python -m http.server 5173   # -> http://localhost:5173/?api=http://localhost:5065
 ```
 

@@ -51,19 +51,15 @@ dotnet run --project Src/backend/ComitatoFeste.Transcriber
 # opzioni: --dry-run  --limit <n>  --delay-ms <n>  --group <nome>
 ```
 
-## API
+## API + frontend
+
+L'API serve anche il frontend (`ComitatoFeste.Api/wwwroot/index.html`) sulla
+stessa origine:
 
 ```powershell
 dotnet run --project Src/backend/ComitatoFeste.Api --launch-profile http
-# -> http://localhost:5065  (Swagger in Development)
+# -> http://localhost:5065/   (Swagger su /swagger in Development)
 ```
 
-## Frontend
-
-```powershell
-cd Src/frontend
-python -m http.server 5173   # -> http://localhost:5173
-```
-
-Vedi [`Src/frontend/README.md`](Src/frontend/README.md) per i parametri URL
-e il login.
+Vedi [`Src/backend/ComitatoFeste.Api/README.md`](Src/backend/ComitatoFeste.Api/README.md)
+per i parametri URL e il login.
