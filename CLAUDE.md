@@ -59,11 +59,13 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     - `GET /api/digestpoints/recap?date=yyyy-MM-dd[&refresh=true][&format=md]`
       → verbale in prosa della giornata, **PDF** di default (`format=md` per
       il Markdown grezzo), `Content-Disposition: attachment`. Il testo è
-      generato da Groq (`GroqRecapClient`, `openai/gpt-oss-120b`) alla prima
-      richiesta e messo in cache in `Verbali` (Markdown); il PDF è reso al
-      volo da quel Markdown con QuestPDF (`VerbalePdf`), senza nuove
-      chiamate. `refresh=true` rigenera il testo. 404 senza punti, 503
-      senza `GROQ_API_KEY`.
+      generato da Groq (`GroqRecapClient`, `openai/gpt-oss-120b`,
+      `max_completion_tokens=4096`) alla prima richiesta e messo in cache in
+      `Verbali` (Markdown); il PDF è reso al volo da quel Markdown con
+      QuestPDF (`VerbalePdf`), senza nuove chiamate. Se Groq tronca la
+      risposta (`finish_reason=="length"`) il client solleva un errore →
+      502, niente cache di un verbale a metà. `refresh=true` rigenera il
+      testo. 404 senza punti, 503 senza `GROQ_API_KEY`.
     - `GET /api/digestpoints/media/{mediaId}/content` → byte del blob inline.
     - `GET /api/members/{memberId}/photo` → foto profilo inline.
     DTO in `Contracts/`, Swagger in Development, CORS dev `localhost:5173/3000`.
