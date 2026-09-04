@@ -8,8 +8,19 @@ QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// In produzione (Render) la porta di ascolto arriva dall'env PORT; in locale resta il
+// default di Kestrel (vedi launchSettings.json).
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
+// Connessione: env COMITATOFESTE_CONNECTION (stessa convenzione di Importer/Transcriber),
+// altrimenti ConnectionStrings:ComitatoFeste da appsettings.json.
+var connectionString = Environment.GetEnvironmentVariable("COMITATOFESTE_CONNECTION")
+                       ?? builder.Configuration.GetConnectionString("ComitatoFeste");
+
 builder.Services.AddDbContext<ComitatoFesteDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("ComitatoFeste")));
+    options.UseNpgsql(connectionString));
 
 // Client Groq per il verbale giornaliero (chiave da env GROQ_API_KEY o config Groq:ApiKey).
 builder.Services.AddHttpClient<GroqRecapClient>(c => c.Timeout = TimeSpan.FromMinutes(2));
@@ -29,12 +40,25 @@ builder.Services.AddCors(options => options.AddPolicy(DevCors, policy => policy
 
 var app = builder.Build();
 
+// Applica le migration in sospeso all'avvio: il primo boot contro un DB vuoto (es. il
+// servizio Aiven appena creato) crea lo schema da solo. Se il DB non è raggiungibile
+// l'avvio fallisce con un errore esplicito nei log — comportamento voluto in deploy.
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<ComitatoFesteDbContext>().Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
     app.UseCors(DevCors);
 }
+
+// Frontend statico (wwwroot/index.html, vedi ComitatoFeste.Api.csproj): servito dalla
+// stessa origine dell'API, così in produzione non serve CORS.
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.MapControllers();
 

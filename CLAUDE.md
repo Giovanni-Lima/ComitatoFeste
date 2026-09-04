@@ -38,6 +38,9 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `dotnet run --project Src/backend/ComitatoFeste.Importer` legge tutti i
   `C:\ComitatoFeste\Export\digest_*.json` — ma vedi l'avviso ⚠️ sotto:
   **non** rilanciarlo intero dopo il Transcriber.
+- **Deploy**: artefatti pronti e immagine testata in locale (build + boot +
+  migrate + endpoint OK), ma **non ancora deployato**. Target Render + Aiven,
+  vedi `docs/DEPLOY.md`. Restano da creare gli account e fare il primo deploy.
 
 ## Struttura
 
@@ -79,6 +82,14 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     La chiave Groq (solo per `recap`) è risolta da `GroqKey.Resolve()`: env
     `GROQ_API_KEY`, poi file `key.txt` (in `.gitignore`, cercato risalendo
     fino alla radice del repo), poi config `Groq:ApiKey`.
+    **Connessione**: env `COMITATOFESTE_CONNECTION` (come Importer/Transcriber),
+    fallback `ConnectionStrings:ComitatoFeste`. All'avvio `Program.cs` esegue
+    `Database.Migrate()` (primo boot su DB vuoto → crea lo schema; DB
+    irraggiungibile → avvio fallito, voluto in deploy). **Frontend statico**:
+    `UseDefaultFiles`/`UseStaticFiles` servono `wwwroot/index.html` (link a
+    `Src/frontend/index.html` nel `.csproj`), stessa origine → in produzione
+    niente CORS. Porta di ascolto da env `PORT` se presente (Render), altrimenti
+    default Kestrel.
   - `ComitatoFeste.Importer` — console: legge i `digest_*.json` da Export e
     li scrive a DB (`DigestImporter` è la classe riusabile);
     `ImportProfilePhotosAsync` sincronizza `Export/profili/`.
@@ -135,8 +146,10 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   il verbale **PDF** della giornata. Foto inline, `<audio>` /
   `<video>` player scelto dal prefisso di `media.contentType`
   (`image/`/`video/`/`audio/`), non dal `mediaType` (video `documento`
-  comunque riprodotto); `<img loading="lazy">`. Si serve su `:5173`
-  (`python -m http.server 5173`); vedi `Src/frontend/README.md`.
+  comunque riprodotto); `<img loading="lazy">`. Base URL API: `?api=` se
+  presente, altrimenti **stessa origine** (in produzione l'API serve questo
+  file). In locale: `dotnet run` dell'API e apri `http://localhost:5065/`,
+  oppure servi il file a parte con `?api=`; vedi `Src/frontend/README.md`.
 - `Export/` — dati sorgente della pipeline sul PC dell'utente:
   `digest_<data>.json`, sottocartella `<data>/` con i media rinominati
   (le sottocartelle `_da-attribuire` / `_conflitto-autore` /
@@ -147,8 +160,13 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   JSON sorgente (date/time/author/type/text/file).
 - `README.md` (radice) — prerequisiti + comandi di build/migration/import/
   trascrizione/run, rimanda a questo file e a `docs/CONTEXT.md`.
-- `schema.reference.sql` / `docker-compose.yml` — citati come passi previsti
-  ma **non ancora presenti** nel repo.
+- **Deploy** — `Dockerfile` (+ `.dockerignore`) builda l'immagine dell'API
+  (che serve anche il frontend); `render.yaml` descrive il Web Service Render;
+  `docker-compose.yml` è per lo sviluppo locale (Postgres + API). Target:
+  Render (container) + **Aiven** PostgreSQL gestito. Guida passo-passo in
+  `docs/DEPLOY.md`.
+- `schema.reference.sql` — citato come passo previsto ma **non ancora
+  presente** nel repo.
 
 ## Generazione di `digest_<data>.json` dall'export WhatsApp
 
@@ -227,6 +245,10 @@ implementarlo.
    o paginazione delle righe (la sezione espansa è pesante da renderizzare).
 2. Transcriber: girato sui dati 2026-09-02/03, prompt iterato. Da rifinire
    il confine `rumore`/`info`/`decisione` su un campione (`--limit`).
-3. Dockerfile per `ComitatoFeste.Api` + `docker-compose.yml` (o aggancio
-   al compose esistente dell'utente). Nel compose serve passare
-   `GROQ_API_KEY` all'API per l'endpoint `recap`.
+3. Deploy: `Dockerfile` + `render.yaml` + `docker-compose.yml` pronti, guida
+   in `docs/DEPLOY.md` (Render + Aiven). Da fare: creare gli account,
+   impostare le env su Render, primo deploy.
+4. **Proteggere gli endpoint binari** (`/api/digestpoints/media/{id}/content`,
+   `/api/members/{id}/photo`): oggi senza `[TokenAuth]`, su URL pubblico sono
+   enumerabili. Follow-up con token in querystring (tocca il rendering media
+   del frontend).

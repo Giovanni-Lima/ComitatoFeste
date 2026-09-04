@@ -1,0 +1,36 @@
+# Render Blueprint — un solo Web Service Docker (API + frontend statico).
+# Il database NON è qui: è un servizio PostgreSQL gestito su Aiven, passato via
+# COMITATOFESTE_CONNECTION. Vedi docs/DEPLOY.md.
+
+services:
+  - type: web
+    name: comitatofeste
+    runtime: docker
+    repo: https://github.com/Giovanni-Lima/ComitatoFeste
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: frankfurt
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/auth/status
+    envVars:
+      # Porta di ascolto: letta da Program.cs, allineata all'EXPOSE del Dockerfile.
+      - key: PORT
+        value: "8080"
+      # --- segreti: impostati nella dashboard Render, non nel repo -----------
+      # Connessione Aiven in formato Npgsql:
+      #   Host=...aivencloud.com;Port=NNNNN;Database=defaultdb;Username=avnadmin;
+      #   Password=...;SSL Mode=Require;Trust Server Certificate=true
+      - key: COMITATOFESTE_CONNECTION
+        sync: false
+      # Passphrase condivisa del comitato. Vuota/assente => login disattivato (portale aperto).
+      - key: COMITATOFESTE_AUTH_PASSWORD
+        sync: false
+      # Segreto per firmare i token. DEVE essere fisso: senza, a ogni redeploy tutti
+      # i login decadono. Genera 32+ caratteri casuali.
+      - key: COMITATOFESTE_AUTH_SECRET
+        sync: false
+      # Opzionale: serve solo a generare verbali di giorni non ancora in cache.
+      - key: GROQ_API_KEY
+        sync: false

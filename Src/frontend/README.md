@@ -10,23 +10,33 @@ picker in alto che scrolla alla sezione e la apre.
 
 ## Avvio
 
-```powershell
-# 1. API (dalla radice del repo, C:\ComitatoFeste)
-$env:ASPNETCORE_ENVIRONMENT="Development"
-dotnet run --project Src/backend/ComitatoFeste.Api --launch-profile http   # -> http://localhost:5065
+L'API serve `index.html` da `wwwroot` (link a questo file nel `.csproj`),
+quindi basta lei:
 
-# 2. servire il frontend su una porta in whitelist CORS (5173 o 3000)
-cd Src/frontend
-python -m http.server 5173                                                 # -> http://localhost:5173
+```powershell
+# dalla radice del repo, C:\ComitatoFeste
+$env:ASPNETCORE_ENVIRONMENT="Development"
+dotnet run --project Src/backend/ComitatoFeste.Api --launch-profile http
 ```
 
-Apri `http://localhost:5173/`.
+Apri `http://localhost:5065/`.
+
+Per iterare solo sul frontend senza ricompilare l'API si può ancora servire
+il file a parte e puntare l'API con `?api=`:
+
+```powershell
+cd Src/frontend
+python -m http.server 5173   # -> http://localhost:5173/?api=http://localhost:5065
+```
+
+(il CORS in Development ammette `:5173` e `:3000`).
 
 ## Parametri URL
 
 - `?date=2026-09-03` — giorno da espandere e a cui scrollare all'apertura
   (default: oggi, fuso Roma)
-- `?api=http://host:porta` — base URL dell'API (default `http://localhost:5065`)
+- `?api=http://host:porta` — base URL dell'API. Default: **stessa origine**
+  della pagina (in produzione l'API serve anche il frontend)
 
 ## Login
 
@@ -38,9 +48,10 @@ variabile d'ambiente il login è disattivato e il sito è aperto.
 
 ## Note
 
-- Il CORS dell'API in Development ammette solo `http://localhost:5173` e
-  `:3000` (vedi `Program.cs`): aprire il file con `file://` non funziona per
-  le chiamate `fetch`.
+- Servito dall'API (stessa origine) le `fetch` sono relative e non serve
+  CORS. Aprendo il file con `file://` o da `:5173` le chiamate `fetch`
+  funzionano solo verso un'origine in whitelist CORS (Development: `:5173`,
+  `:3000`).
 - Filtri per tipo (chip) applicati lato client, su tutti i giorni; `‹ ›` e
   il date picker aprono la sezione del giorno scelto e ci scrollano.
 - Il pulsante ⬇ su ogni header scarica il **verbale PDF** della giornata

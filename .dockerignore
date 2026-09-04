@@ -1,0 +1,20 @@
+# Contesto di build ridotto all'essenziale (Src/). Fuori tutto il resto:
+.git
+.idea
+.vs
+**/bin
+**/obj
+
+# Dati sorgente della pipeline e segreti — non devono finire nell'immagine.
+Export
+Chat WhatsApp con Il branco dei pazzi 87
+key.txt
+*.key
+**/appsettings.*.local.json
+
+# Documentazione e artefatti che non servono al runtime.
+docs
+*.md
+LICENSE
+render.yaml
+docker-compose.yml

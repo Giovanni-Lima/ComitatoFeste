@@ -254,7 +254,9 @@
 
   <script>
     const qs = new URLSearchParams(location.search);
-    const API = (qs.get("api") || "http://localhost:5065").replace(/\/$/, "");
+    // Default: stessa origine da cui è servita la pagina (in produzione l'API serve anche
+    // questo file). Override con ?api=http://host:porta per puntare a un'API separata.
+    const API = (qs.get("api") || "").replace(/\/$/, "");
 
     // --- auth ---------------------------------------------------------------
     const TOKEN_KEY = "cf87_token", USER_KEY = "cf87_user";

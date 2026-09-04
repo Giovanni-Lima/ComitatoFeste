@@ -1,0 +1,46 @@
+# Sviluppo locale: Postgres + API buildata dal Dockerfile, stessa forma della produzione.
+# In alternativa puoi continuare a usare il container 'local-postgres' esterno e lanciare
+# l'API con 'dotnet run' (vedi Src/frontend/README.md).
+#
+#   docker compose up --build      # -> http://localhost:8080/
+#
+# Le migration girano da sole all'avvio dell'API. Per caricare i dati: lancia Importer /
+# Transcriber da locale con COMITATOFESTE_CONNECTION che punta a questo 'db' o a Aiven.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      # NB: in conflitto con un eventuale 'local-postgres' già in ascolto su 5432 —
+      # spegni quello, oppure cambia questa mappatura in "5433:5432".
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      COMITATOFESTE_CONNECTION: "Host=db;Port=5432;Database=postgres;Username=postgres;Password=postgres"
+      COMITATOFESTE_AUTH_PASSWORD: "${COMITATOFESTE_AUTH_PASSWORD:-}"
+      COMITATOFESTE_AUTH_SECRET: "${COMITATOFESTE_AUTH_SECRET:-dev-secret-non-usare-in-produzione}"
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
