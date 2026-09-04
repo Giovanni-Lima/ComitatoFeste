@@ -38,14 +38,17 @@ public sealed class GroqRecapClient
         var system = $$"""
             Sei il segretario del comitato feste "{{groupName}}". Ricevi i punti salienti estratti
             dalla chat WhatsApp del gruppo per una singola giornata. Scrivi un verbale sintetico in
-            italiano, in prosa scorrevole, con queste sezioni Markdown (ometti quelle senza contenuto):
+            italiano, con queste sezioni Markdown (ometti quelle senza contenuto):
 
             ## Decisioni
             ## Domande aperte
             ## Informazioni
 
-            Regole: attieniti ai punti forniti, non inventare nulla, non elencare i file multimediali,
+            Regole: una riga concisa per punto (massimo ~20 parole), come elenco puntato;
+            accorpa in un'unica riga i punti quasi identici o consecutivi dello stesso autore;
+            attieniti ai punti forniti, non inventare nulla, non elencare i file multimediali,
             niente preamboli o chiuse. Attribuisci le affermazioni alle persone quando è utile.
+            Copri TUTTI i punti, dal primo all'ultimo orario: non fermarti a metà giornata.
             """;
 
         var user = $"Giornata: {date:dd/MM/yyyy}\n\nPunti (orario · autore · tipo: testo):\n{pointsBlock}";
@@ -55,7 +58,9 @@ public sealed class GroqRecapClient
             model = Model,
             temperature = 0.2,
             reasoning_effort = "low",
-            max_completion_tokens = 2000,
+            // gpt-oss conta i token di ragionamento nel budget; 4096 basta per una giornata
+            // densa (~95 punti) restando sotto il limite 8k token/min del tier gratuito.
+            max_completion_tokens = 4096,
             messages = new[]
             {
                 new { role = "system", content = system },
@@ -78,8 +83,16 @@ public sealed class GroqRecapClient
             if (resp.IsSuccessStatusCode)
             {
                 using var doc = JsonDocument.Parse(body);
-                var content = doc.RootElement.GetProperty("choices")[0]
-                    .GetProperty("message").GetProperty("content").GetString();
+                var choice = doc.RootElement.GetProperty("choices")[0];
+                var content = choice.GetProperty("message").GetProperty("content").GetString();
+
+                // Risposta tagliata a metà: meglio un errore (l'endpoint non la mette in cache)
+                // che salvare un verbale incompleto.
+                var finish = choice.TryGetProperty("finish_reason", out var fr) ? fr.GetString() : null;
+                if (finish == "length")
+                    throw new InvalidOperationException(
+                        "Groq ha troncato il verbale (max token raggiunto): riprova o riduci i punti del giorno.");
+
                 return (content ?? string.Empty).Trim();
             }
 
