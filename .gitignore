@@ -22,6 +22,10 @@ key.txt
 *.key
 appsettings.*.local.json
 
+## Backup DB (vedi scripts/backup-db.ps1 e docs/DEPLOY.md)
+Backups/
+scripts/aiven.uri
+
 Chat WhatsApp con Il branco dei pazzi 87/
 
 Export/*

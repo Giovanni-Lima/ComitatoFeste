@@ -110,6 +110,38 @@ Il portale online riflette subito i nuovi dati (nessun redeploy).
 `git push` su `main` → Render ribuilda e ripubblica (`autoDeploy: true`).
 Rollback a una versione precedente dalla dashboard Render (**Deploys → Rollback**).
 
+## 6 · Backup del database
+
+Il piano free di Aiven non offre backup/PITR affidabili. In più il DB locale
+della pipeline è già un quasi-mirror (l'unico dato solo-cloud sono i `Verbali`
+generati online). Backup giornaliero con `scripts/backup-db.ps1`:
+
+- legge l'URI Aiven da `scripts/aiven.uri` (gitignorato, una riga:
+  `postgres://avnadmin:...@...:11068/defaultdb?sslmode=require`);
+- `pg_dump -Fc` via un client `postgres:18` usa-e-getta (Aiven gira Postgres
+  18, il container `local-postgres` è alla 16 e non può esportare da un
+  server più recente);
+- scrive `Backups/cf-YYYY-MM-DD.dump` (gitignorato) e ruota a 30 giorni.
+
+Schedulazione giornaliera (una volta, in PowerShell):
+
+```powershell
+$a = New-ScheduledTaskAction -Execute "powershell.exe" `
+     -Argument '-NoProfile -File "C:\ComitatoFeste\scripts\backup-db.ps1"'
+$t = New-ScheduledTaskTrigger -Daily -At 2am
+Register-ScheduledTask -TaskName "ComitatoFeste-DB-Backup" -Action $a -Trigger $t
+```
+
+Restore:
+
+```powershell
+docker run --rm -v "C:\ComitatoFeste\Backups:/backups" postgres:18-alpine `
+  pg_restore --no-owner --clean --if-exists -d "<uri>" /backups/cf-YYYY-MM-DD.dump
+```
+
+Upgrade opzionale (offsite, gira anche a PC spento): workflow GitHub Actions
+schedulato → `pg_dump` → Cloudflare R2 (10 GB free) con lifecycle a 30 giorni.
+
 ---
 
 ## Limiti e cose da sapere

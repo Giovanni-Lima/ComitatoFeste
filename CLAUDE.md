@@ -38,9 +38,12 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `dotnet run --project Src/backend/ComitatoFeste.Importer` legge tutti i
   `C:\ComitatoFeste\Export\digest_*.json` — ma vedi l'avviso ⚠️ sotto:
   **non** rilanciarlo intero dopo il Transcriber.
-- **Deploy**: artefatti pronti e immagine testata in locale (build + boot +
-  migrate + endpoint OK), ma **non ancora deployato**. Target Render + Aiven,
-  vedi `docs/DEPLOY.md`. Restano da creare gli account e fare il primo deploy.
+- **Deploy**: immagine testata in locale (build + boot + migrate + endpoint
+  OK). **DB Aiven già creato e popolato** (`pg_dump`/`pg_restore` dal locale,
+  298/240/20/2, `pg_trgm` + indici + `__EFMigrationsHistory` OK) — Aiven gira
+  **Postgres 18**, il `local-postgres` di dev è alla **16**. Manca solo il Web
+  Service su Render (creare account + env var). Backup: `scripts/backup-db.ps1`
+  (primo dump fatto in `Backups/`, non committato). Tutto in `docs/DEPLOY.md`.
 
 ## Struttura
 
