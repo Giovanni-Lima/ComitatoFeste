@@ -158,6 +158,9 @@
 
     .media{margin-top:10px}
     .media img{max-width:100%;max-height:320px;border-radius:6px;border:1px solid #e0e0e0;display:block}
+    .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+    .gallery a{display:block;line-height:0}
+    .gallery img{width:100%;height:92px;object-fit:cover;border-radius:6px;border:1px solid #e0e0e0}
     .media video{width:100%;max-height:320px;border-radius:6px;border:1px solid #e0e0e0;display:block;background:#000}
     .media audio{width:100%;height:36px}
     .media .doc{display:inline-block;padding:6px 10px;background:var(--bg);border-radius:6px;text-decoration:none}
@@ -349,12 +352,66 @@
         b.classList.toggle("active", b.dataset.k === (filterType || ""));
     }
 
-    function rowHtml(p, i){
+    const avatarHtml = (p) => p.authorPhotoUrl
+      ? `<img class="avatar" loading="lazy" src="${API}${p.authorPhotoUrl}" alt="">`
+      : `<div class="avatar ph" style="background:hsl(${hue(p.author)} 42% 55%)">${esc(initials(p.author))}</div>`;
+
+    const isImage = (p) => p.media && p.media.contentUrl &&
+      ((p.media.contentType || "").startsWith("image/") || p.media.mediaType === "foto");
+
+    // Accorpa immagini consecutive dello stesso autore arrivate nello stesso minuto
+    // (i burst di foto di WhatsApp) in un unico elemento { photoGroup: [...] }.
+    function groupMedia(pts){
+      const out = [];
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i];
+        if (!isImage(p)) { out.push(p); continue; }
+        const minute = fmtTime(p.occurredAt);
+        const grp = [p];
+        while (i + 1 < pts.length && isImage(pts[i + 1])
+               && pts[i + 1].author === p.author
+               && fmtTime(pts[i + 1].occurredAt) === minute) {
+          grp.push(pts[++i]);
+        }
+        out.push(grp.length > 1 ? { photoGroup: grp } : p);
+      }
+      return out;
+    }
+
+    const GENERIC_CAPTION = /^(foto|immagine|video|sticker|gif)\b.*condivis/i;
+
+    function photoGroupHtml(grp, i){
+      const p0 = grp[0];
+      const c = (TYPES.media || TYPES.info).color;
+      const side = i % 2 ? "right" : "left";
+      const thumbs = grp.map(p => {
+        const url = `${API}${p.media.contentUrl}`;
+        return `<a href="${url}" target="_blank" rel="noopener"><img loading="lazy" src="${url}" alt="${esc(p.media.fileName)}"></a>`;
+      }).join("");
+      const caps = [...new Set(grp.map(p => p.text).filter(t => t && !GENERIC_CAPTION.test(t)))];
+      const textHtml = caps.length ? caps.map(esc).join("<br>") : `${grp.length} immagini`;
+      return `
+        <div class="row ${side}">
+          <div class="badge" style="background:${c}">${ICONS.foto}</div>
+          <div class="card">
+            <span class="tag" style="background:color-mix(in srgb, ${c} 14%, #fff);color:${c}">media</span>
+            <div class="card-head">
+              ${avatarHtml(p0)}
+              <span class="name">${esc(p0.author)}</span>
+              <span class="time">${fmtTime(p0.occurredAt)}</span>
+            </div>
+            <div class="text">${textHtml}</div>
+            <div class="media"><div class="gallery">${thumbs}</div></div>
+          </div>
+        </div>`;
+    }
+
+    function rowHtml(entry, i){
+      if (entry.photoGroup) return photoGroupHtml(entry.photoGroup, i);
+      const p = entry;
       const c = (TYPES[p.type] || TYPES.info).color;
       const side = i % 2 ? "right" : "left";
-      const avatar = p.authorPhotoUrl
-        ? `<img class="avatar" loading="lazy" src="${API}${p.authorPhotoUrl}" alt="">`
-        : `<div class="avatar ph" style="background:hsl(${hue(p.author)} 42% 55%)">${esc(initials(p.author))}</div>`;
+      const avatar = avatarHtml(p);
 
       let media = "";
       if (p.media && p.media.contentUrl) {
@@ -417,7 +474,7 @@
             <span class="day-count">${pts.length} punti${mc ? ` · ${mc} media` : ""}</span>
             <button class="day-dl" data-day="${day}" title="Scarica il verbale della giornata" aria-label="Scarica verbale">${ICONS.download}</button>
           </div>
-          <div class="day-body">${open ? `<div class="rail">${pts.map(rowHtml).join("")}</div>` : ""}</div>
+          <div class="day-body">${open ? `<div class="rail">${groupMedia(pts).map(rowHtml).join("")}</div>` : ""}</div>
         </section>`;
     }
 
@@ -457,7 +514,7 @@
       const body = sec.querySelector(".day-body");
       if (open) {
         const pts = visibleItems().filter(p => romeDay(p.occurredAt) === day);
-        body.innerHTML = `<div class="rail">${pts.map(rowHtml).join("")}</div>`;
+        body.innerHTML = `<div class="rail">${groupMedia(pts).map(rowHtml).join("")}</div>`;
       } else {
         body.innerHTML = "";
       }
