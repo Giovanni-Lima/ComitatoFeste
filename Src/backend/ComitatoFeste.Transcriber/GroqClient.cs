@@ -11,21 +11,40 @@ namespace ComitatoFeste.Transcriber;
 /// </summary>
 public sealed class GroqClient
 {
-    // Modelli scelti per il tier gratuito Groq (limiti indicativi 2026, quelli reali sono su
-    // https://console.groq.com/settings/limits):
-    //   whisper-large-v3   : 2.000 richieste/g, 20/min, 7.200 s audio/ora. Preferito al -turbo
-    //     (stessi limiti free) perché su italiano + dialetto marchigiano/abruzzese e audio
-    //     WhatsApp rumoroso il decoder pieno sbaglia meno; la velocità di turbo qui non serve,
-    //     il ritmo lo detta comunque --delay-ms.
-    //   openai/gpt-oss-120b : 1.000 richieste/g, 200k token/g, 30/min, 8.000 token/min —
-    //     stessi identici limiti free di gpt-oss-20b ma contatore RPD/TPD SEPARATO per modello,
-    //     e classificazione più accurata (meno confusione rumore/info). Rimpiazzo Groq dei
-    //     llama-3.x (deprecati giu 2026). Rispetta male response_format json_object: vedi
-    //     ParseClassification. Ogni risposta è un po' più pesante del 20b → il freno TPM
-    //     adattivo qui sotto serve davvero.
+    // Coppie di modelli intercambiabili per il tier gratuito Groq. Al primo HTTP 429 su un
+    // modello si passa al suo backup e ci si resta per il resto del run: il 429 su Groq è
+    // quasi sempre quota (al minuto o giornaliera) esaurita per QUEL modello, e i contatori
+    // sono separati per modello, quindi il backup di solito ha ancora budget.
+    //   Whisper: v3 (default, migliore su dialetto marchigiano/abruzzese e audio WhatsApp
+    //            rumoroso) -> v3-turbo (backup, più veloce, un filo meno accurato).
+    //   Classificatore: gpt-oss-120b (default, meno confusione rumore/info, ma rispetta male
+    //            response_format json_object: vedi ParseClassification) -> gpt-oss-20b (backup,
+    //            stessi limiti free 1.000 req/g · 200k token/g · 30/min · 8.000 token/min ma
+    //            bucket separato). I llama-3.x sono deprecati (giu 2026).
     // Verifica su https://console.groq.com/docs/models che i nomi siano ancora correnti.
-    private const string WhisperModel = "whisper-large-v3";
-    private const string ClassifierModel = "openai/gpt-oss-120b";
+    private static readonly string[] WhisperModels    = { "whisper-large-v3", "whisper-large-v3-turbo" };
+    private static readonly string[] ClassifierModels = { "openai/gpt-oss-120b", "openai/gpt-oss-20b" };
+
+    private int _whisperIdx;
+    private int _classifierIdx;
+    private string WhisperModel => WhisperModels[_whisperIdx];
+    private string ClassifierModel => ClassifierModels[_classifierIdx];
+
+    /// <summary>Modelli attualmente in uso (cambiano se scatta il fallback su 429).</summary>
+    public string CurrentWhisperModel => WhisperModel;
+    public string CurrentClassifierModel => ClassifierModel;
+
+    /// <summary>Passa al backup della coppia (una volta sola). Restituisce il nuovo nome, o null se già sul backup.</summary>
+    private string? FallbackWhisper() =>
+        _whisperIdx + 1 < WhisperModels.Length ? WhisperModels[++_whisperIdx] : null;
+
+    private string? FallbackClassifier()
+    {
+        if (_classifierIdx + 1 >= ClassifierModels.Length)
+            return null;
+        _classifierTokenLog.Clear();   // il nuovo modello ha un suo budget TPM: log da zero
+        return ClassifierModels[++_classifierIdx];
+    }
 
     /// <summary>Quante volte richiedere la classificazione se torna una risposta non valida.</summary>
     private const int ClassifyAttempts = 2;
@@ -68,11 +87,11 @@ public sealed class GroqClient
             var file = new ByteArrayContent(audio);
             file.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? "application/octet-stream");
             form.Add(file, "file", sendName);
-            form.Add(new StringContent(WhisperModel), "model");
+            form.Add(new StringContent(WhisperModel), "model");   // letto ad ogni tentativo
             form.Add(new StringContent("it"), "language");
             form.Add(new StringContent("json"), "response_format");
             return new HttpRequestMessage(HttpMethod.Post, TranscriptionsUrl) { Content = form };
-        }, "Whisper", ct);
+        }, "Whisper", FallbackWhisper, ct);
 
         using var doc = JsonDocument.Parse(body);
         return doc.RootElement.TryGetProperty("text", out var t) ? (t.GetString() ?? "").Trim() : "";
@@ -118,21 +137,22 @@ public sealed class GroqClient
             'Propone di...' / 'Chiede se...' / 'Informa che...'; stringa vuota se type è 'rumore'>"}
             """;
 
-        var payload = new
+        // Payload ricostruito ad ogni chiamata: `ClassifierModel` può cambiare se scatta il
+        // fallback su 429. `reasoning_effort = "low"` perché gpt-oss senza freno emette una
+        // lunga catena di ragionamento che gonfia i token/minuto ~10x (qui serve una riga di
+        // JSON); `max_completion_tokens` è solo una rete contro le derive, non deve troncare.
+        HttpRequestMessage BuildClassifyRequest() => new(HttpMethod.Post, ChatCompletionsUrl)
         {
-            model = ClassifierModel,
-            temperature = 0,
-            // gpt-oss è un modello "reasoning": senza questo emette una lunga catena di
-            // ragionamento che gonfia i token/minuto ~10x (il classificatore serve solo una
-            // riga di JSON). "low" tiene il grosso; il cap è solo una rete di sicurezza contro
-            // le derive — se fosse troppo stretto troncherebbe il JSON prima che venga emesso.
-            reasoning_effort = "low",
-            max_completion_tokens = 512,
-            response_format = new { type = "json_object" },
-            messages = new[] { new { role = "user", content = prompt } },
+            Content = new StringContent(JsonSerializer.Serialize(new
+            {
+                model = ClassifierModel,
+                temperature = 0,
+                reasoning_effort = "low",
+                max_completion_tokens = 512,
+                response_format = new { type = "json_object" },
+                messages = new[] { new { role = "user", content = prompt } },
+            }), Encoding.UTF8, "application/json"),
         };
-
-        var json = JsonSerializer.Serialize(payload);
 
         // gpt-oss ogni tanto risponde con JSON malformato / incorniciato / troncato: ri-chiediamo
         // fino a ClassifyAttempts volte prima di rassegnarci a un esito "incerto".
@@ -141,10 +161,7 @@ public sealed class GroqClient
         {
             await WaitForClassifierTokenBudgetAsync(ct);
 
-            var body = await SendWithRetryAsync(() => new HttpRequestMessage(HttpMethod.Post, ChatCompletionsUrl)
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json"),
-            }, "classificazione", ct);
+            var body = await SendWithRetryAsync(BuildClassifyRequest, "classificazione", FallbackClassifier, ct);
 
             RecordClassifierTokens(body);
 
@@ -230,7 +247,12 @@ public sealed class GroqClient
         }
     }
 
-    private async Task<string> SendWithRetryAsync(Func<HttpRequestMessage> build, string label, CancellationToken ct)
+    /// <param name="fallback">
+    /// Invocato su HTTP 429: se restituisce un nome di modello (backup della coppia) si ripete
+    /// subito la richiesta con quello e i tentativi ripartono da capo; se restituisce null
+    /// (già sul backup) si prosegue col normale retry/backoff.
+    /// </param>
+    private async Task<string> SendWithRetryAsync(Func<HttpRequestMessage> build, string label, Func<string?> fallback, CancellationToken ct)
     {
         for (var attempt = 1; ; attempt++)
         {
@@ -240,6 +262,13 @@ public sealed class GroqClient
 
             if (resp.IsSuccessStatusCode)
                 return body;
+
+            if (resp.StatusCode == HttpStatusCode.TooManyRequests && fallback() is { } backup)
+            {
+                Console.Write($"[429 {label}: passo al modello di backup {backup}] ");
+                attempt = 0;   // il backup riparte con i tentativi pieni
+                continue;
+            }
 
             var retryable = resp.StatusCode == HttpStatusCode.TooManyRequests || (int)resp.StatusCode >= 500;
             if (!retryable || attempt > _maxRetries)

@@ -108,15 +108,20 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     `application/octet-stream`.
   - `ComitatoFeste.Transcriber` — console: prende i `MediaAsset` audio da
     lavorare (`TranscriptionText == null` **oppure** `TranscribedAt ==
-    null`), li trascrive con Groq `whisper-large-v3` (non `-turbo`: meglio
-    su dialetto/audio rumoroso, la velocità qui non serve) e classifica la
-    trascrizione con `openai/gpt-oss-120b` (`GroqClient`) in
-    decisione/domanda/info/media/`rumore`; poi riscrive `DigestPoint.Type`
-    e `Text` (sintesi in una frase, o messaggio segnaposto se `rumore`).
-    Modelli scelti per il tier gratuito Groq (i `llama-3.x` deprecati giu
-    2026). Free tier gpt-oss (20b **e** 120b, identici): 1.000 req/g, 200k
-    token/g, 30/min, 8.000 token/min — ma **contatore separato per
-    modello**. `GroqClient` ha un freno TPM adattivo (finestra 60 s su
+    null`), li trascrive con Groq Whisper e classifica la trascrizione con
+    un modello gpt-oss (`GroqClient`) in decisione/domanda/info/media/`rumore`;
+    poi riscrive `DigestPoint.Type` e `Text` (sintesi in una frase, o
+    messaggio segnaposto se `rumore`).
+    **Coppie di modelli intercambiabili con fallback su 429** (`GroqClient`,
+    `WhisperModels` / `ClassifierModels`): default `whisper-large-v3` +
+    `openai/gpt-oss-120b` (più accurati su dialetto e su rumore/info); al
+    primo HTTP 429 su un modello si passa **stabilmente** al suo backup per
+    il resto del run — `whisper-large-v3-turbo` e `openai/gpt-oss-20b` — che
+    ha un contatore RPD/TPD separato e quindi di solito ancora budget. Al
+    passaggio del classificatore il log del freno TPM viene azzerato. I
+    `llama-3.x` sono deprecati (giu 2026). Free tier gpt-oss (20b **e** 120b,
+    identici): 1.000 req/g, 200k token/g, 30/min, 8.000 token/min — ma
+    **contatore separato per modello**. `GroqClient` ha un freno TPM adattivo (finestra 60 s su
     `usage.total_tokens`, soglia 6.500) perché il limite vero è quello al
     minuto; `--delay-ms` resta come freno per i 20 req/min di Whisper. Il
     limite giornaliero 200k token si sfora solo rifacendo girare il batch

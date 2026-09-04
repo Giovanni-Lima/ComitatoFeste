@@ -92,6 +92,7 @@ var pending = limit > 0
     : await query.ToListAsync(cts.Token);
 
 Console.WriteLine($"{pending.Count} vocali da trascrivere{(dryRun ? " (dry-run, niente scritture)" : "")}.");
+Console.WriteLine($"modelli: {groq.CurrentWhisperModel} + {groq.CurrentClassifierModel} (con fallback su 429).");
 
 int ok = 0, uncertain = 0, skipped = 0, errors = 0;
 var byType = new Dictionary<string, int>();
@@ -194,6 +195,7 @@ foreach (var row in pending)
 }
 
 Console.WriteLine($"\n== completato: {ok} trascritti/classificati, {uncertain} incerti (non salvati, da ritentare), {skipped} saltati, {errors} errori ==");
+Console.WriteLine($"  modelli a fine run: {groq.CurrentWhisperModel} + {groq.CurrentClassifierModel}");
 foreach (var (t, n) in byType.OrderByDescending(kv => kv.Value))
     Console.WriteLine($"  {t}: {n}");
 
