@@ -4,6 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Segreti di sviluppo (passphrase login, ecc.) fuori dal repo: caricati automaticamente
+         in Development. Impostali con "dotnet user-secrets set". In produzione le env var su Render. -->
+    <UserSecretsId>comitatofeste-api-dev</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
