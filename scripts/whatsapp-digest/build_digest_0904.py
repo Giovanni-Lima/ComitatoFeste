@@ -81,7 +81,7 @@ CURATED = {
         "futuri eventi del comitato."),
     ("18:42", "Emanuele Sciarra"): ("info",
         "Condivide un link a un video Facebook, relativo allo stesso evento per bambini di cui si "
-        "stava parlando."),
+        "stava parlando: https://www.facebook.com/share/r/1EUmPSTZqM/?mibextid=wwXIfr"),
 }
 
 MEDIA_OVERRIDES = {

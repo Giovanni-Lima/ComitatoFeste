@@ -81,6 +81,9 @@ con i media rinominati) a partire dall'export della chat WhatsApp Android
   dall'export (di solito perché mai aperto nell'app sul telefono che ha
   fatto l'export) — non recuperabile, si segnala e basta (non si inventa
   un placeholder).
+- **I link condivisi in un messaggio di testo vanno riportati per intero**
+  nel testo di `CURATED`, non solo descritti (es. "condivide un link a un
+  video Facebook: https://...") — altrimenti il punto è incompleto.
 
 ## Percorsi
 

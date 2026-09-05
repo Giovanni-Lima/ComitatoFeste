@@ -216,6 +216,12 @@ seguire in ogni rigenerazione (dettagliate anche nel README sopra):
   digest.
 - Media effettivamente assenti dall'export (`<Media omessi>` nel `.txt`) si
   segnalano come non recuperabili, non si inventano placeholder.
+- **I link condivisi nei messaggi di testo vanno riportati per intero**
+  nel testo curato (`CURATED`), non solo descritti a parole — un punto
+  che dice "condivide un link a X" senza l'URL vero e proprio è
+  incompleto e inutilizzabile da chi legge il digest (regola aggiunta
+  il 4/9/2026, dopo che un punto su un video Facebook era stato scritto
+  senza il link).
 - **Nome del gruppo**: la cartella grezza dell'export si chiama `Chat
   WhatsApp con Il branco dei pazzi 87/` (nome corrente del gruppo su
   WhatsApp), ma il gruppo canonico ovunque — DB, default dei tre eseguibili

@@ -26,8 +26,9 @@
       padding:0 16px 18px;display:flex;flex-direction:column;gap:18px}
     .brand{font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;
       height:70px;margin:0 -16px;padding:0 16px;border-bottom:2px solid var(--yellow)}
-    .me{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:var(--bg)}
+    .me{position:relative;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:var(--bg)}
     .me:empty{display:none}
+    .me:not(:empty){cursor:pointer}
     /* badge profilo nella riga del menu (solo mobile, vedi @media) */
     #meSide{display:none;padding:4px 10px 4px 4px;gap:8px;background:#fff;border:1px solid var(--line)}
     #meSide .me-av{width:28px;height:28px}
@@ -35,7 +36,15 @@
     .me-av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;background:#cfd8dc}
     .me-av.ph{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
     .me-name{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .sidebar .logout{margin-top:auto;align-self:stretch;text-align:center;padding:7px}
+
+    /* --- menu a comparsa (esci) dal badge utente --------------------------- */
+    .me-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:20;background:#fff;
+      border:1px solid var(--cardline);border-radius:10px;box-shadow:0 4px 16px rgba(38,50,56,.16);padding:5px;
+      min-width:100px;opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .15s,transform .15s}
+    .me.open .me-menu{opacity:1;pointer-events:auto;transform:none}
+    .me-menu .logout{display:block;width:100%;border:0;border-radius:6px;padding:7px 10px;text-align:left;
+      background:none;font:inherit;font-size:12px;color:var(--ink-soft);cursor:pointer}
+    .me-menu .logout:hover{background:var(--bg)}
 
     /* --- sidebar: menu di navigazione ------------------------------------- */
     .side-nav{display:flex;flex-direction:column;gap:3px}
@@ -87,15 +96,19 @@
       .stats{flex-direction:row;position:static}
       .stat{flex:1}
       .stat .v{margin-top:12px;font-size:22px}
+      .sidebar{width:200px}
+      .mgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+    }
+    /* mobile in landscape: stessa fascia di larghezza del tablet portrait, ma tile più piccole */
+    @media (max-width:1080px) and (orientation:landscape){
+      .mgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
     }
     @media (max-width:820px){
       .app{flex-direction:column;align-items:stretch}
-      /* la sidebar diventa una fascia in cima: brand + menu + "esci" su una riga */
+      /* la sidebar diventa una fascia in cima: brand + menu + badge utente su una riga */
       .sidebar{width:auto;height:auto;position:static;border-right:0;border-bottom:1px solid var(--line);
-        flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px}
+        flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px;overflow:visible}
       .brand{border-bottom:0;height:auto;margin:0 auto 0 0;padding:0;font-size:18px;display:block}
-      .sidebar .logout{order:2;margin-top:0;align-self:center;width:auto;height:30px;padding:0 14px;
-        text-transform:uppercase;letter-spacing:.04em}
       .side-nav{order:3;flex-basis:100%;flex-direction:row;justify-content:flex-start;align-items:center;gap:6px}
       .navitem{width:auto}
       #meSide:not(:empty){display:flex;margin-left:auto}
@@ -106,9 +119,11 @@
       .day{scroll-margin-top:64px}
       .content{grid-template-columns:1fr;grid-template-areas:"timeline"}
       .stats{display:none}
-      /* 5 chip: 3 sulla prima riga, 2 sulla seconda, entrambe centrate */
+      /* 5 chip (Agenda): 3 sulla prima riga, 2 sulla seconda, entrambe centrate */
       .typebar .filters{justify-content:center}
       .typebar .fitem{width:calc(33.333% - 6px);justify-content:center;padding:7px 4px}
+      /* 4 chip (Media): tutte sulla stessa riga */
+      #mediaFilters .fitem{width:calc(25% - 6px);justify-content:center;padding:7px 2px}
     }
 
     .day{margin:0 auto 14px;border:1px solid var(--line);border-radius:12px;background:#fff;
@@ -186,9 +201,32 @@
     .media.doclist{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
     .media.muted{color:var(--muted);font-style:italic;font-size:13px}
 
-    .logout{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;
-      font-size:12px;color:var(--ink-soft);cursor:pointer}
-    .logout:hover{background:var(--bg)}
+    /* --- vista Media: gruppi per giorno + griglia di tile --------------- */
+    .mgroup{margin:0 auto 14px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+    .mgroup-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+    .mgroup-title{font-weight:700;text-transform:capitalize}
+    .mgroup.today .mgroup-title::after{content:"oggi";margin-left:8px;padding:1px 7px;border-radius:9px;
+      background:var(--accent);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;vertical-align:1px}
+    .mgroup-count{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
+    .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;padding:14px}
+    .mtile{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--bg);
+      border:1px solid var(--cardline);display:block;color:inherit;text-decoration:none}
+    .mtile img,.mtile video,.mtile canvas{width:100%;height:100%;object-fit:cover;display:block;background:#000}
+    .mtile canvas.mpdf{position:absolute;inset:0;background:transparent}
+    .mtile .micon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--media)}
+    .mtile .micon svg{width:32px;height:32px}
+    .mtile .mplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+    .mtile .mplay span{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.45);
+      display:flex;align-items:center;justify-content:center;color:#fff}
+    .mtile .msize{position:absolute;top:5px;right:6px;padding:1px 6px;border-radius:6px;
+      background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:600}
+    .mtile .mcap{position:absolute;left:0;right:0;bottom:0;padding:16px 6px 5px;
+      background:linear-gradient(transparent,rgba(0,0,0,.62));color:#fff;font-size:10px;line-height:1.3;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    @media (max-width:680px){
+      .mgrid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}
+    }
+
 
     .login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
       background:var(--bg);padding:20px}
@@ -227,6 +265,7 @@
   <div class="app">
     <aside class="sidebar">
       <div class="brand">Comitato feste 87</div>
+      <div class="me sm" id="meSide"></div>
       <nav class="side-nav" id="nav">
         <button class="navitem active" data-view="agenda" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
@@ -236,9 +275,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5L7 21"/></svg>
           Media
         </button>
-        <div class="me sm" id="meSide"></div>
       </nav>
-      <button id="logout" class="logout" hidden title="Esci">esci</button>
     </aside>
 
     <div class="main">
@@ -261,7 +298,8 @@
       </section>
 
       <section class="view" id="viewMedia" hidden>
-        <div class="empty">Sezione Media — in costruzione.</div>
+        <div class="typebar"><div class="filters" id="mediaFilters"></div></div>
+        <div id="mediaGrid"></div>
       </section>
     </div>
   </div>
@@ -305,22 +343,25 @@
     function setUser(u){
       try { u ? localStorage.setItem(USER_KEY, JSON.stringify(u)) : localStorage.removeItem(USER_KEY); } catch (e) {}
     }
-    function showLogin(){ el("login").hidden = false; el("logout").hidden = true; el("lgUser").focus(); }
-    function hideLogin(){ el("login").hidden = true; el("logout").hidden = false; renderMe(); }
+    function showLogin(){ el("login").hidden = false; el("lgUser").focus(); }
+    function hideLogin(){ el("login").hidden = true; renderMe(); }
     function logout(){ setToken(null); setUser(null); location.reload(); }
 
     // Avatar + nome nel pannello laterale e nella topbar; l'immagine sostituisce
-    // il placeholder a iniziali solo se il membro ha davvero una foto (onload).
+    // il placeholder a iniziali solo se il membro ha davvero una foto (onload). Il badge
+    // include un menu a comparsa (click per aprirlo/chiuderlo) con la sola voce "esci".
     function renderMe(){
       const u = currentUser();
       for (const [id, greet] of [["meTop", true], ["meSide", true]]) {
         const box = el(id);
         if (!box) continue;
+        box.classList.remove("open");
         if (!u) { box.innerHTML = ""; continue; }
         const label = greet ? `Ciao ${esc(u.displayName.split(" ")[0])}` : esc(u.displayName);
         box.innerHTML =
           `<div class="me-av ph" style="background:hsl(${hue(u.displayName)} 42% 55%)">${esc(initials(u.displayName))}</div>` +
-          `<span class="me-name">${label}</span>`;
+          `<span class="me-name">${label}</span>` +
+          `<div class="me-menu"><button type="button" class="logout">esci</button></div>`;
         const img = new Image();
         img.className = "me-av";
         img.alt = "";
@@ -328,6 +369,17 @@
         img.src = `${API}/api/members/${u.memberId}/photo`;
       }
     }
+
+    // Click sul badge = apri/chiudi il menu; click sulla voce "esci" = logout;
+    // click altrove = chiudi eventuali menu aperti.
+    document.addEventListener("click", (e) => {
+      const exitBtn = e.target.closest(".me-menu .logout");
+      if (exitBtn) { logout(); return; }
+      const box = e.target.closest(".me");
+      const wasOpen = box && box.classList.contains("open");
+      document.querySelectorAll(".me.open").forEach(b => b.classList.remove("open"));
+      if (box && !wasOpen) box.classList.add("open");
+    });
 
     const TYPES = {
       decisione: { color: "var(--decisione)" },
@@ -348,6 +400,7 @@
       video:     I(`<path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/>`),
       documento: I(`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>`),
       download:  I(`<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>`),
+      play:      `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
     };
     function iconFor(p){
       if (p.type === "media") {
@@ -600,6 +653,144 @@
       requestAnimationFrame(() => sec.scrollIntoView({ behavior: "smooth", block: "start" }));
     }
 
+    // --- vista Media: griglia per giorno, filtrabile per tipo di file ------
+    let mediaFilter = null;   // null = tutte le categorie
+    const MEDIA_KINDS = { foto: "Foto", video: "Video", documento: "Documenti" };
+
+    // Stessa logica di isImage/isDoc sopra, unificata in una sola categoria per item.
+    // I vocali non compaiono in questa vista (galleria foto/video/documenti, non messaggi audio).
+    function mediaKind(p){
+      if (!p.media || !p.media.contentUrl) return null;
+      const ct = p.media.contentType || "";
+      if (ct.startsWith("video/")) return "video";
+      if (ct.startsWith("image/") || p.media.mediaType === "foto") return "foto";
+      if (ct.startsWith("audio/") || p.media.mediaType === "audio") return null;
+      return "documento";
+    }
+
+    // Anteprima reale della prima pagina per i PDF, via PDF.js caricato on-demand
+    // (solo quando un tile PDF entra in viewport, non a ogni caricamento della vista).
+    const PDFJS_BASE = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+    let pdfjsReady = null;
+    function ensurePdfJs(){
+      if (pdfjsReady) return pdfjsReady;
+      pdfjsReady = new Promise((resolve, reject) => {
+        if (window.pdfjsLib) { resolve(window.pdfjsLib); return; }
+        const s = document.createElement("script");
+        s.src = PDFJS_BASE + "pdf.min.js";
+        s.onload = () => {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_BASE + "pdf.worker.min.js";
+          resolve(window.pdfjsLib);
+        };
+        s.onerror = () => reject(new Error("PDF.js non caricato"));
+        document.head.appendChild(s);
+      });
+      return pdfjsReady;
+    }
+
+    async function renderPdfThumb(canvas){
+      try {
+        const pdfjsLib = await ensurePdfJs();
+        const doc = await pdfjsLib.getDocument(canvas.dataset.pdfUrl).promise;
+        const page = await doc.getPage(1);
+        const scale = 240 / page.getViewport({ scale: 1 }).width;
+        const viewport = page.getViewport({ scale });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+      } catch (e) {
+        canvas.remove();   // resta visibile l'icona/didascalia già sotto, come fallback
+      }
+    }
+
+    const pdfObserver = new IntersectionObserver((entries, obs) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        obs.unobserve(entry.target);
+        renderPdfThumb(entry.target);
+      }
+    }, { rootMargin: "200px" });
+
+    function observePdfTiles(){
+      el("mediaGrid").querySelectorAll(".mpdf").forEach(c => pdfObserver.observe(c));
+    }
+
+    function fmtSize(b){
+      if (b == null) return "";
+      if (b < 1024) return `${b} B`;
+      if (b < 1024 * 1024) return `${(b / 1024).toFixed(b < 10240 ? 1 : 0)} kB`;
+      return `${(b / 1024 / 1024).toFixed(1)} MB`;
+    }
+
+    function buildMediaFilters(){
+      const item = (k, label) =>
+        `<button class="fitem" data-k="${k}" style="--c:var(--media)"><span class="dot"></span>${label}</button>`;
+      el("mediaFilters").innerHTML =
+        item("", "Tutti") + Object.entries(MEDIA_KINDS).map(([k, l]) => item(k, l)).join("");
+      syncMediaChips();
+    }
+
+    function syncMediaChips(){
+      for (const b of el("mediaFilters").children)
+        b.classList.toggle("active", b.dataset.k === (mediaFilter || ""));
+    }
+
+    const mediaItems = () => data.filter(p => mediaKind(p));
+    const visibleMediaItems = () => {
+      const all = mediaItems();
+      return mediaFilter ? all.filter(p => mediaKind(p) === mediaFilter) : all;
+    };
+
+    function tileHtml(p){
+      const kind = mediaKind(p);
+      const url = `${API}${p.media.contentUrl}`;
+      const sizeBadge = p.media.sizeBytes != null ? `<span class="msize">${fmtSize(p.media.sizeBytes)}</span>` : "";
+      const isPdf = kind === "documento" &&
+        (p.media.contentType === "application/pdf" || /\.pdf$/i.test(p.media.fileName));
+      let inner;
+      if (kind === "foto") {
+        inner = `<img loading="lazy" src="${url}" alt="${esc(p.media.fileName)}">`;
+      } else if (kind === "video") {
+        inner = `<video preload="metadata" muted playsinline src="${url}#t=0.1"></video>
+          <div class="mplay"><span>${ICONS.play}</span></div>`;
+      } else if (isPdf) {
+        inner = `<div class="micon">${ICONS.documento}</div><canvas class="mpdf" data-pdf-url="${url}"></canvas>
+          <div class="mcap">${esc(p.media.fileName)}</div>`;
+      } else {
+        inner = `<div class="micon">${ICONS[kind]}</div><div class="mcap">${esc(p.media.fileName)}</div>`;
+      }
+      return `<a class="mtile" href="${url}" target="_blank" rel="noopener" title="${esc(p.media.fileName)}">${inner}${sizeBadge}</a>`;
+    }
+
+    function mediaGroupHtml(day, pts){
+      return `
+        <section class="mgroup${day === todayRome() ? " today" : ""}">
+          <div class="mgroup-head">
+            <span class="mgroup-title">${fmtDay(day)}</span>
+            <span class="mgroup-count">${pts.length} elementi</span>
+          </div>
+          <div class="mgrid">${pts.map(tileHtml).join("")}</div>
+        </section>`;
+    }
+
+    function renderMedia(){
+      const items = visibleMediaItems();
+      const groups = groupByDay(items);
+      if (!mediaItems().length) { el("mediaGrid").innerHTML = `<div class="empty">Nessun media.</div>`; return; }
+      if (!groups.length) { el("mediaGrid").innerHTML = `<div class="empty">Nessun media in questa categoria.</div>`; return; }
+      el("mediaGrid").innerHTML = groups.map(([day, pts]) => mediaGroupHtml(day, pts)).join("");
+      observePdfTiles();
+    }
+
+    el("mediaFilters").onclick = (e) => {
+      const b = e.target.closest(".fitem");
+      if (!b) return;
+      const k = b.dataset.k || null;
+      mediaFilter = (k === mediaFilter) ? null : k;
+      syncMediaChips();
+      renderMedia();
+    };
+
     async function load(){
       el("timeline").innerHTML = `<div class="loading">Carico…</div>`;
       try {
@@ -608,6 +799,7 @@
         if (!r.ok) { el("timeline").innerHTML = `<div class="error">Errore API: HTTP ${r.status}</div>`; return; }
         data = await r.json();
         renderStats();
+        renderMedia();
       } catch (e) {
         el("timeline").innerHTML = `<div class="error">API non raggiungibile su <code>${API}</code>.<br>Avvia <code>ComitatoFeste.Api</code>.</div>`;
         return;
@@ -616,6 +808,9 @@
       const days = groupByDay(data).map(([d]) => d);
       const wanted = el("day").value;
       const initial = days.includes(wanted) ? wanted : days[0];
+      // Il date picker riflette il giorno effettivamente mostrato: se "oggi" non ha
+      // ancora punti, si allinea al giorno più recente con dati (es. days[0]).
+      if (initial) el("day").value = initial;
       openDays.clear();
       if (initial) openDays.add(initial);
       render();
@@ -695,8 +890,6 @@
       if (b) setView(b.dataset.view);
     };
 
-    el("logout").onclick = logout;
-
     el("toTop").onclick = () => scrollTo({ top: 0, behavior: "smooth" });
     addEventListener("scroll", () => {
       el("toTop").classList.toggle("show", window.scrollY > 300);
@@ -734,6 +927,7 @@
 
     el("day").value = qs.get("date") || todayRome();
     buildFilters();
+    buildMediaFilters();
 
     (async () => {
       let enabled = true;
