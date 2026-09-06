@@ -616,13 +616,12 @@
 
     function dayHtml(day, pts){
       const open = openDays.has(day);
-      const mc = pts.filter(p => p.media).length;
       return `
         <section class="day${open ? " open" : ""}${day === todayRome() ? " today" : ""}" id="day-${day}">
           <div class="day-head" role="button" tabindex="0" data-day="${day}" aria-expanded="${open}">
             <span class="chev">▸</span>
             <span class="day-title">${fmtDay(day)}</span>
-            <span class="day-count">${pts.length} punti${mc ? ` · ${mc} media` : ""}</span>
+            <span class="day-count">${pts.length} punti</span>
             <button class="day-dl" data-day="${day}" title="Scarica il verbale della giornata" aria-label="Scarica verbale">${ICONS.download}</button>
           </div>
           <div class="day-body">${open ? `<div class="rail">${groupMedia(pts).map(rowHtml).join("")}</div>` : ""}</div>
