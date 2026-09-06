@@ -290,13 +290,17 @@
     .lb-body{max-width:100%;max-height:100%;display:flex;align-items:center;justify-content:center}
     .lb-body img,.lb-body video{max-width:100%;max-height:calc(100vh - 24px);
       object-fit:contain;border-radius:6px;background:#000}
-    .lb-pdf{width:min(900px,100%);max-height:100%;overflow:auto;-webkit-overflow-scrolling:touch;
-      display:flex;flex-direction:column;gap:8px;padding:4px}
-    .lb-pdf canvas{width:100%;height:auto;background:#fff;border-radius:4px}
+    /* PDF: riempie tutto l'overlay e scrolla; le pagine sono canvas ad alta
+       risoluzione (nitidi anche col pinch-zoom del browser) larghe la colonna */
+    .lb-pdf{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 8px 44px}
+    .lb-pdf canvas{max-width:100%;height:auto;background:#fff;
+      box-shadow:0 2px 10px rgba(0,0,0,.5);border-radius:2px}
     .lb-file{background:#fff;border-radius:10px;padding:22px;max-width:320px;text-align:center;color:var(--ink)}
     .lb-file a{display:inline-block;margin-top:12px;padding:9px 16px;border-radius:8px;
       background:var(--accent);color:#fff;text-decoration:none;font-weight:700}
-    .lb-msg{color:#fff;font-size:13px;opacity:.85;padding:20px}
+    .lb-msg{color:#fff;font-size:13px;opacity:.85;padding:20px;text-align:center}
+    .lb-msg a{color:#fff}
 
     @media (max-width:680px){
       .rail::before{left:19px}
@@ -809,22 +813,28 @@
         const pdfjsLib = await ensurePdfJs();
         const doc = await pdfjsLib.getDocument(url).promise;
         wrap.innerHTML = "";
-        const w = Math.min(900, wrap.clientWidth || 900);
-        const dpr = window.devicePixelRatio || 1;
-        const n = Math.min(doc.numPages, 20);
+        // larghezza della colonna a video e fattore di sovracampionamento:
+        // il canvas è renderizzato a ~2x i pixel CSS così resta leggibile
+        // anche col pinch-zoom del browser (viewport senza user-scalable=no).
+        const cssW = Math.min(1000, window.innerWidth - 16);
+        const res = Math.min(3, (window.devicePixelRatio || 1) * 2);
+        const max = 25;
+        const n = Math.min(doc.numPages, max);
         for (let i = 1; i <= n; i++){
           const page = await doc.getPage(i);
-          const scale = (w / page.getViewport({ scale: 1 }).width) * dpr;
-          const vp = page.getViewport({ scale });
+          const unit = page.getViewport({ scale: 1 });
+          const vp = page.getViewport({ scale: (cssW / unit.width) * res });
           const canvas = document.createElement("canvas");
-          canvas.width = vp.width; canvas.height = vp.height;
+          canvas.width = vp.width;
+          canvas.height = vp.height;
+          canvas.style.width = cssW + "px";
           wrap.appendChild(canvas);
           await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
         }
         if (doc.numPages > n){
           const more = document.createElement("div");
           more.className = "lb-msg";
-          more.textContent = `…e altre ${doc.numPages - n} pagine`;
+          more.innerHTML = `Prime ${n} di ${doc.numPages} pagine — <a href="${url}" download="${esc(name || "")}">scarica il PDF</a> per il resto.`;
           wrap.appendChild(more);
         }
       } catch {
