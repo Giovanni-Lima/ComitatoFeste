@@ -1,5 +1,6 @@
 using ComitatoFeste.Api.Services;
 using ComitatoFeste.Data;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
 
@@ -57,8 +58,12 @@ if (app.Environment.IsDevelopment())
 
 // Frontend statico (wwwroot/index.html, vedi ComitatoFeste.Api.csproj): servito dalla
 // stessa origine dell'API, così in produzione non serve CORS.
+// Il provider MIME di default non conosce .webmanifest (manifest PWA): aggiungiamolo,
+// altrimenti UseStaticFiles non serve il file e l'app non risulta installabile.
+var contentTypes = new FileExtensionContentTypeProvider();
+contentTypes.Mappings[".webmanifest"] = "application/manifest+json";
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = contentTypes });
 
 app.MapControllers();
 

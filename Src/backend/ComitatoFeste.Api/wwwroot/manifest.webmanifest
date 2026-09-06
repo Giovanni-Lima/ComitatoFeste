@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "Comitato feste 87 — Agenda",
+  "short_name": "Comitato 87",
+  "description": "Agenda e media del gruppo Comitato feste 87: decisioni, domande, informazioni e file della chat.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f2e8",
+  "theme_color": "#f2e11c",
+  "lang": "it",
+  "dir": "ltr",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
