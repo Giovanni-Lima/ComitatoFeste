@@ -11,7 +11,13 @@ namespace ComitatoFeste.Importer;
 /// Legge i file <c>digest_&lt;data&gt;.json</c> dalla cartella Export e li persiste:
 /// get-or-create <see cref="Group"/> e <see cref="Member"/>, un <see cref="IngestionRun"/> per file,
 /// un <see cref="DigestPoint"/> per entry, con <see cref="MediaAsset"/>+<see cref="MediaBlob"/> se c'è un file.
-/// Dedup esatto sul vincolo (GroupId, MemberId, OccurredAt, Text): le entry già presenti vengono saltate.
+/// Dedup a più livelli, così un reimport di una giornata non ancora "chiusa" resta idempotente:
+/// <list type="bullet">
+///   <item>identità media: entry con un <c>file</c> già presente nella finestra per lo stesso autore →
+///     è lo stesso messaggio anche se il Transcriber ne ha riscritto il <c>Text</c>;</item>
+///   <item>esatto sul vincolo (GroupId, MemberId, OccurredAt, Text) contro i rerun letterali;</item>
+///   <item>fuzzy pg_trgm su <c>Text</c> per le riformulazioni tra run diversi.</item>
+/// </list>
 /// </summary>
 public sealed class DigestImporter
 {
@@ -185,6 +191,24 @@ public sealed class DigestImporter
                 existingKeys.Add((r.DisplayName, r.OccurredAt, r.Text));
         }
 
+        // Identità media già a DB nella finestra: (Autore, NomeFile). Un'entry che riporta un file
+        // già presente è lo stesso messaggio anche se il Transcriber ne ha nel frattempo riscritto
+        // il Text (placeholder "non trascritto" -> sintesi), caso in cui il match esatto/fuzzy sul
+        // Text non lo riconoscerebbe più. Il nome file è "HHMM_Autore_descrizione.ext": stabile e
+        // di fatto unico nel giorno, quindi due vocali diversi dello stesso minuto restano distinti.
+        var existingMedia = new HashSet<(string Author, string FileName)>();
+        if (group.Id != 0)
+        {
+            var mrows = await _db.MediaAssets
+                .Where(a => a.DigestPoint.GroupId == group.Id
+                            && a.DigestPoint.OccurredAt >= windowStart
+                            && a.DigestPoint.OccurredAt < windowEnd)
+                .Select(a => new { a.DigestPoint.Member.DisplayName, a.FileName })
+                .ToListAsync(ct);
+            foreach (var m in mrows)
+                existingMedia.Add((m.DisplayName, m.FileName));
+        }
+
         for (var i = 0; i < entries.Count; i++)
         {
             var entry = entries[i];
@@ -195,6 +219,16 @@ public sealed class DigestImporter
             if (!Enum.TryParse<DigestPointType>(entry.Type, ignoreCase: true, out var type))
             {
                 result.Warnings.Add($"entry #{i} scartata: type sconosciuto '{entry.Type}'");
+                continue;
+            }
+
+            // Dedup livello 0 — identità del media: se il file è già nella finestra per questo
+            // autore, salta. .Add restituisce false se già presente e "prenota" il file quando è
+            // nuovo, così una seconda entry con lo stesso file nello stesso run non lo duplica.
+            if (!string.IsNullOrWhiteSpace(entry.File)
+                && !existingMedia.Add((author, entry.File)))
+            {
+                result.MediaDuplicatesSkipped++;
                 continue;
             }
 

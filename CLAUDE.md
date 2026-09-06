@@ -96,10 +96,21 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   - `ComitatoFeste.Importer` — console: legge i `digest_*.json` da Export e
     li scrive a DB (`DigestImporter` è la classe riusabile);
     `ImportProfilePhotosAsync` sincronizza `Export/profili/`.
-    **⚠️ Dopo che il Transcriber ha girato NON rilanciare l'import completo**:
-    riscrive `DigestPoint.Text` (sintesi), il dedup esatto chiave su `Text`
-    non riconosce più i punti e li reinserisce duplicati. Per aggiungere
-    solo foto profilo usare `--photos-only` (salta l'import dei digest).
+    **Reimport della stessa giornata: idempotente** (serve perché un
+    `digest_<data>.json` di oggi non è "chiuso" — la sera arrivano altri
+    messaggi e il file viene rigenerato). Dedup a più livelli in
+    `DigestImporter.ImportFileAsync`: (0) **identità media** — un'entry col
+    `file` già presente nella finestra per lo stesso autore è lo stesso
+    messaggio *anche se il Transcriber ne ha riscritto il `Text`*
+    (placeholder → sintesi), match su `MediaAsset.FileName`; (1) esatto su
+    `(GroupId, MemberId, OccurredAt, Text)`; (2) fuzzy pg_trgm su `Text`.
+    Contatori distinti nell'output (`dup media` / `dup esatti` / `dup
+    fuzzy`). **⚠️ Residuo**: un punto di **solo testo** riformulato in
+    curatela così tanto da scendere sotto la soglia fuzzy 0.6 tra un import
+    e l'altro verrebbe re-inserito duplicato — raro, ma se serve
+    ripulire un giorno basta `DELETE FROM "IngestionRuns" WHERE ...`
+    (cascade sui punti) e reimportare. Per aggiungere solo foto profilo:
+    `--photos-only` (salta l'import dei digest).
     `MediaKind`
     mappa estensione → (`MediaType`, MIME): foto (jpg/png/webp/…), audio
     (ogg/opus/m4a/mp3/…), **video** (mp4/mov/webm/mkv/3gp/avi → restano

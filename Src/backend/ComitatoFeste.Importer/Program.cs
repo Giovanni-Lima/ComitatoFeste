@@ -45,8 +45,9 @@ for (var i = 0; i < args.Length; i++)
             Console.WriteLine("  --fuzzy-threshold <0..1> soglia similarity() (default: 0.6)");
             Console.WriteLine("  --fuzzy-window-min <n>   finestra ± minuti per il confronto (default: 2)");
             Console.WriteLine("  --photos-only            salta l'import dei digest, sincronizza solo Export/profili/");
-            Console.WriteLine("                          (usare questo dopo che il Transcriber ha girato: un");
-            Console.WriteLine("                          reimport creerebbe duplicati, i testi non combaciano più)");
+            Console.WriteLine("  nota: un reimport della stessa giornata è idempotente (media dedup per nome");
+            Console.WriteLine("        file, testo per match esatto/fuzzy). Resta a rischio solo un punto di");
+            Console.WriteLine("        solo testo riformulato sotto la soglia fuzzy tra un import e l'altro.");
             Console.WriteLine("  senza target importa tutti i digest_*.json della cartella Export.");
             return 0;
         default:
@@ -125,7 +126,7 @@ Console.WriteLine(fuzzy
     ? $"dedup fuzzy: ON (soglia {fuzzyThreshold:0.00}, finestra ±{fuzzyWindowMin:0.#} min)"
     : "dedup fuzzy: OFF");
 
-int totInserted = 0, totDup = 0, totFuzzy = 0, totMedia = 0, totMissing = 0, totMembers = 0;
+int totInserted = 0, totDup = 0, totFuzzy = 0, totMediaDup = 0, totMedia = 0, totMissing = 0, totMembers = 0;
 
 foreach (var file in files)
 {
@@ -137,6 +138,7 @@ foreach (var file in files)
     Console.WriteLine($"  punti inseriti ....... {r.PointsInserted}");
     Console.WriteLine($"  duplicati esatti ..... {r.DuplicatesSkipped}");
     Console.WriteLine($"  duplicati fuzzy ...... {r.FuzzyDuplicatesSkipped}");
+    Console.WriteLine($"  duplicati media ...... {r.MediaDuplicatesSkipped}");
     Console.WriteLine($"  membri creati ........ {r.MembersCreated}");
     Console.WriteLine($"  media salvati ........ {r.MediaStored}");
     Console.WriteLine($"  media mancanti ....... {r.MediaFilesMissing}");
@@ -146,13 +148,14 @@ foreach (var file in files)
     totInserted += r.PointsInserted;
     totDup += r.DuplicatesSkipped;
     totFuzzy += r.FuzzyDuplicatesSkipped;
+    totMediaDup += r.MediaDuplicatesSkipped;
     totMedia += r.MediaStored;
     totMissing += r.MediaFilesMissing;
     totMembers += r.MembersCreated;
 }
 
 Console.WriteLine($"\n== totale: {files.Count} file, {totInserted} punti, " +
-                  $"{totDup} dup esatti, {totFuzzy} dup fuzzy, " +
+                  $"{totDup} dup esatti, {totFuzzy} dup fuzzy, {totMediaDup} dup media, " +
                   $"{totMembers} membri, {totMedia} media ({totMissing} mancanti) ==");
 }
 

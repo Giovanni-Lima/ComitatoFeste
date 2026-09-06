@@ -99,9 +99,10 @@ dotnet run --project Src/backend/ComitatoFeste.Transcriber   # vocali -> testo +
 
 Il portale online riflette subito i nuovi dati (nessun redeploy).
 
-> ⚠️ Vale sempre la regola dell'`Importer`: **dopo** che il Transcriber ha
-> girato non rilanciare l'import completo (riscrive `DigestPoint.Text` e
-> reinserisce duplicati). Per le sole foto: `-- --photos-only`.
+> Il reimport della stessa giornata è idempotente anche dopo il Transcriber
+> (i punti media sono dedup per nome file, non per testo — vedi `CLAUDE.md`).
+> Resta a rischio solo un punto di solo testo riformulato sotto la soglia
+> fuzzy tra un import e l'altro. Per le sole foto: `-- --photos-only`.
 
 ---
 
