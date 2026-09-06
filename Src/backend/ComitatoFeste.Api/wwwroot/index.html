@@ -245,6 +245,10 @@
     @media (max-width:680px){
       .mgrid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}
     }
+    /* telefono in landscape: tile piu' piccole (150 invece di 200) */
+    @media (orientation:landscape) and (max-height:600px) and (pointer:coarse){
+      .mgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+    }
 
 
     .login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
@@ -739,6 +743,30 @@
       el("mediaGrid").querySelectorAll(".mpdf").forEach(c => pdfObserver.observe(c));
     }
 
+    // Immagini della griglia Media: montate solo quando il tile entra in viewport (meno
+    // decodifiche JPEG in parallelo -> Chrome non "molla" piu' i tile) + retry su errore
+    // transitorio di caricamento/decodifica (prima i byte erano ok ma restava il box rotto).
+    const imgObserver = new IntersectionObserver((entries, obs) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        obs.unobserve(entry.target);
+        const img = entry.target;
+        if (!img.getAttribute("src") && img.dataset.src) img.src = img.dataset.src;
+      }
+    }, { rootMargin: "300px" });
+
+    function observeMediaImgs(){
+      el("mediaGrid").querySelectorAll("img.mimg[data-src]").forEach(i => imgObserver.observe(i));
+    }
+
+    window.mediaImgRetry = function(img){
+      const n = (+img.dataset.retry || 0) + 1;
+      if (n > 3) return;   // tentativi esauriti: resta l'alt (nome file), come prima
+      img.dataset.retry = n;
+      const base = (img.dataset.src || img.src).split("?")[0];
+      setTimeout(() => { img.src = n >= 2 ? `${base}?r=${n}` : base; }, 250 * 2 ** (n - 1));
+    };
+
     function fmtSize(b){
       if (b == null) return "";
       if (b < 1024) return `${b} B`;
@@ -773,7 +801,7 @@
         (p.media.contentType === "application/pdf" || /\.pdf$/i.test(p.media.fileName));
       let inner;
       if (kind === "foto") {
-        inner = `<img loading="lazy" src="${url}" alt="${esc(p.media.fileName)}">`;
+        inner = `<img class="mimg" decoding="async" data-src="${url}" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)">`;
       } else if (kind === "video") {
         inner = `<video preload="metadata" muted playsinline src="${url}#t=0.1"></video>
           <div class="mplay"><span>${ICONS.play}</span></div>`;
@@ -804,6 +832,7 @@
       if (!groups.length) { el("mediaGrid").innerHTML = `<div class="empty">Nessun media in questa categoria.</div>`; return; }
       el("mediaGrid").innerHTML = groups.map(([day, pts]) => mediaGroupHtml(day, pts)).join("");
       observePdfTiles();
+      observeMediaImgs();
     }
 
     el("mediaFilters").onclick = (e) => {
