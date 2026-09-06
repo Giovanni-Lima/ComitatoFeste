@@ -16,6 +16,10 @@ artifacts/
 Thumbs.db
 .DS_Store
 
+## Python (scripts/whatsapp-digest/, dal refactor su digest_lib.py del 6/9/2026)
+__pycache__/
+*.pyc
+
 ## Locale (dati sorgente pipeline, segreti e volumi Postgres)
 data/postgres/
 key.txt
@@ -26,6 +30,9 @@ appsettings.*.local.json
 Backups/
 scripts/aiven.uri
 
+## Export grezzo della chat: dal 6/9/2026 arriva sempre da Dropbox (vedi CLAUDE.md),
+## non più scompattato dentro il repo — questa entry resta come rete di sicurezza nel caso
+## finisca ancora, per abitudine, in una sottocartella del progetto.
 Chat WhatsApp con Il branco dei pazzi 87/
 
 Export/*

@@ -1,29 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import json, os, re, shutil, subprocess
-from collections import defaultdict
+"""Digest del 2026-09-03 — solo dati di curatela, logica comune in digest_lib.py."""
+import os
+import sys
 
-HOME = os.path.expanduser("~")
-SRC = os.path.join(HOME, "mnt", "ComitatoFeste", "Chat WhatsApp con Il branco dei pazzi 87")
-EXPORT = os.path.join(HOME, "mnt", "ComitatoFeste", "Export")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from digest_lib import build_digest
+
 DATE = "2026-09-03"
-
-def slug(name):
-    s = name.replace("'", "").replace("'", "")
-    s = re.sub(r"\s+", "-", s.strip())
-    return s
-
-def is_reaction_gif(path):
-    """Regola 4/9/2026: WhatsApp salva le GIF di reazione come .mp4 muti e brevi.
-    Un .mp4 senza traccia audio è quindi una GIF, non un video vero: si ignora."""
-    try:
-        out = subprocess.run(
-            ["ffprobe", "-v", "error", "-select_streams", "a",
-             "-show_entries", "stream=codec_type", "-of", "csv=p=0", path],
-            capture_output=True, text=True, timeout=15)
-        return out.stdout.strip() == ""
-    except Exception:
-        return False  # in dubbio, non escludere
 
 CURATED = {
     ("07:38", "Dante Caniglia"): ("decisione",
@@ -188,125 +172,5 @@ MEDIA_OVERRIDES = {
         "Altra foto dello stesso momento (fissaggio della statua in piazza).",
 }
 
-EXT_KIND = {
-    ".opus": "audio", ".m4a": "audio",
-    ".jpg": "foto", ".jpeg": "foto",
-    ".mp4": "video",
-    ".webp": "sticker",
-    ".pdf": "documento",
-}
-
-def media_text(sender, ext, caption, override):
-    if override:
-        return override
-    kind = EXT_KIND.get(ext.lower(), "file")
-    if kind == "audio":
-        return f"Vocale di {sender}, non trascritto."
-    if kind == "foto":
-        t = f"Foto condivisa da {sender}."
-        if caption:
-            t += f" Didascalia: {caption}"
-        return t
-    if kind == "video":
-        t = f"Video condiviso da {sender}."
-        if caption:
-            t += f" Didascalia: {caption}"
-        return t
-    if kind == "sticker":
-        return f"Sticker condiviso da {sender}."
-    if kind == "documento":
-        t = f"Documento condiviso da {sender}."
-        if caption:
-            t += f" Didascalia: {caption}"
-        return t
-    t = f"File condiviso da {sender} ({ext})."
-    if caption:
-        t += f" Didascalia: {caption}"
-    return t
-
-with open(os.path.join(HOME, f"whatsapp_parsed_{DATE}.json"), encoding="utf-8") as f:
-    msgs = json.load(f)
-
-entries = []
-seq = defaultdict(int)
-dest_dir = os.path.join(EXPORT, DATE)
-os.makedirs(dest_dir, exist_ok=True)
-existing_before = set(os.listdir(dest_dir))
-kept_filenames = set()
-
-media_omitted_count = 0
-missing_source_files = []
-skipped_text = []
-skipped_stickers = []
-skipped_reaction_gifs = []
-
-for m in msgs:
-    time_, sender, kind = m["time"], m["sender"], m["kind"]
-
-    if kind == "system":
-        continue
-
-    if kind == "media_omitted":
-        media_omitted_count += 1
-        continue
-
-    if kind == "text":
-        key = (time_, sender)
-        hit = CURATED.get(key)
-        if hit:
-            typ, text = hit
-            entries.append({"date": DATE, "time": time_, "author": sender, "type": typ,
-                             "text": text, "file": None})
-        else:
-            skipped_text.append((time_, sender))
-        continue
-
-    if kind == "media":
-        fname = m["file"]
-        ext = os.path.splitext(fname)[1]
-        if ext.lower() in (".webp", ".gif"):
-            # regola 4/9/2026: sticker e GIF si ignorano, niente entry
-            skipped_stickers.append((time_, sender, fname))
-            continue
-        src_path = os.path.join(SRC, fname)
-        if not os.path.isfile(src_path):
-            missing_source_files.append((time_, sender, fname))
-            continue
-        if ext.lower() == ".mp4" and is_reaction_gif(src_path):
-            skipped_reaction_gifs.append((time_, sender, fname))
-            continue
-        k = (time_.replace(":", ""), sender)
-        seq[k] += 1
-        n = seq[k]
-        suffix = f"-{n}" if n > 1 else ""
-        dest_name = f"{time_.replace(':','')}_{slug(sender)}{suffix}{ext.lower()}"
-        shutil.copy2(src_path, os.path.join(dest_dir, dest_name))
-        kept_filenames.add(dest_name)
-        override = MEDIA_OVERRIDES.get((DATE, time_, sender, fname))
-        text = media_text(sender, ext, m.get("text"), override)
-        entries.append({"date": DATE, "time": time_, "author": sender, "type": "media",
-                         "text": text, "file": dest_name})
-        continue
-
-stale = existing_before - kept_filenames
-if stale:
-    quarantine_dir = os.path.join(EXPORT, "_rimossi_" + DATE)
-    os.makedirs(quarantine_dir, exist_ok=True)
-    for fn in stale:
-        shutil.move(os.path.join(dest_dir, fn), os.path.join(quarantine_dir, fn))
-
-entries.sort(key=lambda e: e["time"])
-out_path = os.path.join(EXPORT, f"digest_{DATE}.json")
-with open(out_path, "w", encoding="utf-8") as f:
-    json.dump(entries, f, ensure_ascii=False, indent=2)
-
-print(f"scritto {out_path} ({len(entries)} entry)")
-by_type = defaultdict(int)
-for e in entries:
-    by_type[e["type"]] += 1
-print("per tipo:", dict(by_type))
-print("media_omessi (esclusi da WhatsApp, non recuperabili):", media_omitted_count)
-print("file sorgente mancanti:", missing_source_files)
-print(f"messaggi di testo NON curati/scartati come rumore: {len(skipped_text)}")
-print(f"sticker/gif ignorati: {len(skipped_stickers)}")
-print(f"gif di reazione travestite da mp4, ignorate: {skipped_reaction_gifs}")
+if __name__ == "__main__":
+    build_digest(DATE, CURATED, MEDIA_OVERRIDES)

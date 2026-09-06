@@ -36,7 +36,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   vocali (`TranscribedAt` valorizzato ovunque). Import idempotente (dedup
   esatto + fuzzy; foto aggiornate solo se cambia lo SHA-256).
   `dotnet run --project Src/backend/ComitatoFeste.Importer` legge tutti i
-  `C:\ComitatoFeste\Export\digest_*.json` — ma vedi l'avviso ⚠️ sotto:
+  `C:\temp\ComitatoFeste\Export\digest_*.json` — ma vedi l'avviso ⚠️ sotto:
   **non** rilanciarlo intero dopo il Transcriber.
 - **Deploy**: immagine testata in locale (build + boot + migrate + endpoint
   OK). **DB Aiven già creato e popolato** (`pg_dump`/`pg_restore` dal locale,
@@ -182,18 +182,40 @@ Il backend .NET compila pulito e gira contro Postgres locale.
 
 ## Generazione di `digest_<data>.json` dall'export WhatsApp
 
-Il repo intero (compreso l'export della chat) vive ora in `C:\ComitatoFeste`
-(spostato da `C:\Digest` il 4/9). Gli script Python che generano i
-`digest_<data>.json` in `Export/` a partire dal `.txt` esportato da
-WhatsApp Android ("esporta chat con media") sono ora versionati nel repo
-in **`scripts/whatsapp-digest/`** (`parse_wa.py` + un `build_digest_MMGG.py`
-per ogni giorno già fatto, `README.md` con la procedura passo-passo) — sono
-lo storico affidabile di come è stato costruito ogni digest, copiali/
-adattali per un nuovo giorno invece di ripartire da zero. Restano da
-rigenerare ogni volta nella sessione device-linked (leggono/scrivono file
-nella home della VM, fuori dal repo) perché serve `ffprobe`/`ffmpeg` e
-l'accesso diretto ai file della chat sul PC dell'utente. Regole stabili da
-seguire in ogni rigenerazione (dettagliate anche nel README sopra):
+Il repo (codice + `Export/` con i digest già generati) vive in
+`C:\temp\ComitatoFeste` (spostato da `C:\Digest` il 4/9, poi da
+`C:\ComitatoFeste` il 6/9). **L'export grezzo della chat WhatsApp non vive
+più dentro il repo**: da oggi (6/9/2026) arriva sempre come file
+`Chat WhatsApp con Il branco dei pazzi 87.zip` nella root di Dropbox
+(`C:\Users\giova\Dropbox\Chat WhatsApp con Il branco dei pazzi 87.zip`,
+~150 MB, contiene sia il `.txt` che tutti i media) — prima veniva
+scompattato a mano in una sottocartella del progetto (`Chat WhatsApp con
+Il branco dei pazzi 87\`), ora si parte direttamente dallo zip Dropbox e lo
+si estrae dove serve per la rigenerazione (non necessariamente sotto
+`C:\temp\ComitatoFeste`). Gli script Python che generano i
+`digest_<data>.json` in `Export/` a partire dal `.txt` estratto sono
+versionati nel repo in **`scripts/whatsapp-digest/`**: `parse_wa.py`,
+**`digest_lib.py`** (logica comune: parsing/copia media, `is_reaction_gif`,
+`media_text`, il loop di costruzione, scrittura del checkpoint — refactor
+del 6/9/2026, prima duplicata in ognuno dei 6 script), un
+`build_digest_MMGG.py` per ogni giorno già fatto (ora solo dati: `DATE`,
+`CURATED`, `MEDIA_OVERRIDES`, ed eventuali eccezioni del giorno come la
+finestra oraria del logo del 5/9, passate a `digest_lib.build_digest(...)`),
+e `README.md` con la procedura passo-passo. I `build_digest_MMGG.py` restano
+comunque lo storico affidabile di come è stato costruito ogni digest —
+copiali/adattali per un nuovo giorno invece di ripartire da zero, ma per
+qualsiasi bug fix o miglioramento alla logica comune tocca **solo**
+`digest_lib.py`, non serve più propagarlo a mano in ogni file (motivo del
+refactor: un bug di deduplicazione trovato il 6/9/2026 — vedi sotto — era
+comunque presente, non corretto, in tutti e 5 gli script dei giorni
+precedenti). Restano da rigenerare ogni volta
+nella sessione device-linked (leggono/scrivono file fuori dal repo, tipico
+lo zip estratto altrove) perché serve `ffprobe`/`ffmpeg` e l'accesso
+diretto ai file della chat sul PC dell'utente (o, quando manca una shell
+diretta sul PC, nell'ambiente cloud della sessione, scaricando lì lo zip e
+poi ricopiando `digest_<data>.json` + media + script sul PC). Regole
+stabili da seguire in ogni rigenerazione (dettagliate anche nel README
+sopra):
 
 - **Ogni vocale (audio) va tenuto**, una entry per vocale, anche se simile a
   uno precedente — l'audio non va mai trattato come "rumore" in fase di
@@ -246,6 +268,42 @@ seguire in ogni rigenerazione (dettagliate anche nel README sopra):
   CLI, questi documenti — è **`Comitato feste 87`**. Non allineare l'uno
   all'altro senza chiedere: cambiare il default rinominerebbe di fatto il
   gruppo in tutta la pipeline.
+- **Descrizione di foto/video con persone ritratte**: nelle didascalie di
+  `MEDIA_OVERRIDES` non si descrivono i tratti fisici delle persone
+  ritratte (corporatura, capelli, barba, tratti del viso, abbigliamento
+  ecc.) — solo l'azione/il contesto. Es. "un uomo con testa rasata e barba
+  folta sorride" va scritto semplicemente "un uomo sorride" (regola
+  aggiunta il 6/9/2026). Il resto della scena (oggetti, luogo, cosa sta
+  succedendo) va comunque descritto guardando l'immagine, come da regola
+  generale sopra.
+- **Checkpoint dell'ultimo messaggio letto**: durante la generazione di un
+  digest (in particolare quando si legge un giorno intero messaggio per
+  messaggio per popolare `CURATED`/`MEDIA_OVERRIDES`), va tenuta traccia
+  dell'ultimo messaggio effettivamente esaminato in
+  `scripts/whatsapp-digest/checkpoint.json` (data, ora, mittente, e la
+  data del digest a cui appartiene), aggiornandolo mano a mano — non solo a
+  fine giornata. Così, se la sessione si interrompe a metà curatela, si può
+  ripartire esattamente da quel messaggio invece di rileggere tutto il
+  giorno da capo (regola aggiunta il 6/9/2026). A digest di un giorno
+  completato e verificato, il checkpoint riporta l'ultimo messaggio di
+  quella giornata.
+- **Bug di deduplicazione trovato/corretto il 6/9/2026** (ora in
+  `digest_lib.build_digest`, prima duplicato in ogni script): se due
+  messaggi di testo consecutivi hanno stesso `(time, sender)` — capita, es.
+  due messaggi separati inviati nello stesso minuto — e quella chiave è
+  presente in `CURATED`, lo script generava un'entry duplicata (una per
+  ogni messaggio che matcha la stessa chiave) invece di una sola. Il fix
+  (`used_curated_keys`) genera una sola entry per chiave. **Rilevanza per
+  i digest già generati**: un confronto di regressione ha mostrato che
+  questo bug era presente, non corretto, negli script (e quindi
+  potenzialmente negli output) di tutti i giorni dall'1 al 5/9/2026 — un
+  10-15% di entry testuali in più del dovuto in ciascuno. I file
+  `Export/digest_2026-09-0[1-5].json` non sono più presenti nel repo
+  (1-3 già importati a DB, vedi "Stato attuale"; l'`Importer` ha comunque
+  un vincolo UNIQUE + dedup che potrebbe aver già filtrato i duplicati
+  esatti in fase di import, ma non è stato verificato) — se serve
+  controllare/pulire i conteggi già a DB per quei giorni, va fatto apposta,
+  non è stato fatto in questo refactor (che ha toccato solo gli script).
 
 ## Convenzioni già in uso — seguile per coerenza
 
