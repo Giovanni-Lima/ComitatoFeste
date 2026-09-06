@@ -222,6 +222,24 @@ seguire in ogni rigenerazione (dettagliate anche nel README sopra):
   incompleto e inutilizzabile da chi legge il digest (regola aggiunta
   il 4/9/2026, dopo che un punto su un video Facebook era stato scritto
   senza il link).
+- **Iterazioni di design (loghi, grafiche, bozze varie)**: quando il
+  gruppo discute più versioni di uno stesso elemento grafico (es. due
+  loghi diversi in lavorazione), NON si tengono tutte le bozze nel
+  digest. Si tiene solo la versione che il testo della chat conferma
+  come definitiva (un voto, un "usiamo questo", un "sì definitivo" —
+  vedi il logo della maglietta del 2/9, già votato). Le bozze intermedie
+  si escludono come i media non significativi. Se dal testo non risulta
+  chiaro quale versione ha vinto, NON si indovina dalle immagini: si
+  segnala all'utente qual è il candidato più probabile e si chiede
+  conferma prima di scartare le altre (regola aggiunta il 4/9/2026).
+  Esempio applicato: il 5/9/2026 la discussione logo/maglietta ha
+  prodotto oltre 50 bozze in una finestra di poche ore (13:37-19:26);
+  invece di elencare ogni singolo file, lo script di quel giorno
+  esclude automaticamente tutte le .jpg cadute in quella finestra
+  tranne le due immagini definitive indicate dall'utente (e due jpg
+  della stessa finestra ma non legate al logo, tenute esplicitamente
+  fuori dall'esclusione) — vedi `build_digest_0905.py` come esempio di
+  esclusione per finestra oraria invece che per elenco di file.
 - **Nome del gruppo**: la cartella grezza dell'export si chiama `Chat
   WhatsApp con Il branco dei pazzi 87/` (nome corrente del gruppo su
   WhatsApp), ma il gruppo canonico ovunque — DB, default dei tre eseguibili
