@@ -1,0 +1,13 @@
+name: Keep Comitato Feste awake
+
+on:
+  schedule:
+    - cron: '*/14 4-23 * * *'  # ogni 14 min, 4:00-23:59 UTC (copre 6:00-24:00 CET/CEST)
+  workflow_dispatch:  # ti permette anche di lanciarlo a mano dalla tab Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping site
+        run: curl -s -o /dev/null -w "%{http_code}" https://comitatofeste.onrender.com/
