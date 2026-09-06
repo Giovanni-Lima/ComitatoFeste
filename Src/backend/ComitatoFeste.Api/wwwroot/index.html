@@ -278,6 +278,26 @@
       .to-top{bottom:calc(94px + env(safe-area-inset-bottom,0px))}
     }
 
+    /* lightbox media: apre l'immagine/PDF/video DENTRO l'app (niente target=_blank,
+       che su PWA Android apre Chrome e il "indietro" fa uscire dall'app) */
+    .lightbox{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.92);
+      display:flex;align-items:center;justify-content:center;
+      padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
+    .lightbox[hidden]{display:none}
+    .lb-close{position:absolute;top:calc(6px + env(safe-area-inset-top));right:10px;z-index:2;
+      width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.14);
+      color:#fff;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .lb-body{max-width:100%;max-height:100%;display:flex;align-items:center;justify-content:center}
+    .lb-body img,.lb-body video{max-width:100%;max-height:calc(100vh - 24px);
+      object-fit:contain;border-radius:6px;background:#000}
+    .lb-pdf{width:min(900px,100%);max-height:100%;overflow:auto;-webkit-overflow-scrolling:touch;
+      display:flex;flex-direction:column;gap:8px;padding:4px}
+    .lb-pdf canvas{width:100%;height:auto;background:#fff;border-radius:4px}
+    .lb-file{background:#fff;border-radius:10px;padding:22px;max-width:320px;text-align:center;color:var(--ink)}
+    .lb-file a{display:inline-block;margin-top:12px;padding:9px 16px;border-radius:8px;
+      background:var(--accent);color:#fff;text-decoration:none;font-weight:700}
+    .lb-msg{color:#fff;font-size:13px;opacity:.85;padding:20px}
+
     @media (max-width:680px){
       .rail::before{left:19px}
       .row,.row.left,.row.right{justify-content:flex-start}
@@ -347,6 +367,11 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
       stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
   </button>
+
+  <div id="lightbox" class="lightbox" hidden>
+    <button class="lb-close" id="lbClose" aria-label="Chiudi">&times;</button>
+    <div class="lb-body" id="lbBody"></div>
+  </div>
 
   <script>
     const qs = new URLSearchParams(location.search);
@@ -510,7 +535,7 @@
       const side = i % 2 ? "right" : "left";
       const thumbs = grp.map(p => {
         const url = `${API}${p.media.contentUrl}`;
-        return `<a href="${url}" target="_blank" rel="noopener"><img loading="lazy" src="${url}" alt="${esc(p.media.fileName)}"></a>`;
+        return `<a href="${url}" target="_blank" rel="noopener"><img loading="lazy" decoding="async" src="${url}" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)"></a>`;
       }).join("");
       const caps = [...new Set(grp.map(p => p.text).filter(t => t && !GENERIC_CAPTION.test(t)))];
       const textHtml = caps.length ? caps.map(esc).join("<br>") : `${grp.length} immagini`;
@@ -569,7 +594,7 @@
         const url = `${API}${p.media.contentUrl}`;
         const ct = p.media.contentType || "";
         if (ct.startsWith("image/") || p.media.mediaType === "foto")
-          media = `<div class="media"><a href="${url}" target="_blank" rel="noopener"><img loading="lazy" src="${url}" alt="${esc(p.media.fileName)}"></a></div>`;
+          media = `<div class="media"><a href="${url}" target="_blank" rel="noopener"><img loading="lazy" decoding="async" src="${url}" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)"></a></div>`;
         else if (ct.startsWith("video/"))
           media = `<div class="media"><video controls preload="none" src="${url}"></video></div>`;
         else if (ct.startsWith("audio/") || p.media.mediaType === "audio")
@@ -742,29 +767,117 @@
       el("mediaGrid").querySelectorAll(".mpdf").forEach(c => pdfObserver.observe(c));
     }
 
-    // Immagini della griglia Media: montate solo quando il tile entra in viewport (meno
-    // decodifiche JPEG in parallelo -> Chrome non "molla" piu' i tile) + retry su errore
-    // transitorio di caricamento/decodifica (prima i byte erano ok ma restava il box rotto).
-    const imgObserver = new IntersectionObserver((entries, obs) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        obs.unobserve(entry.target);
-        const img = entry.target;
-        if (!img.getAttribute("src") && img.dataset.src) img.src = img.dataset.src;
-      }
-    }, { rootMargin: "300px" });
-
-    function observeMediaImgs(){
-      el("mediaGrid").querySelectorAll("img.mimg[data-src]").forEach(i => imgObserver.observe(i));
-    }
-
+    // Alcune foto della griglia Media restavano un box nero (l'alt) pur avendo il
+    // server risposto coi byte giusti: caricamento/decodifica fallita e nessun
+    // tentativo di recupero. Qui, all'errore, si riprova la stessa src fino a 3
+    // volte con backoff (la 3a con ?r=n per scavalcare un'eventuale cache guasta).
     window.mediaImgRetry = function(img){
       const n = (+img.dataset.retry || 0) + 1;
       if (n > 3) return;   // tentativi esauriti: resta l'alt (nome file), come prima
       img.dataset.retry = n;
-      const base = (img.dataset.src || img.src).split("?")[0];
-      setTimeout(() => { img.src = n >= 2 ? `${base}?r=${n}` : base; }, 250 * 2 ** (n - 1));
+      const base = img.src.split("?")[0];
+      setTimeout(() => { img.src = n >= 3 ? `${base}?r=${n}` : base; }, 300 * 2 ** (n - 1));
     };
+
+    // --- lightbox media: apre immagine/PDF/video dentro l'app --------------
+    // Su PWA Android un <a target="_blank"> verso un file porta fuori dall'app
+    // (apre Chrome) e il tasto "indietro" fa uscire dall'app. Qui intercettiamo
+    // il tap sui link ai media e mostriamo il contenuto in un overlay interno,
+    // con uno stato history dedicato così "indietro" chiude solo l'overlay.
+    const MEDIA_HREF = /\/api\/digestpoints\/media\/\d+\/content/;
+    let lbActive = false;
+
+    function mediaInfoFromAnchor(a){
+      const img = a.querySelector("img");
+      const vid = a.querySelector("video");
+      const name = (a.getAttribute("title") || (img && img.getAttribute("alt")) || a.textContent || "").trim();
+      let kind = "file";
+      if (img) kind = "image";
+      else if (vid) kind = "video";
+      else if (a.querySelector(".mpdf") || /\.pdf$/i.test(name)) kind = "pdf";
+      else if (/\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(name)) kind = "image";
+      else if (/\.(mp4|mov|webm|mkv|3gp|avi)$/i.test(name)) kind = "video";
+      let url = a.href;
+      if (img) url = img.currentSrc || img.getAttribute("src") || img.dataset.src || a.href;
+      else if (vid) url = (vid.getAttribute("src") || a.href).split("#")[0];
+      return { url: url.split("?")[0], kind, name };
+    }
+
+    async function renderPdfInto(wrap, url, name){
+      wrap.innerHTML = `<div class="lb-msg">Carico il PDF…</div>`;
+      try {
+        const pdfjsLib = await ensurePdfJs();
+        const doc = await pdfjsLib.getDocument(url).promise;
+        wrap.innerHTML = "";
+        const w = Math.min(900, wrap.clientWidth || 900);
+        const dpr = window.devicePixelRatio || 1;
+        const n = Math.min(doc.numPages, 20);
+        for (let i = 1; i <= n; i++){
+          const page = await doc.getPage(i);
+          const scale = (w / page.getViewport({ scale: 1 }).width) * dpr;
+          const vp = page.getViewport({ scale });
+          const canvas = document.createElement("canvas");
+          canvas.width = vp.width; canvas.height = vp.height;
+          wrap.appendChild(canvas);
+          await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+        }
+        if (doc.numPages > n){
+          const more = document.createElement("div");
+          more.className = "lb-msg";
+          more.textContent = `…e altre ${doc.numPages - n} pagine`;
+          wrap.appendChild(more);
+        }
+      } catch {
+        wrap.innerHTML = `<div class="lb-file"><div>${esc(name || "PDF")}</div>
+          <a href="${url}" download="${esc(name || "")}">Scarica</a></div>`;
+      }
+    }
+
+    function openLightbox({ url, kind, name }){
+      const body = el("lbBody");
+      body.innerHTML = "";
+      if (kind === "image"){
+        const im = new Image();
+        im.alt = name || ""; im.src = url;
+        body.appendChild(im);
+      } else if (kind === "video"){
+        const v = document.createElement("video");
+        v.src = url; v.controls = true; v.autoplay = true; v.playsInline = true;
+        body.appendChild(v);
+      } else if (kind === "pdf"){
+        const wrap = document.createElement("div");
+        wrap.className = "lb-pdf";
+        body.appendChild(wrap);
+        renderPdfInto(wrap, url, name);
+      } else {
+        body.innerHTML = `<div class="lb-file"><div>${esc(name || "File")}</div>
+          <a href="${url}" download="${esc(name || "")}">Scarica</a></div>`;
+      }
+      el("lightbox").hidden = false;
+      document.body.style.overflow = "hidden";
+      if (!lbActive){ lbActive = true; history.pushState({ lb: 1 }, ""); }
+    }
+
+    function closeLightbox(fromPop){
+      if (!lbActive) return;
+      lbActive = false;
+      el("lightbox").hidden = true;
+      el("lbBody").innerHTML = "";
+      document.body.style.overflow = "";
+      if (!fromPop && history.state && history.state.lb) history.back();
+    }
+
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest("a[href]");
+      if (!a || !MEDIA_HREF.test(a.getAttribute("href") || "")) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+      e.preventDefault();
+      openLightbox(mediaInfoFromAnchor(a));
+    });
+    window.addEventListener("popstate", () => { if (lbActive) closeLightbox(true); });
+    el("lbClose").addEventListener("click", () => closeLightbox());
+    el("lightbox").addEventListener("click", (e) => { if (e.target === el("lightbox")) closeLightbox(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && lbActive) closeLightbox(); });
 
     function fmtSize(b){
       if (b == null) return "";
@@ -800,7 +913,7 @@
         (p.media.contentType === "application/pdf" || /\.pdf$/i.test(p.media.fileName));
       let inner;
       if (kind === "foto") {
-        inner = `<img class="mimg" decoding="async" data-src="${url}" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)">`;
+        inner = `<img loading="lazy" decoding="async" src="${url}" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)">`;
       } else if (kind === "video") {
         inner = `<video preload="metadata" muted playsinline src="${url}#t=0.1"></video>
           <div class="mplay"><span>${ICONS.play}</span></div>`;
@@ -824,15 +937,23 @@
         </section>`;
     }
 
+    // La griglia Media si costruisce solo quando la vista è effettivamente
+    // visibile: le <img loading="lazy"> create dentro un contenitore hidden
+    // non partono mai (Chrome le riconsidera solo dopo uno scroll), ed è per
+    // questo che i tile restavano neri finché non si scrollava.
+    let mediaDirty = true;
+
     function renderMedia(){
+      mediaDirty = false;
       const items = visibleMediaItems();
       const groups = groupByDay(items);
       if (!mediaItems().length) { el("mediaGrid").innerHTML = `<div class="empty">Nessun media.</div>`; return; }
       if (!groups.length) { el("mediaGrid").innerHTML = `<div class="empty">Nessun media in questa categoria.</div>`; return; }
       el("mediaGrid").innerHTML = groups.map(([day, pts]) => mediaGroupHtml(day, pts)).join("");
       observePdfTiles();
-      observeMediaImgs();
     }
+
+    function renderMediaIfNeeded(){ if (mediaDirty) renderMedia(); }
 
     el("mediaFilters").onclick = (e) => {
       const b = e.target.closest(".fitem");
@@ -851,7 +972,8 @@
         if (!r.ok) { el("timeline").innerHTML = `<div class="error">Errore API: HTTP ${r.status}</div>`; return; }
         data = await r.json();
         renderStats();
-        renderMedia();
+        mediaDirty = true;
+        if (view === "media") renderMedia();
       } catch (e) {
         el("timeline").innerHTML = `<div class="error">API non raggiungibile su <code>${API}</code>.<br>Avvia <code>ComitatoFeste.Api</code>.</div>`;
         return;
@@ -932,6 +1054,7 @@
       el("viewAgenda").hidden = v !== "agenda";
       el("viewMedia").hidden  = v !== "media";
       el("daynav").hidden     = v !== "agenda";
+      if (v === "media") renderMediaIfNeeded();
       el("viewTitle").textContent = v === "media" ? "Media" : "Agenda";
       document.title = "Comitato feste 87 — " + el("viewTitle").textContent;
       for (const b of el("nav").children) b.classList.toggle("active", b.dataset.view === v);
