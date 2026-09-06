@@ -6,17 +6,20 @@ Portale pubblico a costo zero. Un solo servizio applicativo su **Render**
 locale e scrive sul DB Aiven via `COMITATOFESTE_CONNECTION`.
 
 ```
+   cron-job.org ──(GET /api/auth/status ogni 10')──┐  keep-alive, non tocca il DB
+                                                    ▼
                  ┌─────────────────────────────┐
-   browser  ───▶ │ Render Web Service (Docker)  │
-                 │  ComitatoFeste.Api           │ ──▶  Aiven PostgreSQL (managed)
-                 │  + wwwroot/index.html        │
+   browser  ───▶ │ Render Web Service (Docker)  │ ──▶  Aiven PostgreSQL (managed)
+                 │  ComitatoFeste.Api           │
+                 │  + wwwroot/index.html        │ ──▶  Groq API (solo /recap: verbale non in cache)
                  └─────────────────────────────┘
                           ▲
-   PC locale: Importer / Transcriber ──┘  (COMITATOFESTE_CONNECTION = Aiven)
+   PC locale: Importer / Transcriber ──┘  (COMITATOFESTE_CONNECTION = Aiven; Groq/Whisper per i vocali)
 ```
 
 File in gioco: `Dockerfile`, `.dockerignore`, `render.yaml`, `docker-compose.yml`
-(solo per lo sviluppo locale).
+e `docker-compose.db.yml` (gli ultimi due solo per lo sviluppo locale).
+Schema completo dei servizi esterni e delle interazioni: `docs/ARCHITETTURA.md`.
 
 ---
 
@@ -99,10 +102,54 @@ dotnet run --project Src/backend/ComitatoFeste.Transcriber   # vocali -> testo +
 
 Il portale online riflette subito i nuovi dati (nessun redeploy).
 
+> Su una macchina **senza il runtime .NET 8** installato (solo 9/10) i tre
+> eseguibili — che targettano `net8.0` — compilano ma non partono
+> (`Framework 'Microsoft.NETCore.App' 8.0.0 not found`). Anteponi
+> `$env:DOTNET_ROLL_FORWARD = "Major"` (o `dotnet run --roll-forward Major`),
+> oppure installa l'ASP.NET Core Runtime 8.
+
 > Il reimport della stessa giornata è idempotente anche dopo il Transcriber
 > (i punti media sono dedup per nome file, non per testo — vedi `CLAUDE.md`).
 > Resta a rischio solo un punto di solo testo riformulato sotto la soglia
 > fuzzy tra un import e l'altro. Per le sole foto: `-- --photos-only`.
+
+---
+
+## 4b · Propagare a Aiven un giorno già lavorato in locale (senza rifare Groq)
+
+Se un giorno è già stato importato **e trascritto sul Postgres locale**, rifarlo su
+Aiven con `Importer` + `Transcriber` rispenderebbe i token Groq/Whisper di quei
+vocali. Alternativa: copiare solo le righe di quel giorno da locale ad Aiven con
+`COPY`. Valido finché gli ID identity del locale non collidono con quelli di Aiven
+— vero se il locale è nato da un dump di Aiven e da allora solo il locale ha
+importato quel giorno (le sequenze proseguono da dove le ha lasciate Aiven).
+
+```bash
+AIVEN="postgresql://avnadmin:...@...:11068/defaultdb?sslmode=require"   # = scripts/aiven.uri
+RUN=8   # Id dell'IngestionRun del giorno, sul Postgres locale
+
+# in ordine di FK; il container locale del compose è "comitatofeste-db"
+for pair in \
+  'IngestionRuns|SELECT * FROM "IngestionRuns" WHERE "Id"='$RUN \
+  'DigestPoints|SELECT * FROM "DigestPoints" WHERE "IngestionRunId"='$RUN \
+  'MediaAssets|SELECT ma.* FROM "MediaAssets" ma JOIN "DigestPoints" dp ON dp."Id"=ma."DigestPointId" WHERE dp."IngestionRunId"='$RUN \
+  'MediaBlobs|SELECT mb.* FROM "MediaBlobs" mb JOIN "MediaAssets" ma ON ma."Id"=mb."MediaAssetId" JOIN "DigestPoints" dp ON dp."Id"=ma."DigestPointId" WHERE dp."IngestionRunId"='$RUN ; do
+  t="${pair%%|*}"; q="${pair#*|}"
+  docker exec -i comitatofeste-db psql -U postgres -d postgres -c "\copy ($q) TO STDOUT" \
+   | docker run --rm -i postgres:18-alpine psql "$AIVEN" -c "\copy \"$t\" FROM STDIN"
+done
+
+# riallinea le sequenze identity di Aiven al max(Id) copiato
+docker run --rm -i postgres:18-alpine psql "$AIVEN" <<'SQL'
+SELECT setval(pg_get_serial_sequence('"IngestionRuns"','Id'), (SELECT max("Id") FROM "IngestionRuns"));
+SELECT setval(pg_get_serial_sequence('"DigestPoints"','Id'),  (SELECT max("Id") FROM "DigestPoints"));
+SELECT setval(pg_get_serial_sequence('"MediaAssets"','Id'),   (SELECT max("Id") FROM "MediaAssets"));
+SELECT setval(pg_get_serial_sequence('"MediaBlobs"','Id'),    (SELECT max("Id") FROM "MediaBlobs"));
+SQL
+```
+
+Verifica i conteggi su Aiven dopo la copia. I `Verbali` non si copiano: quelli
+veri li genera l'API online e restano solo su Aiven.
 
 ---
 
@@ -176,6 +223,14 @@ Replica la forma della produzione (Postgres + API dallo stesso `Dockerfile`):
 docker compose up --build      # -> http://localhost:8080/
 ```
 
-Oppure, senza container per l'API: tieni `local-postgres` e lancia
-`dotnet run --project Src/backend/ComitatoFeste.Api` (vedi
-`Src/backend/ComitatoFeste.Api/README.md`).
+Oppure, con l'API lanciata a parte via `dotnet run`, serve solo Postgres:
+
+```powershell
+docker compose -f docker-compose.db.yml up -d   # container "comitatofeste-db", dati in ./data/postgres/
+dotnet run --project Src/backend/ComitatoFeste.Api   # (vedi Src/backend/ComitatoFeste.Api/README.md)
+```
+
+`docker-compose.db.yml` monta i dati su file system (`./data/postgres/`, gitignorato)
+invece di un named volume, così la cartella è ispezionabile e cancellabile a mano;
+il `container_name` è `comitatofeste-db` per non collidere con un eventuale
+`local-postgres` esterno già sulla 5432.
