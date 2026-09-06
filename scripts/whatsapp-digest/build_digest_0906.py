@@ -34,6 +34,16 @@ CURATED = {
     ("10:19", "Ugo Trinchini"): ("info",
         "Per il piccolo buffet, una volta fissata la data si offre di chiedere alla Dolciaria un "
         "paio di chili di dolcetti in omaggio."),
+    ("13:15", "Costantino Mariani"): ("domanda",
+        "Chiede se è successo anche ad altri: il nero del capo del comitato (maglietta/felpa con la "
+        "stampa arcade) si sta stingendo dopo il lavaggio (condivide due foto ravvicinate della "
+        "stampa)."),
+    ("13:37", "Luca Cicchelli"): ("info",
+        "Ipotizza che il problema si presenti solo lavando in lavatrice: lavato a mano il tessuto "
+        "non si comporta così."),
+    ("13:39", "Maria Buttari"): ("info",
+        "Segnala che lavando in lavatrice a 30 gradi con programma rapido il capo non ha stinto, "
+        "diversamente da chi lo ha lavato con un ciclo più aggressivo."),
 }
 
 MEDIA_OVERRIDES = {
@@ -43,6 +53,13 @@ MEDIA_OVERRIDES = {
     (DATE, "00:14", "Elvis Ippoliti", "IMG-20260906-WA0007.jpg"):
         "Selfie in casa: un uomo sorride in camera mostrando una bottiglia di birra Nord "
         "(etichetta \"Fresca come Spina\") appena stappata.",
+    (DATE, "13:15", "Costantino Mariani", "IMG-20260906-WA0012.jpg"):
+        "Foto ravvicinata della stampa colorata (un cabinato arcade anni '80 con la scritta "
+        "\"INSERT COIN\") su un capo nero del comitato, a mostrare lo scolorimento del tessuto nero "
+        "lamentato nel messaggio.",
+    (DATE, "13:15", "Costantino Mariani", "IMG-20260906-WA0013.jpg"):
+        "Altra foto ravvicinata della stessa stampa arcade sul capo nero, a mostrare meglio lo "
+        "scolorimento del tessuto.",
 }
 
 if __name__ == "__main__":
