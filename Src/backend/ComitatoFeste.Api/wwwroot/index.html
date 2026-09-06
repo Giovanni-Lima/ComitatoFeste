@@ -280,26 +280,36 @@
 
     /* lightbox media: apre l'immagine/PDF/video DENTRO l'app (niente target=_blank,
        che su PWA Android apre Chrome e il "indietro" fa uscire dall'app) */
-    .lightbox{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.92);
+    .lightbox{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.96);
       display:flex;align-items:center;justify-content:center;
       padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
     .lightbox[hidden]{display:none}
-    .lb-close{position:absolute;top:calc(6px + env(safe-area-inset-top));right:10px;z-index:2;
-      width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.14);
-      color:#fff;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
-    .lb-dl{position:absolute;top:calc(6px + env(safe-area-inset-top));right:58px;z-index:2;
-      width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;
-      display:flex;align-items:center;justify-content:center;text-decoration:none}
+    .lb-close,.lb-dl{position:absolute;top:calc(6px + env(safe-area-inset-top));z-index:3;
+      width:42px;height:42px;border:1px solid rgba(255,255,255,.35);border-radius:50%;
+      background:rgba(0,0,0,.62);color:#fff;cursor:pointer;text-decoration:none;
+      display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+    .lb-close{right:10px;font-size:24px;line-height:1;padding-bottom:2px}
+    .lb-dl{right:60px}
+    .lb-dl svg{width:17px;height:17px}
     .lb-dl[hidden]{display:none}
+    /* zoom PDF: barra sempre nel flusso, non sparisce col pinch-zoom */
+    .lb-zoom{position:absolute;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));
+      transform:translateX(-50%);z-index:3;display:flex;gap:2px;padding:4px;
+      background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.35);border-radius:24px;
+      box-shadow:0 2px 8px rgba(0,0,0,.5)}
+    .lb-zoom[hidden]{display:none}
+    .lb-zoom button{width:40px;height:40px;border:0;border-radius:50%;background:transparent;
+      color:#fff;font-size:22px;line-height:1;cursor:pointer}
+    .lb-zoom button:active{background:rgba(255,255,255,.18)}
     .lb-body{max-width:100%;max-height:100%;display:flex;align-items:center;justify-content:center}
     .lb-body img,.lb-body video{max-width:100%;max-height:calc(100vh - 24px);
       object-fit:contain;border-radius:6px;background:#000}
-    /* PDF: riempie tutto l'overlay e scrolla; le pagine sono canvas ad alta
-       risoluzione (nitidi anche col pinch-zoom del browser) larghe la colonna */
-    .lb-pdf{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
-      display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 8px 44px}
-    .lb-pdf canvas{max-width:100%;height:auto;background:#fff;
-      box-shadow:0 2px 10px rgba(0,0,0,.5);border-radius:2px}
+    /* PDF: riempie l'overlay e scrolla su entrambi gli assi (per lo zoom a bottoni) */
+    .lb-pdf{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch}
+    .lb-pages{min-width:100%;width:max-content;margin:0 auto;
+      display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 8px 70px}
+    .lb-pdf canvas{height:auto;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.5);
+      border-radius:2px;display:block}
     .lb-file{background:#fff;border-radius:10px;padding:22px;max-width:320px;text-align:center;color:var(--ink)}
     .lb-file a{display:inline-block;margin-top:12px;padding:9px 16px;border-radius:8px;
       background:var(--accent);color:#fff;text-decoration:none;font-weight:700}
@@ -382,6 +392,10 @@
         stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
     </a>
     <button class="lb-close" id="lbClose" aria-label="Chiudi">&times;</button>
+    <div class="lb-zoom" id="lbZoom" hidden>
+      <button type="button" data-z="out" aria-label="Riduci">&minus;</button>
+      <button type="button" data-z="in" aria-label="Ingrandisci">+</button>
+    </div>
     <div class="lb-body" id="lbBody"></div>
   </div>
 
@@ -816,16 +830,36 @@
       return { url: url.split("?")[0], kind, name };
     }
 
+    // zoom del PDF nel lightbox: fattore CSS applicato ai canvas, non pinch-zoom
+    // del browser (che spingerebbe fuori schermo i pulsanti). I canvas sono
+    // sovracampionati ~2-3x, quindi restano nitidi fino a ~zoom 3.
+    let lbPdfZoom = 1;
+    function applyPdfZoom(){
+      const pages = el("lbBody").querySelector(".lb-pages");
+      if (!pages) return;
+      const baseW = +pages.dataset.baseW || 0;
+      pages.querySelectorAll("canvas").forEach(c => { c.style.width = Math.round(baseW * lbPdfZoom) + "px"; });
+    }
+    function setPdfZoom(z){
+      lbPdfZoom = Math.min(3, Math.max(0.6, z));
+      applyPdfZoom();
+    }
+
     async function renderPdfInto(wrap, url, name){
       wrap.innerHTML = `<div class="lb-msg">Carico il PDF…</div>`;
       try {
         const pdfjsLib = await ensurePdfJs();
         const doc = await pdfjsLib.getDocument(url).promise;
         wrap.innerHTML = "";
-        // larghezza della colonna a video e fattore di sovracampionamento:
-        // il canvas è renderizzato a ~2x i pixel CSS così resta leggibile
-        // anche col pinch-zoom del browser (viewport senza user-scalable=no).
+        const pages = document.createElement("div");
+        pages.className = "lb-pages";
+        wrap.appendChild(pages);
+        // larghezza "fit" della colonna + sovracampionamento del canvas: a zoom 1
+        // riempie la larghezza, e resta nitido ingrandendo con i bottoni +/-.
         const cssW = Math.min(1000, window.innerWidth - 16);
+        pages.dataset.baseW = cssW;
+        lbPdfZoom = 1;
+        el("lbZoom").hidden = false;
         const res = Math.min(3, (window.devicePixelRatio || 1) * 2);
         const max = 25;
         const n = Math.min(doc.numPages, max);
@@ -837,16 +871,17 @@
           canvas.width = vp.width;
           canvas.height = vp.height;
           canvas.style.width = cssW + "px";
-          wrap.appendChild(canvas);
+          pages.appendChild(canvas);
           await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
         }
         if (doc.numPages > n){
           const more = document.createElement("div");
           more.className = "lb-msg";
           more.innerHTML = `Prime ${n} di ${doc.numPages} pagine — <a href="${url}" download="${esc(name || "")}">scarica il PDF</a> per il resto.`;
-          wrap.appendChild(more);
+          pages.appendChild(more);
         }
       } catch {
+        el("lbZoom").hidden = true;
         wrap.innerHTML = `<div class="lb-file"><div>${esc(name || "PDF")}</div>
           <a href="${url}" download="${esc(name || "")}">Scarica</a></div>`;
       }
@@ -855,6 +890,7 @@
     function openLightbox({ url, kind, name }){
       const body = el("lbBody");
       body.innerHTML = "";
+      el("lbZoom").hidden = true;   // riattivato da renderPdfInto solo per i PDF
       if (kind === "image"){
         const im = new Image();
         im.alt = name || ""; im.src = url;
@@ -887,10 +923,17 @@
       el("lightbox").hidden = true;
       el("lbBody").innerHTML = "";
       el("lbDl").hidden = true;
+      el("lbZoom").hidden = true;
+      lbPdfZoom = 1;
       document.body.style.overflow = "";
       if (lbObjectUrl){ URL.revokeObjectURL(lbObjectUrl); lbObjectUrl = null; }
       if (!fromPop && history.state && history.state.lb) history.back();
     }
+
+    el("lbZoom").addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (b) setPdfZoom(lbPdfZoom * (b.dataset.z === "in" ? 1.25 : 0.8));
+    });
 
     document.addEventListener("click", (e) => {
       const a = e.target.closest("a[href]");
