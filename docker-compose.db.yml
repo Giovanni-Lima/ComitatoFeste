@@ -1,0 +1,32 @@
+# Solo Postgres per lo sviluppo locale (API lanciata a parte con `dotnet run`).
+# I dati vivono su file system nel repo, in ./data/postgres/ (gitignorato) —
+# niente named volume Docker: la cartella e' ispezionabile e cancellabile a mano.
+#
+#   docker compose -f docker-compose.db.yml up -d      # avvia
+#   docker compose -f docker-compose.db.yml down        # ferma (i dati restano)
+#   docker compose -f docker-compose.db.yml down && rm -rf ./data/postgres   # reset totale
+#
+# Connection string (default di appsettings.json, nessun override necessario):
+#   Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: comitatofeste-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      # initdb solo alla prima creazione della cartella dati
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      # se hai gia' un 'local-postgres' sulla 5432, spegnilo o cambia in "5433:5432"
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
