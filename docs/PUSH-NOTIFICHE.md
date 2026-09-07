@@ -1,10 +1,10 @@
 # Piano — notifiche push a fine import
 
-Stato: **codice completo (step 1-7), non deployato — manca il test end-to-end su un
-device reale e le env su Render**. Dettaglio nella sezione "Stato implementazione"
-qui sotto; il resto del documento è il piano di riferimento. Obiettivo: quando la
-pipeline locale (`Importer` / `Transcriber`) finisce un run con dati nuovi, i membri
-che hanno installato la PWA ricevono una notifica push.
+Stato: **codice completo (step 1-7), test end-to-end su Chrome desktop OK — manca
+il deploy (env su Render) e la prova su telefono**. Dettaglio nella sezione "Stato
+implementazione" qui sotto; il resto del documento è il piano di riferimento.
+Obiettivo: quando la pipeline locale (`Importer` / `Transcriber`) finisce un run con
+dati nuovi, i membri che hanno installato la PWA ricevono una notifica push.
 
 ---
 
@@ -91,15 +91,18 @@ Render → push service, riga in tabella + paragrafo flusso dati).
 
 ### Da fare — chiusura
 
-- **Test end-to-end su un device reale**: `npx web-push generate-vapid-keys`, avvia
-  l'API con quelle env, apri la PWA su Chrome (desktop o Android), premi 🔔 → concedi
-  il permesso → verifica la riga in `PushSubscriptions`, poi `POST /api/push/test`
-  e `POST /api/push/broadcast` → la notifica deve arrivare e il tap aprire il giorno.
-  (Automazione browser non disponibile in questa sessione: il prompt di permesso
-  nativo va cliccato a mano.)
-- **Deploy**: impostare le env su Render (vedi sotto), pushare `main`, mettere
+- ~~**Test end-to-end su Chrome desktop**~~ ✅ **fatto il 7/9/2026**: `npx web-push
+  generate-vapid-keys` → API locale con quelle env → `http://localhost:5065` su
+  Chrome → 🔔 → Consenti → riga in `PushSubscriptions` → `POST /api/push/broadcast`
+  (`X-Hook-Secret`) → **la notifica compare e il click apre `/?date=…`**. Verificati
+  anche: prune automatico di una subscription stale (SW sostituito da reload → 410 →
+  `{sent:1,pruned:1}`), e recupero dopo un "Non consentire" (reset da
+  `chrome://settings/content/notifications`).
+- **Deploy**: impostare le env su Render (vedi sotto — **rigenerare** la coppia
+  VAPID, quella di test è finita nei log di sessione), pushare `main`, mettere
   `COMITATOFESTE_HOOK_URL`/`_SECRET` sul PC per Importer/Transcriber.
-- **iOS**: verificare su un iPhone (≥16.4) con la PWA installata su home.
+- **Android / iOS**: verificare sul dominio Render (o via tunnel HTTPS). iOS solo
+  da PWA installata su home, ≥ 16.4.
 
 ### Env var necessarie
 
