@@ -10,11 +10,12 @@ locale e scrive sul DB Aiven via `COMITATOFESTE_CONNECTION`.
                                                     ▼
                  ┌─────────────────────────────┐
    browser  ───▶ │ Render Web Service (Docker)  │ ──▶  Aiven PostgreSQL (managed)
-                 │  ComitatoFeste.Api           │
-                 │  + wwwroot/index.html        │ ──▶  Groq API (solo /recap: verbale non in cache)
+                 │  ComitatoFeste.Api           │ ──▶  Groq API (solo /recap: verbale non in cache)
+                 │  + wwwroot/index.html        │ ──▶  push service (Web Push a fine import)
                  └─────────────────────────────┘
                           ▲
-   PC locale: Importer / Transcriber ──┘  (COMITATOFESTE_CONNECTION = Aiven; Groq/Whisper per i vocali)
+   PC locale: Importer / Transcriber ──┘  (COMITATOFESTE_CONNECTION = Aiven; Groq/Whisper per i vocali;
+                                            POST /api/push/broadcast a fine run)
 ```
 
 File in gioco: `Dockerfile`, `.dockerignore`, `render.yaml`, `docker-compose.yml`
@@ -70,7 +71,18 @@ Nessun'altra configurazione: niente utenti, rete o backup da impostare a mano.
    | `COMITATOFESTE_AUTH_PASSWORD` | la passphrase condivisa del comitato |
    | `COMITATOFESTE_AUTH_SECRET` | **32+ caratteri casuali, fissi** (senza, ogni redeploy invalida tutti i login) |
    | `GROQ_API_KEY` | *opzionale* — solo per generare verbali di giorni non ancora in cache |
+   | `COMITATOFESTE_VAPID_PUBLIC` / `_PRIVATE` | *opzionale* — coppia VAPID per le notifiche push (vedi sotto). Assenti → bottone 🔔 nascosto |
+   | `COMITATOFESTE_VAPID_SUBJECT` | `mailto:giovannilima800@gmail.com` (già nel blueprint) |
+   | `COMITATOFESTE_HOOK_SECRET` | *opzionale* — secret condiviso con la pipeline locale per `POST /api/push/broadcast`. Stringa casuale, **diversa** da `COMITATOFESTE_AUTH_PASSWORD` |
    | `PORT` | `8080` (già nel blueprint) |
+
+   > **Chiavi VAPID** (per le notifiche push): genera la coppia una volta con
+   > `npx web-push generate-vapid-keys` — `publicKey` → `COMITATOFESTE_VAPID_PUBLIC`,
+   > `privateKey` → `COMITATOFESTE_VAPID_PRIVATE` (segreto, solo su Render). Devono
+   > essere della **stessa** coppia. Le stesse `COMITATOFESTE_HOOK_URL` (=
+   > `https://comitatofeste.onrender.com`) e `COMITATOFESTE_HOOK_SECRET` vanno poi
+   > sul PC locale per `Importer`/`Transcriber` (vedi §4). Dettaglio completo in
+   > `docs/PUSH-NOTIFICHE.md`.
 
 4. **Create / Deploy**. Primo build ~3-5 min. Al primo avvio l'API applica da
    sola le migration sul DB Aiven vuoto (`Database.Migrate()` in `Program.cs`).
@@ -95,10 +107,19 @@ gira nulla di pesante.
 
 ```powershell
 $env:COMITATOFESTE_CONNECTION = "Host=pg-xxxx...;...;SSL Mode=Require;Trust Server Certificate=true"
+# opzionale: notifica push ai membri a fine run (serve la coppia sul Web Service)
+$env:COMITATOFESTE_HOOK_URL    = "https://comitatofeste.onrender.com"
+$env:COMITATOFESTE_HOOK_SECRET = "<lo stesso valore impostato su Render>"
 
 dotnet run --project Src/backend/ComitatoFeste.Importer      # digest_*.json + foto profilo
 dotnet run --project Src/backend/ComitatoFeste.Transcriber   # vocali -> testo + classificazione
 ```
+
+> Le notifiche push sono **best-effort**: se `COMITATOFESTE_HOOK_URL`/`_SECRET` non
+> sono impostate, o Render è freddo/irraggiungibile, il run stampa un avviso e
+> prosegue. `Importer` notifica se ha inserito ≥1 punto, `Transcriber` se ha
+> trascritto ≥1 vocale; con un solo giorno la seconda notifica **aggiorna** la
+> prima (stesso `tag`).
 
 Il portale online riflette subito i nuovi dati (nessun redeploy).
 

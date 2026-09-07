@@ -1,8 +1,155 @@
 # Piano — notifiche push a fine import
 
-Stato: **piano, non implementato**. Obiettivo: quando la pipeline locale
-(`Importer` / `Transcriber`) finisce un run con dati nuovi, i membri che hanno
-installato la PWA ricevono una notifica push.
+Stato: **codice completo (step 1-7), test end-to-end su Chrome desktop OK — manca
+il deploy (env su Render) e la prova su telefono**. Dettaglio nella sezione "Stato
+implementazione" qui sotto; il resto del documento è il piano di riferimento.
+Obiettivo: quando la pipeline locale (`Importer` / `Transcriber`) finisce un run con
+dati nuovi, i membri che hanno installato la PWA ricevono una notifica push.
+
+---
+
+## Stato implementazione — aggiornato 7/9/2026
+
+Branch: **`develop`**. **main non toccato, niente deploy.** Postgres locale migrato
+(`AddPushSubscriptions` + `AddPropostaDigestPointType`).
+
+### Fatto — step 1-3 di 7 (commit "feat: notifiche push — backend")
+
+**Step 1 · Data model** — migration `20260907154355_AddPushSubscriptions`
+(applicata al `local-postgres`; su Aiven la applica `Database.Migrate()` al boot):
+- `ComitatoFeste.Domain/Entities/PushSubscription.cs` — `Id`, `Endpoint`, `P256dh`,
+  `Auth`, `MemberId?`, `UserAgent?`, `CreatedAt`, `LastNotifiedAt?`.
+- `ComitatoFeste.Data/Configurations/PushSubscriptionConfiguration.cs` — `Endpoint`
+  UNIQUE (`UX_PushSubscriptions_Endpoint`, serve per l'upsert), FK a `Members`
+  `ON DELETE SET NULL`, `CreatedAt` default `now()`.
+- `DbSet<PushSubscription> PushSubscriptions` nel context.
+
+**Step 2 · Endpoint API** — `ComitatoFeste.Api/Controllers/PushController.cs`:
+- `GET /api/push/key` (aperto) → `{ publicKey }`; **503** se VAPID non configurato.
+- `POST /api/push/subscribe` `[TokenAuth]` — body = `PushSubscription.toJSON()` del
+  browser; **upsert su `Endpoint`**; `MemberId` ricavato dal token Bearer.
+- `POST /api/push/unsubscribe` `[TokenAuth]` — delete idempotente su `Endpoint`.
+- DTO in `Contracts/PushContracts.cs`.
+- `Services/PushKeys.cs` (singleton) — VAPID da env `COMITATOFESTE_VAPID_PUBLIC` /
+  `_PRIVATE` / `_SUBJECT`, fallback config `Vapid:*`.
+
+**Step 3 · Invio** — pacchetto **`WebPush 1.0.13`** in `ComitatoFeste.Api.csproj`:
+- `Services/PushSender.cs` — `BroadcastAsync` (tutte) / `SendToMemberAsync` (una
+  persona); firma VAPID; un solo `HttpClient` (`AddHttpClient<PushSender>`);
+  **prune su 404/410**; `LastNotifiedAt` aggiornata sugli invii riusciti.
+- `POST /api/push/broadcast` — auth header **`X-Hook-Secret`**
+  (`COMITATOFESTE_HOOK_SECRET`, confronto a tempo costante), **non** il token
+  utente; body `{ title, body, url?, tag? }` → `{ sent, pruned }`.
+- `POST /api/push/test` `[TokenAuth]` — notifica di prova alle subscription del
+  membro loggato.
+- Payload JSON `{ title, body, url, tag }` (default `url:"/"`, `tag:"digest"`).
+
+Verificato in locale: auth `broadcast` (401 senza/errato), validazione (400),
+0 subscription (`{sent:0,pruned:0}`), invio verso endpoint morto → il push service
+risponde 410 → **prune** (`{sent:0,pruned:1}`, riga cancellata). L'invio
+*riuscito* verso un device reale si prova nello step 5.
+
+### Fatto — step 4-7 (commit "feat: notifiche push — sw.js, frontend, hook pipeline")
+
+**Step 4 · Service worker** — `wwwroot/sw.js`: handler `push` (mostra la notifica,
+icona `/icon-192.png`, `tag`/`renotify` per aggiornare invece di impilare) e
+`notificationclick` (focus di una window esistente + `navigate` all'`url`, altrimenti
+`openWindow`). `CACHE_VERSION` alzato a `"v2"`.
+
+**Step 5 · Frontend** — `wwwroot/index.html`: bottone `#btnPush` (`🔔`) in topbar,
+CSS `.pushbtn` (stato `.on` = pieno accent). Modulo JS: `pushSupported`,
+`apiHasVapid()` (cache di `GET /api/push/key`), `currentPushSub()`,
+`paintPushBtn(state)` (hidden/off/on/blocked/busy), `refreshPushBtn()` (nasconde
+se: no supporto / login aperto / no VAPID / permesso `denied`), `enablePush()`
+(`requestPermission` → `serviceWorker.ready` → `subscribe` → `POST /api/push/subscribe`
+con Bearer; `localStorage["cf87_push"]`), `disablePush()` (unsubscribe lato server +
+browser). `refreshPushBtn()` chiamato da `showLogin`/`hideLogin`, fine IIFE auth,
+e dopo `register("/sw.js")`. Helper `urlB64ToUint8Array`. Icone `bell`/`bellOff`.
+
+**Step 6 · Hook pipeline** — `ComitatoFeste.Data/PushHook.cs`:
+`NotifyAsync(title, body, url?, tag?)`, legge `COMITATOFESTE_HOOK_URL` +
+`_SECRET` (se una manca → log "salto"), `POST {url}/api/push/broadcast` con header
+`X-Hook-Secret`, `HttpClient` con timeout 6 s, tutto in try/catch (non fa fallire il
+run). Chiamata da:
+- `Importer/Program.cs` — se `totInserted > 0`; `insertedDays` raccoglie la data da
+  ogni `SourceFile`; 1 giorno → `"Digest <data>: N nuovi punti"`, `url=/?date=<data>`,
+  `tag=digest-<data>`; più giorni → messaggio aggregato, `tag=digest`.
+- `Transcriber/Program.cs` — se `!dryRun && ok > 0`; `doneDays` (HashSet) raccoglie
+  la data Roma di ogni punto classificato; `"Digest <data>: N vocali trascritti"`,
+  stesso `tag=digest-<data>` → la notifica del Transcriber **aggiorna** quella
+  dell'Importer.
+
+Verificato in locale (API con VAPID+HOOK secret, `comitatofeste-db`):
+`Importer` su una giornata di test → `notifica push inviata: {"sent":0,"pruned":0}`;
+`Transcriber --limit 1` → idem. La chiamata pipeline→Render→PushSender funziona
+end-to-end; `sw.js`/`index.html` passano il parser.
+
+**Step 7 · Config/doc** — `render.yaml` (+4 env `sync:false`), tabella env di
+`docs/DEPLOY.md` + nota VAPID + §4 con `COMITATOFESTE_HOOK_URL/_SECRET`,
+`docs/ARCHITETTURA.md` (nodo `push service`, frecce Importer/Transcriber → Render e
+Render → push service, riga in tabella + paragrafo flusso dati).
+
+### Da fare — chiusura
+
+- ~~**Test end-to-end su Chrome desktop**~~ ✅ **fatto il 7/9/2026**: `npx web-push
+  generate-vapid-keys` → API locale con quelle env → `http://localhost:5065` su
+  Chrome → 🔔 → Consenti → riga in `PushSubscriptions` → `POST /api/push/broadcast`
+  (`X-Hook-Secret`) → **la notifica compare e il click apre `/?date=…`**. Verificati
+  anche: prune automatico di una subscription stale (SW sostituito da reload → 410 →
+  `{sent:1,pruned:1}`), e recupero dopo un "Non consentire" (reset da
+  `chrome://settings/content/notifications`).
+- **Deploy**: impostare le env su Render (vedi sotto — **rigenerare** la coppia
+  VAPID, quella di test è finita nei log di sessione), pushare `main`, mettere
+  `COMITATOFESTE_HOOK_URL`/`_SECRET` sul PC per Importer/Transcriber.
+- **Android / iOS**: verificare sul dominio Render (o via tunnel HTTPS). iOS solo
+  da PWA installata su home, ≥ 16.4.
+
+### Env var necessarie
+
+| Dove | Variabili |
+|---|---|
+| **Render** | `COMITATOFESTE_VAPID_PUBLIC`, `COMITATOFESTE_VAPID_PRIVATE`, `COMITATOFESTE_VAPID_SUBJECT` (`mailto:giovannilima800@gmail.com`), `COMITATOFESTE_HOOK_SECRET` |
+| **PC locale** (per i CLI, quando ci sarà lo step 6) | `COMITATOFESTE_HOOK_URL` (es. `https://comitatofeste.onrender.com`), `COMITATOFESTE_HOOK_SECRET` |
+
+**Chiavi VAPID**: la coppia generata durante la sessione **non è stata committata**
+(la privata è un segreto). Rigenerane una con `npx web-push generate-vapid-keys`
+(oppure `WebPush.VapidHelper.GenerateVapidKeys()` da .NET) — pubblica e privata
+devono essere della **stessa coppia**. `COMITATOFESTE_HOOK_SECRET` = una stringa
+casuale a scelta, diversa da `COMITATOFESTE_AUTH_PASSWORD`.
+
+### Riprendere / testare in locale
+
+```bash
+# il local-postgres ha già la tabella PushSubscriptions. Avvia l'API con le env:
+COMITATOFESTE_VAPID_PUBLIC=<pub> COMITATOFESTE_VAPID_PRIVATE=<priv> \
+COMITATOFESTE_VAPID_SUBJECT=mailto:giovannilima800@gmail.com \
+COMITATOFESTE_HOOK_SECRET=una-stringa-a-caso \
+dotnet run --project Src/backend/ComitatoFeste.Api --launch-profile http
+# -> http://localhost:5065
+
+# simula la pipeline (broadcast a tutte le subscription):
+curl -X POST http://localhost:5065/api/push/broadcast \
+  -H "X-Hook-Secret: una-stringa-a-caso" -H "Content-Type: application/json" \
+  -d '{"title":"Comitato feste 87","body":"prova","url":"/?date=2026-09-05"}'
+```
+
+### Gotcha incontrati
+
+- `dotnet ef` locale è **9.x su progetti net8**: dopo `migrations add` fai
+  `dotnet build` del progetto Data **prima** di `has-pending-model-changes`
+  (il comando guarda l'assembly compilato, non i sorgenti — altrimenti dà un
+  falso "pending").
+- `WebPush 1.0.13`: si costruisce con `new WebPushClient(httpClient)` — **non**
+  esiste `SetHttpClient`.
+- `PushController.ResolveMemberIdAsync` duplica lo schema token → member di
+  `AuthController.Login`. Se lo tocchi, allinea i due (o, meglio, fai stashare
+  lo username in `HttpContext.Items` dentro `TokenAuthAttribute`).
+- `[TokenAuth]` lascia passare tutto se il login è disattivato: in quel caso
+  `subscribe` funziona lo stesso ma con `MemberId = null`.
+
+---
+
+*Piano originale (riferimento per gli step 4-7):*
 
 Scelte già fissate con l'utente:
 

@@ -47,6 +47,12 @@ builder.Services.AddHttpClient<LinkPreviewService>(c =>
 // Login "casereccio": passphrase condivisa da env COMITATOFESTE_AUTH_PASSWORD o config Auth:Password.
 builder.Services.AddSingleton<AuthService>();
 
+// Chiavi VAPID per il Web Push (env COMITATOFESTE_VAPID_* o config Vapid:*).
+builder.Services.AddSingleton<PushKeys>();
+
+// Invio Web Push: typed client (un solo HttpClient riusato dal WebPushClient).
+builder.Services.AddHttpClient<PushSender>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
