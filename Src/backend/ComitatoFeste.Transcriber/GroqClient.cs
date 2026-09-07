@@ -60,7 +60,7 @@ public sealed class GroqClient
     private const string TranscriptionsUrl = "https://api.groq.com/openai/v1/audio/transcriptions";
     private const string ChatCompletionsUrl = "https://api.groq.com/openai/v1/chat/completions";
 
-    private static readonly string[] AllowedTypes = { "decisione", "domanda", "info", "media", "rumore" };
+    private static readonly string[] AllowedTypes = { "decisione", "proposta", "domanda", "info", "media", "rumore" };
 
     private readonly HttpClient _http;
     private readonly int _maxRetries;
@@ -97,7 +97,7 @@ public sealed class GroqClient
         return doc.RootElement.TryGetProperty("text", out var t) ? (t.GetString() ?? "").Trim() : "";
     }
 
-    /// <summary>Classifica una trascrizione in decisione/domanda/info/media/rumore, con sintesi in una frase.</summary>
+    /// <summary>Classifica una trascrizione in decisione/proposta/domanda/info/media/rumore, con sintesi in una frase.</summary>
     public async Task<Classification> ClassifyAsync(string groupName, string author, string transcript, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(transcript))
@@ -117,20 +117,27 @@ public sealed class GroqClient
             "rumore". Nel dubbio fra "rumore" e altro, scegli "rumore".
 
             Se invece ha sostanza, scegli:
-            - "decisione": una decisione presa, o una proposta operativa rivolta al gruppo, anche
-              abbozzata ("potremmo...", "io farei...", "proviamo a...", "bisognerebbe...")
+            - "decisione": una decisione GIÀ PRESA o confermata dal gruppo ("facciamo così",
+              "abbiamo deciso", "ok allora si va con...")
+            - "proposta": un'idea o una proposta operativa AVANZATA al gruppo ma non ancora
+              decisa/votata, anche abbozzata ("potremmo...", "io farei...", "proviamo a...",
+              "bisognerebbe...", "che ne dite di...")
             - "domanda": una domanda aperta rivolta al gruppo che attende una risposta
             - "info": condivide un FATTO concreto e verificabile utile al comitato — una data, un
               luogo, un numero, un preventivo, un contatto, lo stato di un compito. Un'opinione o
               un commento generico NON è "info".
-            - "media": contenuto chiaramente sostanzioso che non rientra in decisione/domanda/info
+            - "media": contenuto chiaramente sostanzioso che non rientra in decisione/proposta/domanda/info
+
+            Nel dubbio fra "decisione" e "proposta", scegli "proposta" (la decisione richiede una
+            conferma esplicita del gruppo).
 
             Esempi:
             "Vabbè, dopo a casa mi va bene, lo sto a dire." -> {"type":"rumore","summary":""}
             "Secondo me la festa è andata bene dai." -> {"type":"rumore","summary":""}
             "Il preventivo del service è 800 euro." -> {"type":"info","summary":"Informa che il preventivo del service è di 800 euro."}
             "Facciamo la riunione giovedì alle 21?" -> {"type":"domanda","summary":"Chiede se fissare la riunione giovedì alle 21."}
-            "Io direi di puntare sugli sponsor per il cantante." -> {"type":"decisione","summary":"Propone di puntare sugli sponsor per finanziare il cantante."}
+            "Io direi di puntare sugli sponsor per il cantante." -> {"type":"proposta","summary":"Propone di puntare sugli sponsor per finanziare il cantante."}
+            "Ok allora è deciso, il gonfiabile lo prendiamo da Marco." -> {"type":"decisione","summary":"Conferma che il gonfiabile sarà noleggiato da Marco."}
 
             Rispondi SOLO con un oggetto JSON, senza altro testo, in questo formato esatto:
             {"type": "<categoria>", "summary": "<una frase in italiano, in terza persona, stile
@@ -292,7 +299,7 @@ public sealed class GroqClient
 }
 
 /// <summary>Esito della classificazione di un vocale trascritto.</summary>
-/// <param name="Type">Una fra: decisione, domanda, info, media, rumore.</param>
+/// <param name="Type">Una fra: decisione, proposta, domanda, info, media, rumore.</param>
 /// <param name="Summary">Sintesi in una frase; <c>null</c> per "rumore" o se assente.</param>
 /// <param name="Uncertain">
 /// <c>true</c> quando "media" è un ripiego perché la risposta del modello non era valida

@@ -15,7 +15,7 @@ public sealed record DigestPointDto
     /// <summary>Endpoint della foto profilo dell'autore, se disponibile.</summary>
     public string? AuthorPhotoUrl { get; init; }
 
-    /// <summary>decisione | domanda | media | info</summary>
+    /// <summary>decisione | proposta | domanda | media | info | rumore</summary>
     public required string Type { get; init; }
 
     public required string Text { get; init; }

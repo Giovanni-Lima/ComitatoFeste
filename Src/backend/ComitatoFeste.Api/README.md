@@ -64,6 +64,10 @@ variabile d'ambiente il login è disattivato e il sito è aperto.
   Markdown grezzo.
 - I `rumore` e i vocali non ancora digeriti (audio senza `TranscribedAt`)
   sono esclusi dall'API di default.
+- Gli URL nel testo di un punto diventano link cliccabili; sotto la card
+  compare un'anteprima OpenGraph (`GET /api/links/preview`, cache in memoria
+  lato API, serve solo per URL già presenti in un punto). Immagine in hotlink
+  dal sito originale; se la pagina non espone meta la card non compare.
 - Con giorni molto densi (~100 punti) la sezione espansa è pesante da
   renderizzare: `<img loading="lazy">` mitiga, ma resta un candidato per
   virtualizzazione / paginazione lato server.

@@ -11,7 +11,7 @@ public class DigestPointConfiguration : IEntityTypeConfiguration<DigestPoint>
         builder.ToTable("DigestPoints", t =>
             t.HasCheckConstraint(
                 "CK_DigestPoints_Type",
-                "\"Type\" IN ('decisione', 'domanda', 'media', 'info', 'rumore')"));
+                "\"Type\" IN ('decisione', 'proposta', 'domanda', 'media', 'info', 'rumore')"));
 
         builder.HasKey(d => d.Id);
 

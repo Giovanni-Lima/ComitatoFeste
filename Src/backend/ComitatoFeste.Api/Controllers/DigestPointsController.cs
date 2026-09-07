@@ -44,7 +44,7 @@ public sealed class DigestPointsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(type))
         {
             if (!Enum.TryParse<DigestPointType>(type, ignoreCase: true, out var parsed))
-                return BadRequest($"Valore 'type' non valido: '{type}'. Ammessi: decisione, domanda, media, info, rumore.");
+                return BadRequest($"Valore 'type' non valido: '{type}'. Ammessi: decisione, proposta, domanda, media, info, rumore.");
             typeFilter = parsed;
         }
 
