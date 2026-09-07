@@ -96,6 +96,7 @@ Console.WriteLine($"modelli: {groq.CurrentWhisperModel} + {groq.CurrentClassifie
 
 int ok = 0, uncertain = 0, skipped = 0, errors = 0;
 var byType = new Dictionary<string, int>();
+var doneDays = new HashSet<string>();   // date Roma dei punti classificati, per la notifica push
 
 foreach (var row in pending)
 {
@@ -159,6 +160,8 @@ foreach (var row in pending)
             else
             {
                 asset.TranscribedAt = DateTimeOffset.UtcNow;
+                doneDays.Add(DateOnly.FromDateTime(
+                    TimeZoneInfo.ConvertTime(point.OccurredAt, RomeTime.Zone).DateTime).ToString("yyyy-MM-dd"));
 
                 if (Enum.TryParse<DigestPointType>(classification.Type, ignoreCase: true, out var newType))
                     point.Type = newType;
@@ -198,6 +201,20 @@ Console.WriteLine($"\n== completato: {ok} trascritti/classificati, {uncertain} i
 Console.WriteLine($"  modelli a fine run: {groq.CurrentWhisperModel} + {groq.CurrentClassifierModel}");
 foreach (var (t, n) in byType.OrderByDescending(kv => kv.Value))
     Console.WriteLine($"  {t}: {n}");
+
+// Notifica push (best-effort, vedi PushHook). Solo su scritture reali.
+if (!dryRun && ok > 0)
+{
+    var single = doneDays.Count == 1 ? doneDays.First() : null;
+    var vocali = ok == 1 ? "1 vocale" : $"{ok} vocali";
+    var body = single is not null
+        ? $"Digest {single}: {vocali} trascritti"
+        : $"{vocali} trascritti in {doneDays.Count} giornate";
+    await PushHook.NotifyAsync(
+        "Comitato feste 87", body,
+        url: single is not null ? $"/?date={single}" : "/",
+        tag: single is not null ? $"digest-{single}" : "digest");
+}
 
 return errors > 0 ? 1 : 0;
 

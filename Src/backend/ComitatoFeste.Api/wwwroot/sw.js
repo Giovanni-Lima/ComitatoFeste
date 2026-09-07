@@ -4,7 +4,7 @@
  * guscio, SENZA mai mettere in cache le risposte /api (dati + auth: devono
  * sempre passare dalla rete). Alza CACHE_VERSION a ogni modifica al guscio per
  * forzare l'aggiornamento della cache sui client gia' installati. */
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `cf87-shell-${CACHE_VERSION}`;
 
 const SHELL = [
@@ -28,6 +28,42 @@ self.addEventListener("activate", (event) => {
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+/* --- Web Push -----------------------------------------------------------
+ * L'API (PushSender) invia un payload JSON { title, body, url, tag }.
+ * Stesso `tag` per giorno ⇒ una nuova notifica dello stesso giorno
+ * rimpiazza la precedente invece di impilarsi. */
+self.addEventListener("push", (event) => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (_) { d = {}; }
+  const title = d.title || "Comitato feste 87";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: d.body || "",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: d.tag || "digest",
+      renotify: true,
+      data: { url: d.url || "/" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const c of wins) {
+      if (c.url.startsWith(self.location.origin)) {
+        await c.focus();
+        if ("navigate" in c) { try { await c.navigate(target); } catch (_) {} }
+        return;
+      }
+    }
+    await self.clients.openWindow(target);
+  })());
 });
 
 self.addEventListener("fetch", (event) => {

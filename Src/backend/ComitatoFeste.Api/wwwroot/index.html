@@ -90,6 +90,14 @@
     .topbar .me.sm{margin-left:auto;padding:4px 12px 4px 4px;gap:8px;background:#fff}
     .topbar .me.sm .me-av{width:28px;height:28px}
     .topbar .me.sm .me-name{font-weight:600}
+    .pushbtn{flex:none;margin-left:auto;width:34px;height:34px;border-radius:50%;
+      border:1px solid color-mix(in srgb, var(--yellow) 72%, #7a6b00);background:#fff;color:var(--ink);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+    .pushbtn svg{width:17px;height:17px}
+    .pushbtn.on{background:var(--accent);color:#fff;border-color:transparent}
+    .pushbtn:disabled{opacity:.45;cursor:default}
+    .pushbtn[hidden]{display:none}
+    .pushbtn + .me.sm{margin-left:8px}
 
     .view{flex:1;width:100%;max-width:1320px;margin:0 auto;padding:22px 20px 90px}
     .content{display:grid;gap:22px;align-items:start;grid-template-columns:1fr 210px;grid-template-areas:"timeline stats"}
@@ -366,6 +374,8 @@
           <input type="date" id="day">
           <button id="next" title="Giorno successivo">›</button>
         </div>
+        <button id="btnPush" class="pushbtn" type="button" hidden aria-pressed="false"
+          title="Attiva le notifiche push" aria-label="Notifiche push"></button>
         <div class="me sm" id="meTop"></div>
       </header>
 
@@ -436,8 +446,8 @@
     function setUser(u){
       try { u ? localStorage.setItem(USER_KEY, JSON.stringify(u)) : localStorage.removeItem(USER_KEY); } catch (e) {}
     }
-    function showLogin(){ el("login").hidden = false; el("lgUser").focus(); }
-    function hideLogin(){ el("login").hidden = true; renderMe(); }
+    function showLogin(){ el("login").hidden = false; el("lgUser").focus(); refreshPushBtn(); }
+    function hideLogin(){ el("login").hidden = true; renderMe(); refreshPushBtn(); }
     function logout(){ setToken(null); setUser(null); location.reload(); }
 
     // Avatar + nome nel pannello laterale e nella topbar; l'immagine sostituisce
@@ -495,6 +505,8 @@
       video:     I(`<path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/>`),
       documento: I(`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>`),
       download:  I(`<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>`),
+      bell:      I(`<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>`),
+      bellOff:   I(`<path d="M8.7 3A6 6 0 0 1 18 8c0 4 1.2 6.4 2.2 7.8M17 17H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>`),
       play:      `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
     };
     function iconFor(p){
@@ -1245,13 +1257,100 @@
         if (enabled) hideLogin();   // mostra il bottone "esci"
         load();   // load() gestisce un 401 (token scaduto) mostrando il login
       }
+      refreshPushBtn();
     })();
+
+    // --- notifiche push -----------------------------------------------------
+    // Bottone 🔔 in topbar: visibile solo se il browser supporta Web Push, l'API
+    // ha le chiavi VAPID (GET /api/push/key) e l'utente è dentro (login chiuso).
+    const PUSH_FLAG = "cf87_push";
+    const pushSupported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    let pushHasKey = null;   // cache del check /api/push/key
+
+    function urlB64ToUint8Array(b64){
+      const s = (b64 + "=".repeat((4 - b64.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = atob(s);
+      return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+    }
+    async function apiHasVapid(){
+      if (pushHasKey !== null) return pushHasKey;
+      try { pushHasKey = (await fetch(`${API}/api/push/key`)).ok; } catch { pushHasKey = false; }
+      return pushHasKey;
+    }
+    async function currentPushSub(){
+      try { return await (await navigator.serviceWorker.ready).pushManager.getSubscription(); }
+      catch { return null; }
+    }
+    function paintPushBtn(state){   // "hidden" | "off" | "on" | "blocked" | "busy"
+      const b = el("btnPush");
+      if (!b) return;
+      b.hidden = state === "hidden";
+      if (b.hidden) return;
+      b.disabled = state === "blocked" || state === "busy";
+      b.classList.toggle("on", state === "on");
+      b.innerHTML = state === "on" ? ICONS.bell : ICONS.bellOff;
+      b.setAttribute("aria-pressed", state === "on" ? "true" : "false");
+      b.title = state === "on" ? "Notifiche attive — tocca per disattivare"
+              : state === "blocked" ? "Notifiche bloccate nelle impostazioni del browser"
+              : state === "busy" ? "…" : "Attiva le notifiche push";
+    }
+    async function refreshPushBtn(){
+      if (!pushSupported || !el("login").hidden || !(await apiHasVapid())) return paintPushBtn("hidden");
+      if (Notification.permission === "denied") return paintPushBtn("blocked");
+      paintPushBtn((await currentPushSub()) ? "on" : "off");
+    }
+    async function enablePush(){
+      paintPushBtn("busy");
+      try {
+        if (await Notification.requestPermission() !== "granted") return;
+        const reg = await navigator.serviceWorker.ready;
+        const { publicKey } = await (await fetch(`${API}/api/push/key`)).json();
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(publicKey),
+        });
+        const r = await fetch(`${API}/api/push/subscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify(sub),
+        });
+        if (r.status === 401) { setToken(null); showLogin(); return; }
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        try { localStorage.setItem(PUSH_FLAG, "1"); } catch (_) {}
+      } catch (e) {
+        alert("Non riesco ad attivare le notifiche: " + (e && e.message || e));
+      } finally {
+        refreshPushBtn();
+      }
+    }
+    async function disablePush(){
+      paintPushBtn("busy");
+      try {
+        const sub = await currentPushSub();
+        if (sub) {
+          await fetch(`${API}/api/push/unsubscribe`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...authHeaders() },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          }).catch(() => {});
+          await sub.unsubscribe().catch(() => {});
+        }
+        try { localStorage.removeItem(PUSH_FLAG); } catch (_) {}
+      } finally {
+        refreshPushBtn();
+      }
+    }
+    el("btnPush").addEventListener("click", () => {
+      el("btnPush").classList.contains("on") ? disablePush() : enablePush();
+    });
 
     // PWA: registra il service worker (serve per l'installazione + apertura offline
     // del guscio). Richiede un contesto sicuro: HTTPS in produzione, localhost in dev.
     if ("serviceWorker" in navigator) {
       addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js").catch(() => { /* non bloccante */ });
+        navigator.serviceWorker.register("/sw.js")
+          .then(() => refreshPushBtn())
+          .catch(() => { /* non bloccante */ });
       });
     }
   </script>

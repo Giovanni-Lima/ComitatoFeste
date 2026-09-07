@@ -1,19 +1,19 @@
 # Piano — notifiche push a fine import
 
-Stato: **in corso — backend fatto (step 1-3 di 7), non deployato**. Dettaglio nella
-sezione "Stato implementazione" qui sotto; il resto del documento è il piano di
-riferimento per gli step 4-7. Obiettivo: quando la pipeline locale
-(`Importer` / `Transcriber`) finisce un run con dati nuovi, i membri che hanno
-installato la PWA ricevono una notifica push.
+Stato: **codice completo (step 1-7), non deployato — manca il test end-to-end su un
+device reale e le env su Render**. Dettaglio nella sezione "Stato implementazione"
+qui sotto; il resto del documento è il piano di riferimento. Obiettivo: quando la
+pipeline locale (`Importer` / `Transcriber`) finisce un run con dati nuovi, i membri
+che hanno installato la PWA ricevono una notifica push.
 
 ---
 
 ## Stato implementazione — aggiornato 7/9/2026
 
-Branch: **`develop`** (commit "feat: notifiche push — backend (step 1-3)").
-**main non toccato, niente deploy.** Postgres locale già migrato.
+Branch: **`develop`**. **main non toccato, niente deploy.** Postgres locale migrato
+(`AddPushSubscriptions` + `AddPropostaDigestPointType`).
 
-### Fatto — step 1-3 di 7
+### Fatto — step 1-3 di 7 (commit "feat: notifiche push — backend")
 
 **Step 1 · Data model** — migration `20260907154355_AddPushSubscriptions`
 (applicata al `local-postgres`; su Aiven la applica `Database.Migrate()` al boot):
@@ -49,28 +49,57 @@ Verificato in locale: auth `broadcast` (401 senza/errato), validazione (400),
 risponde 410 → **prune** (`{sent:0,pruned:1}`, riga cancellata). L'invio
 *riuscito* verso un device reale si prova nello step 5.
 
-### Da fare — step 4-7
+### Fatto — step 4-7 (commit "feat: notifiche push — sw.js, frontend, hook pipeline")
 
-4. **Service worker** — aggiungere gli handler `push` e `notificationclick` a
-   `Src/backend/ComitatoFeste.Api/wwwroot/sw.js` (codice pronto in §5 sotto);
-   **alzare `CACHE_VERSION`** da `"v1"` a `"v2"` (c'è già la logica che pota le
-   cache vecchie). Lo `sw.js` attuale è solo shell-cache, nessun handler push.
-5. **Frontend** — bottone `🔔` in topbar di `wwwroot/index.html` con i 4 stati di
-   §6; flusso Attiva (`Notification.requestPermission` → `serviceWorker.ready` →
-   `GET /api/push/key` → `pushManager.subscribe` → `POST /api/push/subscribe`) e
-   Disattiva; helper `urlB64ToUint8Array`; flag `localStorage["cf87_push"]`.
-   Poi **test end-to-end** su Chrome desktop con `POST /api/push/test`.
-6. **Hook pipeline** — classe `PushHook` in **`ComitatoFeste.Data`** (referenziata
-   da Importer e Transcriber): `Task NotifyAsync(string title, string body, string url)`,
-   legge `COMITATOFESTE_HOOK_URL` + `COMITATOFESTE_HOOK_SECRET` (se una manca →
-   skip silenzioso), `POST {HOOK_URL}/api/push/broadcast` con `X-Hook-Secret`,
-   timeout 5 s, **best-effort** (try/catch, non fa fallire il run). Chiamata da
-   `Importer/Program.cs` (se `PointsInserted > 0` nel totale) e
-   `Transcriber/Program.cs` (se trascritti > 0), con `tag = "digest-<data>"` così
-   la seconda notifica **aggiorna** la prima invece di impilarsi.
-7. **Config/doc** — `render.yaml` (aggiungere le 4 env `sync:false`), tabella env
-   di `docs/DEPLOY.md`, schema `docs/ARCHITETTURA.md` (freccia Importer/Transcriber
-   → Render, e Render → push service), e togliere "in corso" dall'intestazione.
+**Step 4 · Service worker** — `wwwroot/sw.js`: handler `push` (mostra la notifica,
+icona `/icon-192.png`, `tag`/`renotify` per aggiornare invece di impilare) e
+`notificationclick` (focus di una window esistente + `navigate` all'`url`, altrimenti
+`openWindow`). `CACHE_VERSION` alzato a `"v2"`.
+
+**Step 5 · Frontend** — `wwwroot/index.html`: bottone `#btnPush` (`🔔`) in topbar,
+CSS `.pushbtn` (stato `.on` = pieno accent). Modulo JS: `pushSupported`,
+`apiHasVapid()` (cache di `GET /api/push/key`), `currentPushSub()`,
+`paintPushBtn(state)` (hidden/off/on/blocked/busy), `refreshPushBtn()` (nasconde
+se: no supporto / login aperto / no VAPID / permesso `denied`), `enablePush()`
+(`requestPermission` → `serviceWorker.ready` → `subscribe` → `POST /api/push/subscribe`
+con Bearer; `localStorage["cf87_push"]`), `disablePush()` (unsubscribe lato server +
+browser). `refreshPushBtn()` chiamato da `showLogin`/`hideLogin`, fine IIFE auth,
+e dopo `register("/sw.js")`. Helper `urlB64ToUint8Array`. Icone `bell`/`bellOff`.
+
+**Step 6 · Hook pipeline** — `ComitatoFeste.Data/PushHook.cs`:
+`NotifyAsync(title, body, url?, tag?)`, legge `COMITATOFESTE_HOOK_URL` +
+`_SECRET` (se una manca → log "salto"), `POST {url}/api/push/broadcast` con header
+`X-Hook-Secret`, `HttpClient` con timeout 6 s, tutto in try/catch (non fa fallire il
+run). Chiamata da:
+- `Importer/Program.cs` — se `totInserted > 0`; `insertedDays` raccoglie la data da
+  ogni `SourceFile`; 1 giorno → `"Digest <data>: N nuovi punti"`, `url=/?date=<data>`,
+  `tag=digest-<data>`; più giorni → messaggio aggregato, `tag=digest`.
+- `Transcriber/Program.cs` — se `!dryRun && ok > 0`; `doneDays` (HashSet) raccoglie
+  la data Roma di ogni punto classificato; `"Digest <data>: N vocali trascritti"`,
+  stesso `tag=digest-<data>` → la notifica del Transcriber **aggiorna** quella
+  dell'Importer.
+
+Verificato in locale (API con VAPID+HOOK secret, `comitatofeste-db`):
+`Importer` su una giornata di test → `notifica push inviata: {"sent":0,"pruned":0}`;
+`Transcriber --limit 1` → idem. La chiamata pipeline→Render→PushSender funziona
+end-to-end; `sw.js`/`index.html` passano il parser.
+
+**Step 7 · Config/doc** — `render.yaml` (+4 env `sync:false`), tabella env di
+`docs/DEPLOY.md` + nota VAPID + §4 con `COMITATOFESTE_HOOK_URL/_SECRET`,
+`docs/ARCHITETTURA.md` (nodo `push service`, frecce Importer/Transcriber → Render e
+Render → push service, riga in tabella + paragrafo flusso dati).
+
+### Da fare — chiusura
+
+- **Test end-to-end su un device reale**: `npx web-push generate-vapid-keys`, avvia
+  l'API con quelle env, apri la PWA su Chrome (desktop o Android), premi 🔔 → concedi
+  il permesso → verifica la riga in `PushSubscriptions`, poi `POST /api/push/test`
+  e `POST /api/push/broadcast` → la notifica deve arrivare e il tap aprire il giorno.
+  (Automazione browser non disponibile in questa sessione: il prompt di permesso
+  nativo va cliccato a mano.)
+- **Deploy**: impostare le env su Render (vedi sotto), pushare `main`, mettere
+  `COMITATOFESTE_HOOK_URL`/`_SECRET` sul PC per Importer/Transcriber.
+- **iOS**: verificare su un iPhone (≥16.4) con la PWA installata su home.
 
 ### Env var necessarie
 

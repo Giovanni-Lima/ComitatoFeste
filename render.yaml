@@ -34,3 +34,16 @@ services:
       # Opzionale: serve solo a generare verbali di giorni non ancora in cache.
       - key: GROQ_API_KEY
         sync: false
+      # --- notifiche push (Web Push / VAPID) --------------------------------
+      # Coppia VAPID (genera con `npx web-push generate-vapid-keys`). Se assenti,
+      # il frontend nasconde il bottone 🔔 e /api/push/* risponde 503.
+      - key: COMITATOFESTE_VAPID_PUBLIC
+        sync: false
+      - key: COMITATOFESTE_VAPID_PRIVATE
+        sync: false
+      - key: COMITATOFESTE_VAPID_SUBJECT
+        value: mailto:giovannilima800@gmail.com
+      # Secret condiviso con la pipeline locale: autentica POST /api/push/broadcast
+      # (header X-Hook-Secret). Stringa casuale, diversa da COMITATOFESTE_AUTH_PASSWORD.
+      - key: COMITATOFESTE_HOOK_SECRET
+        sync: false

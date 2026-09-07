@@ -22,6 +22,7 @@ flowchart TB
     end
 
     G["<b>Groq API</b><br/>whisper-large-v3 · openai/gpt-oss-120b"]
+    PUSH["push service<br/>FCM / APNs / Mozilla"]
 
     subgraph localbox["💻 PC locale — on-demand"]
       direction TB
@@ -33,17 +34,21 @@ flowchart TB
 
     DBX["Dropbox<br/>export chat WhatsApp (.zip)"]
 
-    U -->|"HTTPS · pagina, /api/digestpoints, media, /recap"| R
+    U -->|"HTTPS · pagina, /api/digestpoints, media, /recap, /api/push/subscribe"| R
     U -.->|"carica pdf.js per il lightbox PDF"| CDN
     CJ -->|"GET /api/auth/status ogni ~10' · keep-alive, non tocca il DB"| R
     GH -->|"push su main → build & deploy · autoDeploy"| R
     R -->|"Npgsql/SSL · lettura + scrittura"| A
     R -->|"solo GET /recap se il Verbale non è già in cache"| G
+    R -->|"Web Push firmato VAPID (a fine import)"| PUSH
+    PUSH -.->|"notifica → service worker"| U
 
     DBX --> PIPE --> IMP
     IMP -->|"COMITATOFESTE_CONNECTION"| A
+    IMP -->|"POST /api/push/broadcast · X-Hook-Secret (best-effort)"| R
     TR -->|"Whisper + classificazione gpt-oss"| G
     TR -->|"COMITATOFESTE_CONNECTION"| A
+    TR -->|"POST /api/push/broadcast"| R
     A -.->|"pg_dump via client postgres:18"| BK
 ```
 
@@ -51,10 +56,11 @@ flowchart TB
 
 | Servizio | Ruolo | Config / credenziali | Se non risponde |
 |---|---|---|---|
-| **Render** | Host del container: `ComitatoFeste.Api` (ASP.NET Core) che serve **anche** il frontend statico dalla stessa origine. Region Frankfurt, health check `/api/auth/status`. | Env var nella tab *Environment* (`render.yaml`, `sync:false`): `COMITATOFESTE_CONNECTION`, `COMITATOFESTE_AUTH_PASSWORD`, `COMITATOFESTE_AUTH_SECRET`, `GROQ_API_KEY` (opz.), `PORT=8080`. | Portale offline. I dati restano su Aiven, nessuna perdita. |
+| **Render** | Host del container: `ComitatoFeste.Api` (ASP.NET Core) che serve **anche** il frontend statico dalla stessa origine. Region Frankfurt, health check `/api/auth/status`. | Env var nella tab *Environment* (`render.yaml`, `sync:false`): `COMITATOFESTE_CONNECTION`, `COMITATOFESTE_AUTH_PASSWORD`, `COMITATOFESTE_AUTH_SECRET`, `GROQ_API_KEY` (opz.), `COMITATOFESTE_VAPID_PUBLIC`/`_PRIVATE`/`_SUBJECT` + `COMITATOFESTE_HOOK_SECRET` (opz., notifiche push), `PORT=8080`. | Portale offline. I dati restano su Aiven, nessuna perdita. |
 | **Aiven** | Unico datastore: PostgreSQL 18 gestito. Contiene tutto — `Groups`, `Members`, `IngestionRuns`, `DigestPoints`, `MediaAssets`, `MediaBlobs` (i byte dei file), `MemberProfilePhotos`, `Verbali` (cache dei verbali). | URI Aiven → stringa Npgsql in `COMITATOFESTE_CONNECTION` (usata da API, Importer, Transcriber). Copia locale in `scripts/aiven.uri` (gitignorata) per i backup. | L'API non parte (`Database.Migrate()` in `Program.cs` fallisce, voluto). Ultimo dump in `Backups/`. |
 | **Groq** | LLM + speech. **Due usi distinti**: (1) *locale* — il `Transcriber` trascrive i vocali con `whisper-large-v3` e li classifica con `openai/gpt-oss-120b`; (2) *online* — Render chiama Groq **solo** su `GET /api/digestpoints/recap` quando il verbale del giorno non è ancora nella tabella `Verbali`. | `GROQ_API_KEY` (env) oppure file `key.txt` risalendo fino alla radice (`GroqKey.Resolve()`). Free tier: 1.000 req/g, 200k token/g, contatore separato per modello. | Transcriber si ferma (ritenta al run dopo). Online: `/recap` di un giorno non in cache → **503**; tutto il resto del portale funziona. |
 | **cron-job.org** | Tiene "caldo" il container Render (piano free: spento dopo ~15 min di inattività, poi ~40-60 s di cold start). Un `GET https://comitatofeste.onrender.com/api/auth/status` ogni ~10 min — quell'endpoint **non** tocca il DB, quindi zero carico su Aiven. Rientra nelle 750 h/mese del free. | Un solo job schedulato con l'URL dello status. Alternativa a costo zero già nel repo: `.github/workflows/keep-alive.yaml` (GitHub Actions). | Nessun danno: il primo accesso dopo un periodo di inattività paga il cold start. |
+| **push service** (FCM / APNs / Mozilla) | Recapito delle notifiche Web Push. Il browser di ogni membro sceglie il proprio (Chrome→FCM, Safari→APNs, Firefox→Mozilla) e ne registra l'`endpoint` via `POST /api/push/subscribe` (tabella `PushSubscriptions` su Aiven). A fine import `Importer`/`Transcriber` fanno `POST /api/push/broadcast` (header `X-Hook-Secret`) → Render firma con VAPID e consegna a ogni endpoint; le subscription che rispondono 404/410 vengono cancellate. | Chiavi VAPID (`COMITATOFESTE_VAPID_PUBLIC`/`_PRIVATE`/`_SUBJECT`) + `COMITATOFESTE_HOOK_SECRET` su Render; `COMITATOFESTE_HOOK_URL`/`_SECRET` sul PC per i CLI. Assenti → 🔔 nascosto, `/api/push/*` → 503. | Best-effort: la notifica non parte, il run della pipeline prosegue lo stesso. |
 
 ## Flusso dei dati
 
@@ -74,6 +80,14 @@ verbale e i PDF condivisi nella chat vengono renderizzati nel browser con
 **Deploy:** `git push` su `main` → **GitHub** notifica **Render** → build
 dell'immagine Docker + redeploy (`autoDeploy: true`). Al primo boot su DB vuoto
 l'API crea lo schema da sola.
+
+**Notifiche push:** i membri attivano dal bottone 🔔 in topbar (`POST /api/push/subscribe`,
+subscription salvata su Aiven). A fine run `Importer` (≥1 punto inserito) e
+`Transcriber` (≥1 vocale trascritto) chiamano `POST /api/push/broadcast` su Render →
+Web Push firmato VAPID a tutti gli endpoint → service worker mostra la notifica, il
+tap apre `/?date=<data>`. Con un solo giorno la seconda notifica **aggiorna** la
+prima (stesso `tag`). Tutto best-effort: se Render è freddo o le env mancano, il run
+non fallisce. Dettaglio in `docs/PUSH-NOTIFICHE.md`.
 
 **Backup:** `scripts/backup-db.ps1` (schedulato) fa `pg_dump -Fc` di **Aiven** con
 un client `postgres:18` usa-e-getta → `Backups/cf-YYYY-MM-DD.dump` (rotazione 30
