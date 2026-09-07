@@ -99,8 +99,10 @@
     .fitem .dot{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
     .fitem.active{background:var(--c);color:#fff;border-color:var(--c)}
     .fitem.active .dot{background:#fff}
-    /* "Tutti" non ha una categoria: pallino giallo per distinguerlo da "Decisioni" */
+    /* "Tutti" non ha una categoria: giallo (pallino sempre, pill quando attivo) */
     .fitem[data-k=""] .dot{background:var(--yellow)}
+    .fitem[data-k=""].active{background:var(--yellow);border-color:var(--yellow);color:#131019}
+    .fitem[data-k=""].active .dot{background:#131019}
 
     .main{flex:1;min-width:0;display:flex;flex-direction:column}
     .topbar{position:sticky;top:0;z-index:10;background:var(--brand);
