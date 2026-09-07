@@ -1,5 +1,9 @@
 # Deploy — Render + Aiven
 
+> **Stato:** in produzione su <https://comitatofeste.onrender.com> (Render + Aiven,
+> autoDeploy da `main`, env impostate incluse quelle delle notifiche push). Le
+> sezioni sotto restano come guida/riferimento per ricreare o modificare il setup.
+
 Portale pubblico a costo zero. Un solo servizio applicativo su **Render**
 (container Docker: API .NET + frontend statico sulla stessa origine), database
 **PostgreSQL gestito su Aiven**. La pipeline `Importer`/`Transcriber` resta in
