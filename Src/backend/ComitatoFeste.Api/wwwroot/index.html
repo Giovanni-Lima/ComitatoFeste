@@ -105,7 +105,7 @@
     .main{flex:1;min-width:0;display:flex;flex-direction:column}
     .topbar{position:sticky;top:0;z-index:10;background:var(--brand);
       border-bottom:1px solid var(--brand-line);
-      min-height:56px;padding:7px 24px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+      height:51px;padding:0 24px;display:flex;flex-wrap:nowrap;gap:8px 16px;align-items:center}
     .topbar h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.02em;color:var(--on-brand)}
     .topbar .me.sm{margin-left:auto;padding:4px 12px 4px 4px;gap:8px;background:var(--brand-chip)}
     .topbar .me.sm .me-av{width:28px;height:28px}
@@ -161,7 +161,7 @@
       .navitem:hover{background:none}
       .navitem.active{color:var(--accent);background:color-mix(in srgb, var(--accent) 16%, var(--surface))}
 
-      .topbar{min-height:0;padding:6px 16px 10px;border-bottom:0;gap:8px 12px}
+      .topbar{padding:0 16px;border-bottom:0;gap:8px 12px}
       .topbar h1{font-size:17px}
       .topbar .me.sm{display:none}
       .view{padding:16px 12px calc(96px + env(safe-area-inset-bottom,0px))}
