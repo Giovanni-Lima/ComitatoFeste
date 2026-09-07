@@ -1,17 +1,19 @@
-# Piano — notifiche push a fine import
+# Notifiche push a fine import
 
-Stato: **codice completo (step 1-7), test end-to-end su Chrome desktop OK — manca
-il deploy (env su Render) e la prova su telefono**. Dettaglio nella sezione "Stato
-implementazione" qui sotto; il resto del documento è il piano di riferimento.
-Obiettivo: quando la pipeline locale (`Importer` / `Transcriber`) finisce un run con
-dati nuovi, i membri che hanno installato la PWA ricevono una notifica push.
+Stato: **fatto e in produzione** (step 1-7 su `main`, deploy su Render OK,
+verificato end-to-end contro Aiven il 7/9/2026). Resta solo la prova esplicita su
+telefono Android/iOS. Il resto del documento è la storia dell'implementazione e il
+piano di riferimento. Obiettivo: quando la pipeline locale (`Importer` /
+`Transcriber`) finisce un run con dati nuovi, i membri che hanno installato la PWA
+ricevono una notifica push.
 
 ---
 
 ## Stato implementazione — aggiornato 7/9/2026
 
-Branch: **`develop`**. **main non toccato, niente deploy.** Postgres locale migrato
-(`AddPushSubscriptions` + `AddPropostaDigestPointType`).
+Su **`main`** (merge di `develop`), **deployato su Render** con le 4 env impostate
+nel dashboard. Migration `AddPushSubscriptions` + `AddPropostaDigestPointType`
+applicate ad Aiven da `Database.Migrate()` al boot. Postgres locale idem.
 
 ### Fatto — step 1-3 di 7 (commit "feat: notifiche push — backend")
 
@@ -89,27 +91,40 @@ end-to-end; `sw.js`/`index.html` passano il parser.
 `docs/ARCHITETTURA.md` (nodo `push service`, frecce Importer/Transcriber → Render e
 Render → push service, riga in tabella + paragrafo flusso dati).
 
-### Da fare — chiusura
+### Fatto — chiusura
 
-- ~~**Test end-to-end su Chrome desktop**~~ ✅ **fatto il 7/9/2026**: `npx web-push
-  generate-vapid-keys` → API locale con quelle env → `http://localhost:5065` su
-  Chrome → 🔔 → Consenti → riga in `PushSubscriptions` → `POST /api/push/broadcast`
-  (`X-Hook-Secret`) → **la notifica compare e il click apre `/?date=…`**. Verificati
-  anche: prune automatico di una subscription stale (SW sostituito da reload → 410 →
-  `{sent:1,pruned:1}`), e recupero dopo un "Non consentire" (reset da
-  `chrome://settings/content/notifications`).
-- **Deploy**: impostare le env su Render (vedi sotto — **rigenerare** la coppia
-  VAPID, quella di test è finita nei log di sessione), pushare `main`, mettere
-  `COMITATOFESTE_HOOK_URL`/`_SECRET` sul PC per Importer/Transcriber.
-- **Android / iOS**: verificare sul dominio Render (o via tunnel HTTPS). iOS solo
-  da PWA installata su home, ≥ 16.4.
+- ✅ **Test end-to-end Chrome desktop (locale)** — 🔔 → Consenti → riga in
+  `PushSubscriptions` → `POST /api/push/broadcast` → notifica visibile, click apre
+  `/?date=…`. Verificati anche il prune automatico (SW sostituito da reload → 410 →
+  `{sent:1,pruned:1}`) e il recupero dopo un "Non consentire"
+  (`chrome://settings/content/notifications`).
+- ✅ **Deploy su Render** — le 4 env (`COMITATOFESTE_VAPID_PUBLIC`/`_PRIVATE`,
+  `COMITATOFESTE_VAPID_SUBJECT` via `render.yaml`, `COMITATOFESTE_HOOK_SECRET`)
+  impostate nel dashboard; `render.yaml` sincronizzato. Coppia VAPID **nuova**
+  generata per la produzione (quella di test scartata).
+- ✅ **Verifica in produzione (7/9/2026)** —
+  `GET https://comitatofeste.onrender.com/api/push/key` → chiave (non 503);
+  login sul portale → 🔔 → subscribe → riga su **Aiven** con il `MemberId` giusto;
+  `POST /api/push/broadcast` con secret vecchio → **401**, con secret nuovo →
+  `{"sent":1,"pruned":0}` + notifica.
+
+### Da fare
+
+- **Prova su telefono** — Android e iPhone (iOS ≥ 16.4, solo da PWA installata su
+  home): aprire `https://comitatofeste.onrender.com`, 🔔 → Consenti, poi lanciare
+  un import dal PC con `COMITATOFESTE_HOOK_URL` + `_SECRET` impostate e verificare
+  che la notifica di fine import arrivi.
+- Sul PC, per far notificare la pipeline: `COMITATOFESTE_HOOK_URL =
+  https://comitatofeste.onrender.com` e `COMITATOFESTE_HOOK_SECRET` = lo stesso
+  valore messo su Render, nella sessione da cui si lancia Importer/Transcriber
+  (o permanenti con `[Environment]::SetEnvironmentVariable(...,'User')`).
 
 ### Env var necessarie
 
 | Dove | Variabili |
 |---|---|
-| **Render** | `COMITATOFESTE_VAPID_PUBLIC`, `COMITATOFESTE_VAPID_PRIVATE`, `COMITATOFESTE_VAPID_SUBJECT` (`mailto:giovannilima800@gmail.com`), `COMITATOFESTE_HOOK_SECRET` |
-| **PC locale** (per i CLI, quando ci sarà lo step 6) | `COMITATOFESTE_HOOK_URL` (es. `https://comitatofeste.onrender.com`), `COMITATOFESTE_HOOK_SECRET` |
+| **Render** *(impostate)* | `COMITATOFESTE_VAPID_PUBLIC`, `COMITATOFESTE_VAPID_PRIVATE`, `COMITATOFESTE_VAPID_SUBJECT` (`mailto:giovannilima800@gmail.com`), `COMITATOFESTE_HOOK_SECRET` |
+| **PC locale** (per i CLI) | `COMITATOFESTE_HOOK_URL` (`https://comitatofeste.onrender.com`), `COMITATOFESTE_HOOK_SECRET` — stesso valore di Render |
 
 **Chiavi VAPID**: la coppia generata durante la sessione **non è stata committata**
 (la privata è un segreto). Rigenerane una con `npx web-push generate-vapid-keys`

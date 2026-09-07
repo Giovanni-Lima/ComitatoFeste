@@ -40,12 +40,13 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `dotnet run --project Src/backend/ComitatoFeste.Importer` legge tutti i
   `C:\temp\ComitatoFeste\Export\digest_*.json` — ma vedi l'avviso ⚠️ sotto:
   **non** rilanciarlo intero dopo il Transcriber.
-- **Deploy**: immagine testata in locale (build + boot + migrate + endpoint
-  OK). **DB Aiven già creato e popolato** (`pg_dump`/`pg_restore` dal locale,
-  298/240/20/2, `pg_trgm` + indici + `__EFMigrationsHistory` OK) — Aiven gira
-  **Postgres 18**, il `local-postgres` di dev è alla **16**. Manca solo il Web
-  Service su Render (creare account + env var). Backup: `scripts/backup-db.ps1`
-  (primo dump fatto in `Backups/`, non committato). Tutto in `docs/DEPLOY.md`.
+- **Deploy**: **in produzione** su `https://comitatofeste.onrender.com` (Render Web
+  Service Docker, autoDeploy da `main`) contro **DB Aiven** (`pg_dump`/`pg_restore`
+  dal locale — Aiven gira **Postgres 18**, il `local-postgres` di dev è alla **16**).
+  Env impostate nel dashboard Render: `COMITATOFESTE_CONNECTION`, `_AUTH_PASSWORD`,
+  `_AUTH_SECRET`, `GROQ_API_KEY`, e per le notifiche push `COMITATOFESTE_VAPID_PUBLIC`
+  / `_PRIVATE` / `_SUBJECT` + `_HOOK_SECRET` (vedi `docs/PUSH-NOTIFICHE.md`).
+  Backup: `scripts/backup-db.ps1`. Tutto in `docs/DEPLOY.md`.
 
 ## Struttura
 
@@ -385,9 +386,10 @@ implementarlo.
    o paginazione delle righe (la sezione espansa è pesante da renderizzare).
 2. Transcriber: girato sui dati 2026-09-02/03, prompt iterato. Da rifinire
    il confine `rumore`/`info`/`proposta`/`decisione` su un campione (`--limit`).
-3. Deploy: `Dockerfile` + `render.yaml` + `docker-compose.yml` pronti, guida
-   in `docs/DEPLOY.md` (Render + Aiven). Da fare: creare gli account,
-   impostare le env su Render, primo deploy.
+3. Deploy: **fatto** — Render (`comitatofeste.onrender.com`) + Aiven, autoDeploy
+   da `main`, env impostate. Guida in `docs/DEPLOY.md`. Da rifinire: keep-alive
+   (cron-job.org o `.github/workflows/keep-alive.yaml`), prova notifiche push su
+   telefono (`docs/PUSH-NOTIFICHE.md`).
 4. **Proteggere gli endpoint binari** (`/api/digestpoints/media/{id}/content`,
    `/api/members/{id}/photo`): oggi senza `[TokenAuth]`, su URL pubblico sono
    enumerabili. Follow-up con token in querystring (tocca il rendering media
