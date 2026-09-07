@@ -4,7 +4,7 @@
 
 Data/API layer (EF Core Code-First su Postgres) di una pipeline più ampia
 che riassume automaticamente la chat WhatsApp del gruppo "Comitato feste
-87": legge i messaggi, li classifica (decisione/domanda/media/info),
+87": legge i messaggi, li classifica (decisione/proposta/domanda/media/info),
 scarica i media (foto, audio, documenti) e li persiste. Contesto completo
 e razionale delle decisioni: @docs/CONTEXT.md. Istruzioni di setup/build:
 @README.md.
@@ -23,7 +23,9 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `InitialCreate` + `AddMediaBlobs` + `AddMemberProfilePhotos` +
   `AddRumoreDigestPointType` (`'rumore'` nel CHECK di `DigestPoints.Type`) +
   `AddVerbali` (tabella `Verbali`: verbale giornaliero in cache, UNIQUE
-  `(GroupId, Date)`). Connessione di default in
+  `(GroupId, Date)`) + `AddPropostaDigestPointType` (`'proposta'` nel CHECK
+  di `DigestPoints.Type`: idea/proposta operativa non ancora decisa —
+  distinta da `decisione`). Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
 - **Dati importati** (gruppo `Comitato feste 87`, stato al 4/9/2026): 3
@@ -81,6 +83,17 @@ Il backend .NET compila pulito e gira contro Postgres locale.
       testo. 404 senza punti, 503 senza `GROQ_API_KEY`.
     - `GET /api/digestpoints/media/{mediaId}/content` → byte del blob inline.
     - `GET /api/members/{memberId}/photo` → foto profilo inline.
+    - `GET /api/links/preview?url=…` → anteprima OpenGraph di un link
+      (`{url,title,description,image,siteName}`, `LinkPreviewService` +
+      `IMemoryCache`, TTL 12 h / 30 min sui fallimenti). `[TokenAuth]`. 204 se
+      la pagina non espone meta utili, **404 se l'`url` non compare in nessun
+      `DigestPoint.Text`** (così non è un proxy di fetch generico). Guardia
+      SSRF: il `SocketsHttpHandler` del typed client ha un `ConnectCallback`
+      (`LinkPreviewService.SafeConnectAsync`) che risolve e valida l'IP ad
+      ogni hop, redirect inclusi — si esce solo verso IP pubblici; max 3
+      redirect, timeout 6 s, corpo troncato a 512 KB, solo `Content-Type` HTML.
+      Il frontend mostra la card sotto il testo (immagine `og:image` in
+      hotlink dal sito originale).
     DTO in `Contracts/`, Swagger in Development, CORS dev `localhost:5173/3000`.
     La chiave Groq (solo per `recap`) è risolta da `GroqKey.Resolve()`: env
     `GROQ_API_KEY`, poi file `key.txt` (in `.gitignore`, cercato risalendo
@@ -120,7 +133,10 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   - `ComitatoFeste.Transcriber` — console: prende i `MediaAsset` audio da
     lavorare (`TranscriptionText == null` **oppure** `TranscribedAt ==
     null`), li trascrive con Groq Whisper e classifica la trascrizione con
-    un modello gpt-oss (`GroqClient`) in decisione/domanda/info/media/`rumore`;
+    un modello gpt-oss (`GroqClient`) in
+    decisione/proposta/domanda/info/media/`rumore` (`proposta` = idea/proposta
+    operativa non ancora decisa; `decisione` solo se il gruppo l'ha confermata —
+    nel dubbio il prompt sceglie `proposta`);
     poi riscrive `DigestPoint.Type` e `Text` (sintesi in una frase, o
     messaggio segnaposto se `rumore`).
     **Coppie di modelli intercambiabili con fallback su 429** (`GroqClient`,
@@ -165,7 +181,11 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   picker in topbar fa `goToDay` → espande la sezione e ci scrolla
   (`scrollIntoView` + `scroll-margin-top`). Ogni header ha un pulsante
   download (con spinner) che chiama `GET /api/digestpoints/recap` e scarica
-  il verbale **PDF** della giornata. Foto inline, `<audio>` /
+  il verbale **PDF** della giornata. Il testo dei punti passa da `linkify()`
+  (escape HTML poi `http(s)://` → `<a>`); sotto ogni card con un link,
+  `hydrateLinkPreviews()` chiama `GET /api/links/preview` e inserisce una card
+  di anteprima OpenGraph (silenziosa su 204/404/errore, cache client per URL).
+  Foto inline, `<audio>` /
   `<video>` player scelto dal prefisso di `media.contentType`
   (`image/`/`video/`/`audio/`), non dal `mediaType` (video `documento`
   comunque riprodotto); `<img loading="lazy">`. Base URL API: `?api=` se
@@ -364,7 +384,7 @@ implementarlo.
    lato server, e — con giorni molto densi (~100 punti) — virtualizzazione
    o paginazione delle righe (la sezione espansa è pesante da renderizzare).
 2. Transcriber: girato sui dati 2026-09-02/03, prompt iterato. Da rifinire
-   il confine `rumore`/`info`/`decisione` su un campione (`--limit`).
+   il confine `rumore`/`info`/`proposta`/`decisione` su un campione (`--limit`).
 3. Deploy: `Dockerfile` + `render.yaml` + `docker-compose.yml` pronti, guida
    in `docs/DEPLOY.md` (Render + Aiven). Da fare: creare gli account,
    impostare le env su Render, primo deploy.

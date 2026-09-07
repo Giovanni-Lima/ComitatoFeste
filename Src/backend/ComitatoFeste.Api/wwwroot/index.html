@@ -20,7 +20,7 @@
       --bg:#f4f2e8; --card:#ffffff; --line:#e3ddca; --cardline:#e9e3d1;
       --ink:#2b2420; --ink-soft:#4b423b; --muted:#9b9282;
       --accent:#7c3aed; --yellow:#f2e11c;
-      --decisione:#7c3aed; --domanda:#e23b8c; --media:#e0820c; --info:#8b7fae;
+      --decisione:#7c3aed; --proposta:#0d9488; --domanda:#e23b8c; --media:#e0820c; --info:#8b7fae;
     }
     *{box-sizing:border-box}
     [hidden]{display:none!important}
@@ -206,6 +206,20 @@
     .name{font-weight:700;color:var(--ink)}
     .time{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
     .text{color:var(--ink-soft)}
+    .text a{overflow-wrap:anywhere}
+
+    /* anteprima "unfurl" di un link (dati OpenGraph, GET /api/links/preview) */
+    .link-preview{display:flex;gap:10px;margin-top:10px;max-width:440px;
+      border:1px solid var(--cardline);border-radius:10px;overflow:hidden;
+      text-decoration:none;color:inherit;background:#fff}
+    .link-preview:hover{border-color:var(--muted)}
+    .lp-img{width:96px;height:96px;flex:none;object-fit:cover;background:var(--line)}
+    .lp-body{display:flex;flex-direction:column;gap:3px;padding:8px 10px;min-width:0}
+    .lp-site{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+    .lp-title,.lp-desc{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+    .lp-title{font-weight:700;color:var(--ink);font-size:13px}
+    .lp-desc{font-size:12px;color:var(--ink-soft)}
+    .row.right .link-preview{margin-left:auto}
 
     .media{margin-top:10px}
     .media img{max-width:100%;max-height:320px;border-radius:6px;border:1px solid #e0e0e0;display:block}
@@ -462,6 +476,7 @@
 
     const TYPES = {
       decisione: { color: "var(--decisione)" },
+      proposta:  { color: "var(--proposta)" },
       domanda:   { color: "var(--domanda)" },
       media:     { color: "var(--media)" },
       info:      { color: "var(--info)" },
@@ -471,6 +486,7 @@
       stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
     const ICONS = {
       decisione: I(`<path d="M20 6 9 17l-5-5"/>`),
+      proposta:  I(`<path d="M15 14c.2-1 .7-1.7 1.5-2.5A5.5 5.5 0 0 0 12 2.5 5.5 5.5 0 0 0 6.5 8c0 1 .2 2 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>`),
       domanda:   I(`<path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>`),
       info:      I(`<path d="M12 10v6"/><path d="M12 7h.01"/>`),
       media:     I(`<path d="M21.44 11.05 12.7 19.8a5 5 0 0 1-7.07-7.07l8.49-8.49a3.5 3.5 0 0 1 4.95 4.95l-8.49 8.49a2 2 0 0 1-2.83-2.83l7.78-7.78"/>`),
@@ -492,6 +508,14 @@
 
     const el = (id) => document.getElementById(id);
     const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+    // Come esc(), ma trasforma gli URL http(s):// in <a> cliccabili. L'escape HTML viene fatto
+    // PRIMA, così il regex lavora su testo gia' sicuro e non si aprono buchi XSS; la punteggiatura
+    // finale (. , ) ecc.) resta fuori dal link.
+    const linkify = (s) => esc(String(s ?? "")).replace(/\bhttps?:\/\/[^\s<]+/g, (m) => {
+      const tail = m.match(/[.,;:!?)\]}'"]+$/);
+      const url = tail ? m.slice(0, -tail[0].length) : m;
+      return `<a class="lp" href="${url}" target="_blank" rel="noopener">${url}</a>${tail ? tail[0] : ""}`;
+    });
     const initials = (n) => n.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
     const hue = (s) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
     const fmtTime = (iso) => new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" });
@@ -500,7 +524,7 @@
     let data = [];
     let filterType = null;   // null = mostra tutti i tipi
 
-    const TYPE_LABELS = { decisione: "Decisioni", domanda: "Domande", media: "Media", info: "Info" };
+    const TYPE_LABELS = { decisione: "Decisioni", proposta: "Proposte", domanda: "Domande", media: "Media", info: "Info" };
 
     function buildFilters(){
       const item = (k, c, label) =>
@@ -564,7 +588,7 @@
         return `<a href="${url}" target="_blank" rel="noopener"><img loading="lazy" decoding="async" src="${url}" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)"></a>`;
       }).join("");
       const caps = [...new Set(grp.map(p => p.text).filter(t => t && !GENERIC_CAPTION.test(t)))];
-      const textHtml = caps.length ? caps.map(esc).join("<br>") : `${grp.length} immagini`;
+      const textHtml = caps.length ? caps.map(linkify).join("<br>") : `${grp.length} immagini`;
       return `
         <div class="row ${side}">
           <div class="badge" style="background:${c}">${ICONS.foto}</div>
@@ -590,7 +614,7 @@
         return `<a class="doc" href="${url}" target="_blank" rel="noopener">${ICONS.documento} ${esc(p.media.fileName)}</a>`;
       }).join("");
       const caps = [...new Set(grp.map(p => p.text).filter(t => t && !GENERIC_CAPTION.test(t)))];
-      const textHtml = caps.length ? caps.map(esc).join("<br>") : `${grp.length} documenti`;
+      const textHtml = caps.length ? caps.map(linkify).join("<br>") : `${grp.length} documenti`;
       return `
         <div class="row ${side}">
           <div class="badge" style="background:${c}">${ICONS.documento}</div>
@@ -641,7 +665,7 @@
               <span class="name">${esc(p.author)}</span>
               <span class="time">${fmtTime(p.occurredAt)}</span>
             </div>
-            <div class="text">${esc(p.text)}</div>
+            <div class="text">${linkify(p.text)}</div>
             ${media}
           </div>
         </div>`;
@@ -691,6 +715,44 @@
         card("Giorni", "in agenda", days);
     }
 
+    // Anteprime dei link: risolte lato server (OpenGraph) e riusate tra un render e l'altro.
+    const linkPreviewCache = new Map();   // href -> dto | null (null = nessuna anteprima)
+
+    function linkPreviewHtml(d){
+      const img = d.image
+        ? `<img class="lp-img" src="${esc(d.image)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`
+        : "";
+      const site = d.siteName ? `<span class="lp-site">${esc(d.siteName)}</span>` : "";
+      const title = d.title ? `<span class="lp-title">${esc(d.title)}</span>` : "";
+      const desc = d.description ? `<span class="lp-desc">${esc(d.description)}</span>` : "";
+      return `<a class="link-preview" href="${esc(d.url)}" target="_blank" rel="noopener">`
+        + `${img}<span class="lp-body">${site}${title}${desc}</span></a>`;
+    }
+
+    // Per ogni card con un link nel testo, chiede l'anteprima all'API e la inserisce sotto il
+    // testo. Silenziosa su 204/404/errore: niente card, nessun riquadro rotto.
+    async function hydrateLinkPreviews(scope){
+      for (const card of scope.querySelectorAll(".card")){
+        if (card.querySelector(".link-preview")) continue;
+        const a = card.querySelector(".text a.lp[href^='http']");
+        const href = a && a.getAttribute("href");
+        if (!href) continue;
+
+        if (!linkPreviewCache.has(href)){
+          let dto = null;
+          try {
+            const r = await fetch(`${API}/api/links/preview?url=${encodeURIComponent(href)}`, { headers: authHeaders() });
+            if (r.ok) dto = await r.json();
+          } catch (e) { /* rete non disponibile: nessuna anteprima */ }
+          linkPreviewCache.set(href, dto);
+        }
+
+        const dto = linkPreviewCache.get(href);
+        if (dto && !card.querySelector(".link-preview"))
+          card.querySelector(".text").insertAdjacentHTML("afterend", linkPreviewHtml(dto));
+      }
+    }
+
     function render(){
       const items = visibleItems();
       const groups = groupByDay(items);
@@ -699,6 +761,7 @@
       if (!groups.length) { el("timeline").innerHTML = `<div class="empty">Nessun punto "${filterType}".</div>`; return; }
 
       el("timeline").innerHTML = groups.map(([day, pts]) => dayHtml(day, pts)).join("");
+      hydrateLinkPreviews(el("timeline"));
     }
 
     function toggleDay(day, force){
@@ -712,6 +775,7 @@
       if (open) {
         const pts = visibleItems().filter(p => romeDay(p.occurredAt) === day);
         body.innerHTML = `<div class="rail">${groupMedia(pts).map(rowHtml).join("")}</div>`;
+        hydrateLinkPreviews(body);
       } else {
         body.innerHTML = "";
       }

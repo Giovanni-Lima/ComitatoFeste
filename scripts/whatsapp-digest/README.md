@@ -51,7 +51,8 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
    `digest_lib.py`, il file del giorno resta solo dati). Per ogni giorno
    serve:
    - **`CURATED`**: dict `(time, sender) -> (type, text)` per i messaggi di
-     testo davvero significativi (decisione/domanda/info). La maggior
+     testo davvero significativi (decisione/proposta/domanda/info —
+     `proposta` per un'idea avanzata al gruppo ma non ancora decisa). La maggior
      parte dei messaggi di testo è rumore (saluti, emoji, battute in
      dialetto, conferme brevi) e va lasciata fuori — lo script la conta e
      basta, non genera una entry.

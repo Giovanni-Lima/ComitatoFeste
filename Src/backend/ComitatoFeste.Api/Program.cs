@@ -1,3 +1,4 @@
+using System.Net;
 using ComitatoFeste.Api.Services;
 using ComitatoFeste.Data;
 using Microsoft.AspNetCore.StaticFiles;
@@ -25,6 +26,23 @@ builder.Services.AddDbContext<ComitatoFesteDbContext>(options =>
 
 // Client Groq per il verbale giornaliero (chiave da env GROQ_API_KEY o config Groq:ApiKey).
 builder.Services.AddHttpClient<GroqRecapClient>(c => c.Timeout = TimeSpan.FromMinutes(2));
+
+// Anteprime dei link condivisi nei punti: cache in memoria + fetch OpenGraph. Il
+// SocketsHttpHandler valida ogni connessione (redirect inclusi) via ConnectCallback,
+// così si esce solo verso IP pubblici (guardia SSRF, vedi LinkPreviewService).
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<LinkPreviewService>(c =>
+    {
+        c.Timeout = TimeSpan.FromSeconds(6);
+        c.MaxResponseContentBufferSize = 1024 * 1024;
+    })
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+    {
+        AllowAutoRedirect = true,
+        MaxAutomaticRedirections = 3,
+        AutomaticDecompression = DecompressionMethods.All,
+        ConnectCallback = LinkPreviewService.SafeConnectAsync,
+    });
 
 // Login "casereccio": passphrase condivisa da env COMITATOFESTE_AUTH_PASSWORD o config Auth:Password.
 builder.Services.AddSingleton<AuthService>();

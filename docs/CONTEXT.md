@@ -22,7 +22,9 @@ con i relativi file scaricati e rinominati.
    scroll/lettura DOM) su una finestra temporale data (obiettivo finale:
    24h, per gestire il volume reale di messaggi vocali). Per ogni messaggio
    significativo produce una entry `{date, time, author, type, text, file}`
-   con `type` ∈ `decisione | domanda | media | info`. Per i media (foto,
+   con `type` ∈ `decisione | proposta | domanda | media | info` (il
+   Transcriber può inoltre marcare `rumore` un vocale non significativo).
+   Per i media (foto,
    documenti, vocali) scarica il file, lo rinomina
    `HHMM_Autore_breve-descrizione.estensione` e lo archivia in una
    sottocartella per data. **Tutti** i vocali vanno scaricati (non solo
