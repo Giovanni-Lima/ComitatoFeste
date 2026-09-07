@@ -94,15 +94,18 @@
     .filters{display:flex;flex-wrap:wrap;gap:7px}
     .fitem{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--hair);
       border-radius:999px;background:var(--surface);font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);
-      cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+      cursor:pointer;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
     .fitem:hover{border-color:var(--muted)}
     .fitem .dot{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
-    .fitem.active{background:var(--c);color:#fff;border-color:var(--c)}
-    .fitem.active .dot{background:#fff}
-    /* "Tutti" non ha una categoria: giallo (pallino sempre, pill quando attivo) */
-    .fitem[data-k=""] .dot{background:var(--yellow)}
-    .fitem[data-k=""].active{background:var(--yellow);border-color:var(--yellow);color:#131019}
-    .fitem[data-k=""].active .dot{background:#131019}
+    /* attivo = bordo "acceso" nel colore del filtro, niente riempimento pieno.
+       Il colore di "Tutti" è --yellow (impostato in buildFilters). */
+    .fitem.active{border-color:var(--c);
+      background:color-mix(in srgb, var(--c) 13%, var(--surface));
+      color:color-mix(in srgb, var(--c) 66%, #fff);
+      box-shadow:0 0 0 1px var(--c), 0 0 12px -4px var(--c)}
+    /* "Tutti" resta riconoscibile in giallo anche da inattivo (bordo + pallino) */
+    .fitem[data-k=""]:not(.active){border-color:color-mix(in srgb, var(--yellow) 50%, var(--hair));
+      color:color-mix(in srgb, var(--yellow) 22%, var(--ink-soft))}
 
     .main{flex:1;min-width:0;display:flex;flex-direction:column}
     .topbar{position:sticky;top:0;z-index:10;background:var(--brand);
@@ -574,7 +577,7 @@
       const item = (k, c, label) =>
         `<button class="fitem" data-k="${k}" style="--c:${c}"><span class="dot"></span>${label}</button>`;
       el("filters").innerHTML =
-        item("", "var(--accent)", "Tutti") +
+        item("", "var(--yellow)", "Tutti") +
         Object.keys(TYPES).map(k => item(k, TYPES[k].color, TYPE_LABELS[k])).join("");
       syncChips();
     }
@@ -1063,7 +1066,7 @@
 
     function buildMediaFilters(){
       const item = (k, label) =>
-        `<button class="fitem" data-k="${k}" style="--c:var(--media)"><span class="dot"></span>${label}</button>`;
+        `<button class="fitem" data-k="${k}" style="--c:${k ? "var(--media)" : "var(--yellow)"}"><span class="dot"></span>${label}</button>`;
       el("mediaFilters").innerHTML =
         item("", "Tutti") + Object.entries(MEDIA_KINDS).map(([k, l]) => item(k, l)).join("");
       syncMediaChips();
