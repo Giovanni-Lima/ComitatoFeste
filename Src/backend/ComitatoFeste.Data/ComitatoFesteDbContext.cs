@@ -18,6 +18,7 @@ public class ComitatoFesteDbContext : DbContext
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<MediaBlob> MediaBlobs => Set<MediaBlob>();
     public DbSet<Verbale> Verbali => Set<Verbale>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
