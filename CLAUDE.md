@@ -38,7 +38,14 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   via `pg_dump`/`pg_restore` (workflow corrente: import + trascrizione si
   fanno **direttamente su Aiven**, poi si riallinea il locale con un dump —
   vedi `docs/DEPLOY.md`; nota: pg_dump 18 emette `SET transaction_timeout`
-  che Postgres 16 rifiuta, va filtrato in fase di restore). A DB:
+  che Postgres 16 rifiuta, va filtrato in fase di restore).
+  **Regola: quando si lancia l'import (o il Transcriber) puntando ad Aiven,
+  vanno esportate nell'ambiente anche `COMITATOFESTE_HOOK_URL=https://comitatofeste.onrender.com`
+  e `COMITATOFESTE_HOOK_SECRET`** (segreto dal dashboard Render), accanto a
+  `COMITATOFESTE_CONNECTION`: così `PushHook.NotifyAsync` invia davvero la
+  notifica push a fine run (con dati nuovi). Senza quelle due env Importer e
+  Transcriber stampano `notifiche push: … non impostati — salto` e nessuno
+  riceve nulla. A DB:
   **804 `DigestPoint`** (per giorno dal 01-09 all'08-09: 211 / 167 / 131 /
   37 / 163 / 10 / 24 / 61; **288** classificati `rumore`), **597 `MediaAsset`**
   (523 audio, 60 foto, 14 documento) con altrettanti `MediaBlob`,
