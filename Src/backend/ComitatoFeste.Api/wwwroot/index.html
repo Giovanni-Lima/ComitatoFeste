@@ -16,7 +16,19 @@
   <meta name="apple-mobile-web-app-title" content="Comitato 87">
   <meta name="mobile-web-app-capable" content="yes">
   <style>
+    /* Font display retro/pixel per topbar e titoli.
+       Thaleah Fat di Rick Hoppmann — CC-BY 4.0 (https://tinyworlds.itch.io/free-pixel-font-thaleah).
+       unicode-range: il font copre solo Basic Latin (+ €), le lettere accentate
+       (es. la "ì" di "lunedì") ricadono in automatico sul font di sistema. */
+    @font-face{
+      font-family:"Thaleah Fat";
+      src:url("/fonts/ThaleahFat.woff2") format("woff2"),
+          url("/fonts/ThaleahFat.ttf") format("truetype");
+      font-weight:400;font-style:normal;font-display:swap;
+      unicode-range:U+0020-007E, U+00A0, U+20AC;
+    }
     :root{
+      --font-display:"Thaleah Fat",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
       /* --- tema unico (scuro): il viola è la tinta "struttura", il giallo un accento --- */
       --bg:#131019; --surface:#1d1a25; --card:#221d2c; --line:#332d40; --cardline:#2b2635;
       --ink:#f2eef8; --ink-soft:#cbc3d8; --muted:#8d84a0;
@@ -50,7 +62,8 @@
     .sidebar{width:250px;flex:none;background:var(--surface);border-right:1px solid var(--line);
       position:sticky;top:0;height:100vh;overflow-y:auto;
       padding:0 16px 18px;display:flex;flex-direction:column;gap:18px}
-    .brand{font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;gap:9px;
+    .brand{font-family:var(--font-display);font-weight:400;font-size:20px;letter-spacing:.03em;
+      display:flex;align-items:center;justify-content:center;gap:9px;
       height:58px;margin:0 -16px;padding:0 16px;border-bottom:1px solid var(--line)}
     .brand-logo{height:34px;width:auto;flex:none}
     .me{position:relative;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:var(--bg)}
@@ -59,10 +72,11 @@
     /* badge profilo nella riga del menu (solo mobile, vedi @media) */
     #meSide{display:none;padding:4px 10px 4px 4px;gap:8px;background:var(--surface);border:1px solid var(--line)}
     #meSide .me-av{width:28px;height:28px}
-    #meSide .me-name{font-weight:600;font-size:13px}
+    #meSide .me-name{font-size:13px}
     .me-av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;background:#cfd8dc}
     .me-av.ph{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
-    .me-name{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .me-name{font-family:var(--font-display);font-size:16px;letter-spacing:.02em;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
     /* --- menu a comparsa (esci) dal badge utente --------------------------- */
     .me-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:20;background:var(--surface);
@@ -76,7 +90,8 @@
     /* --- sidebar: menu di navigazione ------------------------------------- */
     .side-nav{display:flex;flex-direction:column;gap:3px}
     .navitem{display:flex;align-items:center;gap:10px;width:100%;padding:9px 11px;border:0;border-radius:9px;
-      background:none;text-align:left;font:inherit;font-size:14px;font-weight:600;color:var(--ink-soft);cursor:pointer}
+      background:none;text-align:left;font:inherit;font-family:var(--font-display);font-size:15px;font-weight:400;
+      letter-spacing:.03em;color:var(--ink-soft);cursor:pointer}
     .navitem:hover{background:var(--bg)}
     .navitem.active{background:var(--accent);color:#fff}
     .navitem svg{width:17px;height:17px;flex:none}
@@ -93,7 +108,8 @@
     .typebar{margin-bottom:18px}
     .filters{display:flex;flex-wrap:wrap;gap:7px}
     .fitem{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--hair);
-      border-radius:999px;background:var(--surface);font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);
+      border-radius:999px;background:var(--surface);font:inherit;font-family:var(--font-display);font-size:14px;
+      font-weight:400;letter-spacing:.02em;color:var(--ink-soft);
       cursor:pointer;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
     .fitem:hover{border-color:var(--muted)}
     .fitem .dot{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
@@ -103,18 +119,15 @@
       background:color-mix(in srgb, var(--c) 13%, var(--surface));
       color:color-mix(in srgb, var(--c) 66%, #fff);
       box-shadow:0 0 0 1px var(--c), 0 0 12px -4px var(--c)}
-    /* "Tutti" resta riconoscibile in giallo anche da inattivo (bordo + pallino) */
-    .fitem[data-k=""]:not(.active){border-color:color-mix(in srgb, var(--yellow) 50%, var(--hair));
-      color:color-mix(in srgb, var(--yellow) 22%, var(--ink-soft))}
 
     .main{flex:1;min-width:0;display:flex;flex-direction:column}
     .topbar{position:sticky;top:0;z-index:10;background:var(--brand);
       border-bottom:1px solid var(--brand-line);
       height:51px;padding:0 24px;display:flex;flex-wrap:nowrap;gap:8px 16px;align-items:center}
-    .topbar h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.02em;color:var(--on-brand)}
+    .topbar h1{font-family:var(--font-display);font-size:22px;margin:0;font-weight:400;letter-spacing:.04em;color:var(--on-brand)}
     .topbar .me.sm{margin-left:auto;padding:4px 12px 4px 4px;gap:8px;background:var(--brand-chip)}
     .topbar .me.sm .me-av{width:28px;height:28px}
-    .topbar .me.sm .me-name{font-weight:600}
+    .topbar .me.sm .me-name{font-weight:400}
     .topbar .me.sm .me-name,#meSide .me-name{color:var(--on-brand)}
     .pushbtn{flex:none;margin-left:auto;width:34px;height:34px;border-radius:50%;
       border:1px solid var(--brand-line);background:var(--brand-chip);color:var(--on-brand);
@@ -123,7 +136,9 @@
     .pushbtn.on{background:var(--accent);color:#fff;border-color:transparent}
     .pushbtn:disabled{opacity:.45;cursor:default}
     .pushbtn[hidden]{display:none}
-    .pushbtn + .me.sm{margin-left:8px}
+    /* col pulsante push visibile: gap tra pulsante e badge (il push porta il margin-left:auto).
+       Se il pulsante è nascosto la regola non matcha e il badge resta allineato a destra. */
+    .pushbtn:not([hidden]) + .me.sm{margin-left:8px}
 
     .view{flex:1;width:100%;max-width:1320px;margin:0 auto;padding:24px 20px 90px}
     .content{display:grid;gap:26px;align-items:start;grid-template-columns:1fr 196px;grid-template-areas:"timeline stats"}
@@ -152,7 +167,7 @@
       /* sidebar + topbar diventano un unico header compatto della tinta --brand */
       .sidebar{width:auto;height:auto;position:static;border-right:0;border-bottom:0;background:var(--brand);
         flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 16px 6px;overflow:visible}
-      .brand{border-bottom:0;height:auto;margin:0 auto 0 0;padding:0;font-size:15px;gap:7px;color:var(--on-brand)}
+      .brand{border-bottom:0;height:auto;margin:0 auto 0 0;padding:0;font-size:17px;gap:7px;color:var(--on-brand)}
       .brand-logo{height:28px}
       #meSide:not(:empty){display:flex;margin-left:auto;background:var(--brand-chip);border-color:transparent}
       /* le voci di menu diventano una tab bar "flottante" in fondo */
@@ -161,13 +176,13 @@
         backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--hair);border-radius:18px;
         box-shadow:0 8px 24px -6px rgba(38,50,56,.22)}
       .navitem{flex:1;flex-direction:column;gap:3px;width:auto;padding:7px 4px;border-radius:13px;
-        justify-content:center;font-size:10.5px;font-weight:700}
+        justify-content:center;font-size:15px;font-weight:400;letter-spacing:.01em}
       .navitem svg{width:20px;height:20px}
       .navitem:hover{background:none}
       .navitem.active{color:var(--accent);background:color-mix(in srgb, var(--accent) 16%, var(--surface))}
 
       .topbar{padding:0 16px;border-bottom:0;gap:8px 12px}
-      .topbar h1{font-size:17px}
+      .topbar h1{font-size:19px}
       .topbar .me.sm{display:none}
       .view{padding:16px 12px calc(96px + env(safe-area-inset-bottom,0px))}
       .day{scroll-margin-top:56px}
@@ -188,9 +203,10 @@
     .day-head:hover{background:color-mix(in srgb, var(--brand) 14%, transparent)}
     .day-head:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
     .day.open .day-head{border-radius:14px 14px 0 0;background:var(--panel)}
-    .day-title{font-weight:800;font-size:16px;text-transform:capitalize;letter-spacing:.01em}
+    .day-title{font-family:var(--font-display);font-weight:400;font-size:19px;text-transform:capitalize;letter-spacing:.02em}
     .day.today .day-title::after{content:"oggi";margin-left:9px;padding:2px 8px;border-radius:999px;
       background:var(--accent);color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.06em;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
       text-transform:uppercase;vertical-align:2px}
     .day-count{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
     .day-dl{flex:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center;
@@ -244,7 +260,7 @@
     .card-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
     .avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;flex:none;background:#cfd8dc}
     .avatar.ph{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
-    .name{font-weight:700;color:var(--ink);font-size:13.5px}
+    .name{font-family:var(--font-display);font-weight:400;color:var(--ink);font-size:17px;letter-spacing:.02em}
     .time{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
     .text{color:var(--text);line-height:1.55}
     .text a{overflow-wrap:anywhere}
@@ -278,8 +294,9 @@
     /* --- vista Media: gruppi per giorno + griglia di tile --------------- */
     .mgroup{margin:0 auto 10px;border:1px solid var(--hair);border-radius:14px;background:var(--panel);overflow:hidden}
     .mgroup-head{display:flex;align-items:center;gap:11px;padding:12px 16px}
-    .mgroup-title{font-weight:800;font-size:16px;text-transform:capitalize;letter-spacing:.01em}
+    .mgroup-title{font-family:var(--font-display);font-weight:400;font-size:19px;text-transform:capitalize;letter-spacing:.02em}
     .mgroup.today .mgroup-title::after{content:"oggi";margin-left:9px;padding:2px 8px;border-radius:999px;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
       background:var(--accent);color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.06em;
       text-transform:uppercase;vertical-align:2px}
     .mgroup-count{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -313,7 +330,7 @@
     .login-box{background:var(--surface);border:1px solid var(--cardline);border-radius:12px;
       box-shadow:0 2px 12px rgba(38,50,56,.12);padding:26px 24px;width:100%;max-width:340px;
       display:flex;flex-direction:column;gap:12px}
-    .login-box h2{margin:0;font-size:17px}
+    .login-box h2{margin:0;font-family:var(--font-display);font-weight:400;font-size:21px;letter-spacing:.03em}
     .login-box p{margin:0;color:var(--muted);font-size:13px}
     .login-box label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--ink-soft)}
     .login-box input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-weight:400;
@@ -566,7 +583,11 @@
     const initials = (n) => n.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
     const hue = (s) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
     const fmtTime = (iso) => new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" });
-    const fmtDay = (d) => new Date(d + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    // giorno della settimana abbreviato (es. "sab 5 settembre 2026"): il font pixel
+    // dei titoli non ha le lettere accentate, "sab/dom/lun/mar/mer/gio/ven" le evita.
+    const fmtDay = (d) => new Date(d + "T12:00:00")
+      .toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "long", year: "numeric" })
+      .replace(/\.(?=\s)/, "");
 
     let data = [];
     let filterType = null;   // null = mostra tutti i tipi
