@@ -25,20 +25,33 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `AddVerbali` (tabella `Verbali`: verbale giornaliero in cache, UNIQUE
   `(GroupId, Date)`) + `AddPropostaDigestPointType` (`'proposta'` nel CHECK
   di `DigestPoints.Type`: idea/proposta operativa non ancora decisa —
-  distinta da `decisione`). Connessione di default in
+  distinta da `decisione`) + `AddPushSubscriptions` (tabella
+  `PushSubscriptions`, `Endpoint` UNIQUE — notifiche push PWA, vedi
+  `docs/PUSH-NOTIFICHE.md`). Le stesse migration sono applicate ad **Aiven**
+  (da `Database.Migrate()` al boot dell'API). Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
-- **Dati importati** (gruppo `Comitato feste 87`, stato al 4/9/2026): 3
-  `IngestionRun` da `digest_2026-09-02.json` + `digest_2026-09-03.json`
-  (il `digest_2026-09-01.json` era stato importato prima ed è ora fuori da
-  `Export/`). A DB: **298 `DigestPoint`** (167 del 02-09, 131 del 03-09;
-  122 già classificati `rumore` dal Transcriber), **240 `MediaAsset`**,
-  **20 `Member`** (14 con foto profilo da `Export/profili/<Nome>.jpg`),
-  **2 `Verbale`** in cache. Il Transcriber ha già girato su tutti i 207
-  vocali (`TranscribedAt` valorizzato ovunque). Import idempotente (dedup
-  esatto + fuzzy; foto aggiornate solo se cambia lo SHA-256).
-  `dotnet run --project Src/backend/ComitatoFeste.Importer` legge tutti i
-  `C:\temp\ComitatoFeste\Export\digest_*.json` — ma vedi l'avviso ⚠️ sotto:
+- **Dati importati** (gruppo `Comitato feste 87`, stato all'8/9/2026):
+  **10 `IngestionRun`** dai `digest_2026-09-01.json` … `digest_2026-09-08.json`
+  (i file 01–05 non sono più in `Export/`, restano solo 06/07/08; alcuni
+  giorni hanno più di un run per reimport). **DB Aiven e locale allineati**
+  via `pg_dump`/`pg_restore` (workflow corrente: import + trascrizione si
+  fanno **direttamente su Aiven**, poi si riallinea il locale con un dump —
+  vedi `docs/DEPLOY.md`; nota: pg_dump 18 emette `SET transaction_timeout`
+  che Postgres 16 rifiuta, va filtrato in fase di restore). A DB:
+  **804 `DigestPoint`** (per giorno dal 01-09 all'08-09: 211 / 167 / 131 /
+  37 / 163 / 10 / 24 / 61; **288** classificati `rumore`), **597 `MediaAsset`**
+  (523 audio, 60 foto, 14 documento) con altrettanti `MediaBlob`,
+  **31 `Member`** (**24 con foto profilo** da `Export/profili/<Nome>.jpg`;
+  senza foto: Emanuele Sciarra — 120 punti, manca il file —, Alessandra
+  Toracchio, Alessandra Simonetti, Alessandro Di Benedetto, `Sistema`
+  (pseudo-membro dei messaggi di servizio), Daniele Boscolo, Tina Giarrante),
+  **6 `Verbale`** in cache (giorni 01-09 → 07-09). Il Transcriber ha girato
+  su **tutti i 523 vocali** (`TranscribedAt` valorizzato ovunque, 0 pendenti).
+  Import idempotente (dedup esatto + fuzzy; foto aggiornate solo se cambia
+  lo SHA-256). `dotnet run --project Src/backend/ComitatoFeste.Importer`
+  legge tutti i `C:\temp\ComitatoFeste\Export\digest_*.json` (o un singolo
+  `<file.json | yyyy-MM-dd>` come argomento) — ma vedi l'avviso ⚠️ sotto:
   **non** rilanciarlo intero dopo il Transcriber.
 - **Deploy**: **in produzione** su `https://comitatofeste.onrender.com` (Render Web
   Service Docker, autoDeploy da `main`) contro **DB Aiven** (`pg_dump`/`pg_restore`
@@ -336,6 +349,20 @@ sopra):
   esatti in fase di import, ma non è stato verificato) — se serve
   controllare/pulire i conteggi già a DB per quei giorni, va fatto apposta,
   non è stato fatto in questo refactor (che ha toccato solo gli script).
+- **Sondaggi WhatsApp (regola aggiunta l'8/9/2026)**: nel `.txt` esportato un
+  sondaggio è un normale messaggio di testo multi-riga che inizia con
+  `SONDAGGIO:`, seguito dal titolo/domanda e da una riga `OPZIONE: <testo>
+  (N voti)` per ciascuna opzione — il parser lo tratta già come testo
+  normale, nessuna modifica a `parse_wa.py`/`digest_lib.py` necessaria. In
+  `CURATED` va sempre classificato come **`proposta`** (non `decisione`,
+  anche se al momento dell'export ha già dei voti: i voti sono solo uno
+  snapshot, il sondaggio resta aperto), riportando per intero sia la
+  domanda/titolo sia tutte le opzioni con il relativo conteggio voti al
+  momento dell'export (stessa logica della regola sui link condivisi:
+  niente riassunti parziali). Se in un messaggio successivo il gruppo
+  dichiara esplicitamente l'esito (es. "Considerato l'esito del sondaggio,
+  la riunione viene confermata per..."), quello va curato come una entry
+  separata di tipo `decisione`.
 
 ## Convenzioni già in uso — seguile per coerenza
 
