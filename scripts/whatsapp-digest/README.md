@@ -128,6 +128,14 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
   presente, non corretto, in tutti gli script dei giorni 1-5/9/2026 (vedi
   `CLAUDE.md` per i dettagli su cosa questo implica per i dati già
   importati a DB).
+- **Sondaggi WhatsApp (regola aggiunta l'8/9/2026)**: nel `.txt` un
+  sondaggio è già un messaggio di testo normale (multi-riga), che inizia
+  con `SONDAGGIO:` seguito dal titolo e da una riga `OPZIONE: <testo> (N
+  voti)` per opzione — nessuna modifica al parser serve. Va sempre curato
+  come **`proposta`** (mai `decisione`, anche se ha già dei voti al momento
+  dell'export: il sondaggio resta aperto), riportando per intero domanda e
+  tutte le opzioni con il conteggio voti. Se un messaggio successivo
+  dichiara l'esito, va curato come `decisione` in una entry separata.
 
 ## Percorsi
 
