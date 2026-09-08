@@ -72,10 +72,11 @@
     /* badge profilo nella riga del menu (solo mobile, vedi @media) */
     #meSide{display:none;padding:4px 10px 4px 4px;gap:8px;background:var(--surface);border:1px solid var(--line)}
     #meSide .me-av{width:28px;height:28px}
-    #meSide .me-name{font-weight:600;font-size:13px}
+    #meSide .me-name{font-size:13px}
     .me-av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;background:#cfd8dc}
     .me-av.ph{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
-    .me-name{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .me-name{font-family:var(--font-display);font-size:16px;letter-spacing:.02em;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
     /* --- menu a comparsa (esci) dal badge utente --------------------------- */
     .me-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:20;background:var(--surface);
@@ -118,9 +119,6 @@
       background:color-mix(in srgb, var(--c) 13%, var(--surface));
       color:color-mix(in srgb, var(--c) 66%, #fff);
       box-shadow:0 0 0 1px var(--c), 0 0 12px -4px var(--c)}
-    /* "Tutti" resta riconoscibile in giallo anche da inattivo (bordo + pallino) */
-    .fitem[data-k=""]:not(.active){border-color:color-mix(in srgb, var(--yellow) 50%, var(--hair));
-      color:color-mix(in srgb, var(--yellow) 22%, var(--ink-soft))}
 
     .main{flex:1;min-width:0;display:flex;flex-direction:column}
     .topbar{position:sticky;top:0;z-index:10;background:var(--brand);
@@ -129,7 +127,7 @@
     .topbar h1{font-family:var(--font-display);font-size:22px;margin:0;font-weight:400;letter-spacing:.04em;color:var(--on-brand)}
     .topbar .me.sm{margin-left:auto;padding:4px 12px 4px 4px;gap:8px;background:var(--brand-chip)}
     .topbar .me.sm .me-av{width:28px;height:28px}
-    .topbar .me.sm .me-name{font-weight:600}
+    .topbar .me.sm .me-name{font-weight:400}
     .topbar .me.sm .me-name,#meSide .me-name{color:var(--on-brand)}
     .pushbtn{flex:none;margin-left:auto;width:34px;height:34px;border-radius:50%;
       border:1px solid var(--brand-line);background:var(--brand-chip);color:var(--on-brand);
@@ -138,7 +136,9 @@
     .pushbtn.on{background:var(--accent);color:#fff;border-color:transparent}
     .pushbtn:disabled{opacity:.45;cursor:default}
     .pushbtn[hidden]{display:none}
-    .pushbtn + .me.sm{margin-left:8px}
+    /* col pulsante push visibile: gap tra pulsante e badge (il push porta il margin-left:auto).
+       Se il pulsante è nascosto la regola non matcha e il badge resta allineato a destra. */
+    .pushbtn:not([hidden]) + .me.sm{margin-left:8px}
 
     .view{flex:1;width:100%;max-width:1320px;margin:0 auto;padding:24px 20px 90px}
     .content{display:grid;gap:26px;align-items:start;grid-template-columns:1fr 196px;grid-template-areas:"timeline stats"}
@@ -260,7 +260,7 @@
     .card-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
     .avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;flex:none;background:#cfd8dc}
     .avatar.ph{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
-    .name{font-weight:700;color:var(--ink);font-size:13.5px}
+    .name{font-family:var(--font-display);font-weight:400;color:var(--ink);font-size:17px;letter-spacing:.02em}
     .time{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
     .text{color:var(--text);line-height:1.55}
     .text a{overflow-wrap:anywhere}
