@@ -71,3 +71,12 @@ variabile d'ambiente il login è disattivato e il sito è aperto.
 - Con giorni molto densi (~100 punti) la sezione espansa è pesante da
   renderizzare: `<img loading="lazy">` mitiga, ma resta un candidato per
   virtualizzazione / paginazione lato server.
+- Tipografia: topbar, titoli dei giorni, voci di menu, badge dei filtri,
+  badge/nomi utente usano il font pixel **Thaleah Fat** (Rick Hoppmann,
+  CC-BY 4.0, in `wwwroot/fonts/`), via la variabile CSS `--font-display`.
+  Il font copre **solo Basic Latin** (niente à/è/ì/ò/ù): l'`@font-face` ha
+  un `unicode-range` esplicito così gli accenti ricadono sul font di
+  sistema, e `fmtDay` usa il giorno della settimana **abbreviato**
+  (`sab/dom/lun/…`) per evitare del tutto la "ì" nei titoli. Se aggiungi
+  `--font-display` a testo che può contenere accenti, aspettati quel
+  fallback per-glifo.
