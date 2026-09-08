@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using ComitatoFeste.Data;
 using ComitatoFeste.Domain;
 using ComitatoFeste.Transcriber;
@@ -167,7 +168,7 @@ foreach (var row in pending)
                     point.Type = newType;
 
                 point.Text = classification.Type == "rumore"
-                    ? $"Vocale di {author} — rumore/reazione, non significativo."
+                    ? RumorePlaceholder(author, asset.FileName)
                     : !string.IsNullOrWhiteSpace(classification.Summary)
                         ? classification.Summary!
                         : transcript;
@@ -185,6 +186,18 @@ foreach (var row in pending)
     {
         errors++;
         Console.WriteLine($"ERRORE: {ex.Message}");
+
+        // Una SaveChanges fallita lascia asset/point tracciati con le modifiche pendenti:
+        // ogni SaveChanges successiva le ritenta e rifallisce, mandando in errore a cascata
+        // TUTTI i vocali rimanenti del run. Riportiamo le due entità allo stato del DB
+        // (o le stacchiamo) così il context torna pulito per il vocale dopo.
+        if (!dryRun)
+        {
+            try { await db.Entry(asset).ReloadAsync(cts.Token); }
+            catch { db.Entry(asset).State = EntityState.Detached; }
+            try { await db.Entry(point).ReloadAsync(cts.Token); }
+            catch { db.Entry(point).State = EntityState.Detached; }
+        }
     }
 
     try
@@ -219,3 +232,17 @@ if (!dryRun && ok > 0)
 return errors > 0 ? 1 : 0;
 
 static string Trunc(string s, int n) => s.Length <= n ? s : s[..n] + "…";
+
+// Segnaposto per un vocale classificato "rumore". Deve restare univoco sul vincolo
+// UX_DigestPoints_Group_Member_OccurredAt_Text: due vocali dello stesso autore nello
+// stesso minuto entrambi "rumore" collasserebbero sullo stesso testo e la INSERT/UPDATE
+// fallirebbe. L'Importer numera i vocali ripetuti dello stesso minuto
+// (HHMM_Nome.opus, HHMM_Nome-2.opus, -3, ...): quando c'è quel suffisso lo riportiamo
+// nel testo, così i "gemelli" restano distinti. Formato identico a quello scritto a mano
+// per il caso già a DB, quindi ri-processare lo stesso vocale è idempotente.
+static string RumorePlaceholder(string author, string fileName)
+{
+    var basePhrase = $"Vocale di {author} — rumore/reazione, non significativo.";
+    var m = Regex.Match(fileName, @"-(\d+)\.[^.]+$");
+    return m.Success ? $"{basePhrase} ({m.Groups[1].Value})" : basePhrase;
+}
