@@ -4,7 +4,7 @@
  * guscio, SENZA mai mettere in cache le risposte /api (dati + auth: devono
  * sempre passare dalla rete). Alza CACHE_VERSION a ogni modifica al guscio per
  * forzare l'aggiornamento della cache sui client gia' installati. */
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 const CACHE_NAME = `cf87-shell-${CACHE_VERSION}`;
 
 const SHELL = [
