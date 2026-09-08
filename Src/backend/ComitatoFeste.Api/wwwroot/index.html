@@ -62,7 +62,7 @@
     .sidebar{width:250px;flex:none;background:var(--surface);border-right:1px solid var(--line);
       position:sticky;top:0;height:100vh;overflow-y:auto;
       padding:0 16px 18px;display:flex;flex-direction:column;gap:18px}
-    .brand{font-family:var(--font-display);font-weight:400;font-size:20px;letter-spacing:.03em;
+    .brand{font-family:var(--font-display);font-weight:400;font-size:23px;letter-spacing:.03em;
       display:flex;align-items:center;justify-content:center;gap:9px;
       height:58px;margin:0 -16px;padding:0 16px;border-bottom:1px solid var(--line)}
     .brand-logo{height:34px;width:auto;flex:none}
@@ -72,10 +72,10 @@
     /* badge profilo nella riga del menu (solo mobile, vedi @media) */
     #meSide{display:none;padding:4px 10px 4px 4px;gap:8px;background:var(--surface);border:1px solid var(--line)}
     #meSide .me-av{width:28px;height:28px}
-    #meSide .me-name{font-size:13px}
+    #meSide .me-name{font-size:16px}
     .me-av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;background:#cfd8dc}
     .me-av.ph{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
-    .me-name{font-family:var(--font-display);font-size:16px;letter-spacing:.02em;
+    .me-name{font-family:var(--font-display);font-size:19px;letter-spacing:.02em;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
     /* --- menu a comparsa (esci) dal badge utente --------------------------- */
@@ -90,7 +90,7 @@
     /* --- sidebar: menu di navigazione ------------------------------------- */
     .side-nav{display:flex;flex-direction:column;gap:3px}
     .navitem{display:flex;align-items:center;gap:10px;width:100%;padding:9px 11px;border:0;border-radius:9px;
-      background:none;text-align:left;font:inherit;font-family:var(--font-display);font-size:15px;font-weight:400;
+      background:none;text-align:left;font:inherit;font-family:var(--font-display);font-size:18px;font-weight:400;
       letter-spacing:.03em;color:var(--ink-soft);cursor:pointer}
     .navitem:hover{background:var(--bg)}
     .navitem.active{background:var(--accent);color:#fff}
@@ -108,7 +108,7 @@
     .typebar{margin-bottom:18px}
     .filters{display:flex;flex-wrap:wrap;gap:7px}
     .fitem{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--hair);
-      border-radius:999px;background:var(--surface);font:inherit;font-family:var(--font-display);font-size:14px;
+      border-radius:999px;background:var(--surface);font:inherit;font-family:var(--font-display);font-size:17px;
       font-weight:400;letter-spacing:.02em;color:var(--ink-soft);
       cursor:pointer;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
     .fitem:hover{border-color:var(--muted)}
@@ -124,7 +124,7 @@
     .topbar{position:sticky;top:0;z-index:10;background:var(--brand);
       border-bottom:1px solid var(--brand-line);
       height:51px;padding:0 24px;display:flex;flex-wrap:nowrap;gap:8px 16px;align-items:center}
-    .topbar h1{font-family:var(--font-display);font-size:22px;margin:0;font-weight:400;letter-spacing:.04em;color:var(--on-brand)}
+    .topbar h1{font-family:var(--font-display);font-size:25px;margin:0;font-weight:400;letter-spacing:.04em;color:var(--on-brand)}
     .topbar .me.sm{margin-left:auto;padding:4px 12px 4px 4px;gap:8px;background:var(--brand-chip)}
     .topbar .me.sm .me-av{width:28px;height:28px}
     .topbar .me.sm .me-name{font-weight:400}
@@ -167,7 +167,7 @@
       /* sidebar + topbar diventano un unico header compatto della tinta --brand */
       .sidebar{width:auto;height:auto;position:static;border-right:0;border-bottom:0;background:var(--brand);
         flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 16px 6px;overflow:visible}
-      .brand{border-bottom:0;height:auto;margin:0 auto 0 0;padding:0;font-size:17px;gap:7px;color:var(--on-brand)}
+      .brand{border-bottom:0;height:auto;margin:0 auto 0 0;padding:0;font-size:20px;gap:7px;color:var(--on-brand)}
       .brand-logo{height:28px}
       #meSide:not(:empty){display:flex;margin-left:auto;background:var(--brand-chip);border-color:transparent}
       /* le voci di menu diventano una tab bar "flottante" in fondo */
@@ -176,13 +176,13 @@
         backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--hair);border-radius:18px;
         box-shadow:0 8px 24px -6px rgba(38,50,56,.22)}
       .navitem{flex:1;flex-direction:column;gap:3px;width:auto;padding:7px 4px;border-radius:13px;
-        justify-content:center;font-size:15px;font-weight:400;letter-spacing:.01em}
+        justify-content:center;font-size:18px;font-weight:400;letter-spacing:.01em}
       .navitem svg{width:20px;height:20px}
       .navitem:hover{background:none}
       .navitem.active{color:var(--accent);background:color-mix(in srgb, var(--accent) 16%, var(--surface))}
 
       .topbar{padding:0 16px;border-bottom:0;gap:8px 12px}
-      .topbar h1{font-size:19px}
+      .topbar h1{font-size:22px}
       .topbar .me.sm{display:none}
       .view{padding:16px 12px calc(96px + env(safe-area-inset-bottom,0px))}
       .day{scroll-margin-top:56px}
@@ -203,7 +203,7 @@
     .day-head:hover{background:color-mix(in srgb, var(--brand) 14%, transparent)}
     .day-head:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
     .day.open .day-head{border-radius:14px 14px 0 0;background:var(--panel)}
-    .day-title{font-family:var(--font-display);font-weight:400;font-size:19px;text-transform:capitalize;letter-spacing:.02em}
+    .day-title{font-family:var(--font-display);font-weight:400;font-size:22px;text-transform:capitalize;letter-spacing:.02em}
     .day.today .day-title::after{content:"oggi";margin-left:9px;padding:2px 8px;border-radius:999px;
       background:var(--accent);color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.06em;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -260,7 +260,7 @@
     .card-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
     .avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;flex:none;background:#cfd8dc}
     .avatar.ph{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
-    .name{font-family:var(--font-display);font-weight:400;color:var(--ink);font-size:17px;letter-spacing:.02em}
+    .name{font-family:var(--font-display);font-weight:400;color:var(--ink);font-size:20px;letter-spacing:.02em}
     .time{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
     .text{color:var(--text);line-height:1.55}
     .text a{overflow-wrap:anywhere}
@@ -294,7 +294,7 @@
     /* --- vista Media: gruppi per giorno + griglia di tile --------------- */
     .mgroup{margin:0 auto 10px;border:1px solid var(--hair);border-radius:14px;background:var(--panel);overflow:hidden}
     .mgroup-head{display:flex;align-items:center;gap:11px;padding:12px 16px}
-    .mgroup-title{font-family:var(--font-display);font-weight:400;font-size:19px;text-transform:capitalize;letter-spacing:.02em}
+    .mgroup-title{font-family:var(--font-display);font-weight:400;font-size:22px;text-transform:capitalize;letter-spacing:.02em}
     .mgroup.today .mgroup-title::after{content:"oggi";margin-left:9px;padding:2px 8px;border-radius:999px;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
       background:var(--accent);color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.06em;
@@ -330,7 +330,7 @@
     .login-box{background:var(--surface);border:1px solid var(--cardline);border-radius:12px;
       box-shadow:0 2px 12px rgba(38,50,56,.12);padding:26px 24px;width:100%;max-width:340px;
       display:flex;flex-direction:column;gap:12px}
-    .login-box h2{margin:0;font-family:var(--font-display);font-weight:400;font-size:21px;letter-spacing:.03em}
+    .login-box h2{margin:0;font-family:var(--font-display);font-weight:400;font-size:24px;letter-spacing:.03em}
     .login-box p{margin:0;color:var(--muted);font-size:13px}
     .login-box label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--ink-soft)}
     .login-box input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-weight:400;
