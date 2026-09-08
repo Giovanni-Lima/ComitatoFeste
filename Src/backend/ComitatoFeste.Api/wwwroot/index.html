@@ -59,7 +59,7 @@
     /* --- shell: sidebar fissa + area principale ---------------------------- */
     .app{display:flex;align-items:flex-start;min-height:100vh}
 
-    .sidebar{width:250px;flex:none;background:var(--surface);border-right:1px solid var(--line);
+    .sidebar{width:280px;flex:none;background:var(--surface);border-right:1px solid var(--line);
       position:sticky;top:0;height:100vh;overflow-y:auto;
       padding:0 16px 18px;display:flex;flex-direction:column;gap:18px}
     .brand{font-family:var(--font-display);font-weight:400;font-size:23px;letter-spacing:.03em;
@@ -98,9 +98,6 @@
 
     /* --- navigazione data (in topbar) ----------------------------------- */
     .daynav{display:flex;align-items:center;gap:6px}
-    .daynav button{width:28px;height:28px;flex:none;border:1px solid var(--line);background:var(--surface);border-radius:8px;
-      font-size:15px;line-height:1;cursor:pointer;color:var(--ink-soft)}
-    .daynav button:hover{background:var(--bg)}
     .daynav input{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font:inherit;
       background:var(--surface);color:var(--ink)}
 
@@ -123,7 +120,7 @@
     .main{flex:1;min-width:0;display:flex;flex-direction:column}
     .topbar{position:sticky;top:0;z-index:10;background:var(--brand);
       border-bottom:1px solid var(--brand-line);
-      height:51px;padding:0 24px;display:flex;flex-wrap:nowrap;gap:8px 16px;align-items:center}
+      height:58px;padding:0 24px;display:flex;flex-wrap:nowrap;gap:8px 16px;align-items:center}
     .topbar h1{font-family:var(--font-display);font-size:25px;margin:0;font-weight:400;letter-spacing:.04em;color:var(--on-brand)}
     .topbar .me.sm{margin-left:auto;padding:4px 12px 4px 4px;gap:8px;background:var(--brand-chip)}
     .topbar .me.sm .me-av{width:28px;height:28px}
@@ -435,9 +432,7 @@
       <header class="topbar" id="topbar">
         <h1 id="viewTitle">Agenda</h1>
         <div class="daynav" id="daynav">
-          <button id="prev" title="Giorno precedente">‹</button>
           <input type="date" id="day">
-          <button id="next" title="Giorno successivo">›</button>
         </div>
         <button id="btnPush" class="pushbtn" type="button" hidden aria-pressed="false"
           title="Attiva le notifiche push" aria-label="Notifiche push"></button>
@@ -769,6 +764,8 @@
     const todayRome = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
 
     const openDays = new Set();   // giorni (yyyy-MM-dd) attualmente espansi
+    let spyTick = 0;               // scroll-spy del date picker (vedi updatePickerFromScroll)
+    let spySuppressUntil = 0;     // ms performance.now(): spy sospeso durante lo scroll di goToDay
 
     const visibleItems = () => filterType ? data.filter(p => p.type === filterType) : data;
 
@@ -855,6 +852,7 @@
 
       el("timeline").innerHTML = groups.map(([day, pts]) => dayHtml(day, pts)).join("");
       hydrateLinkPreviews(el("timeline"));
+      scheduleSpy();
     }
 
     function toggleDay(day, force){
@@ -872,6 +870,7 @@
       } else {
         body.innerHTML = "";
       }
+      scheduleSpy();   // le altezze sotto sono cambiate: riallinea il picker allo scroll
     }
 
     function goToDay(day){
@@ -883,6 +882,10 @@
       // a quel giorno invece che su quello scelto.
       for (const d of [...openDays]) if (d !== day) toggleDay(d, false);
       toggleDay(day, true);
+      el("day").value = day;
+      // lo scroll-spy resterebbe indietro sui giorni intermedi durante l'animazione:
+      // lo sospendo finché non siamo arrivati.
+      spySuppressUntil = performance.now() + 900;
       // dopo il paint delle nuove righe, così lo scroll punta alla posizione giusta;
       // l'offset per la topbar sticky è gestito da scroll-margin-top su .day
       requestAnimationFrame(() => sec.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -1216,26 +1219,47 @@
       if (initial && qs.get("date")) requestAnimationFrame(() => goToDay(initial));
     }
 
-    function shiftDay(n){
-      const d = new Date(el("day").value + "T12:00:00");
-      d.setDate(d.getDate() + n);
-      el("day").value = d.toISOString().slice(0, 10);
-      goToDay(el("day").value);
-    }
+    const setPickerDay = (day) => { if (day && el("day").value !== day) el("day").value = day; };
 
-    el("prev").onclick = () => shiftDay(-1);
-    el("next").onclick = () => shiftDay(1);
+    // Scroll-spy: mentre si scorre l'agenda il date picker segue la giornata che
+    // sta sotto la topbar sticky. Il calcolo è throttlato a ~90ms e sospeso durante
+    // lo scroll programmatico di goToDay (spySuppressUntil) e mentre l'utente sta
+    // usando il date picker (focus sull'input: non glielo sovrascriviamo sotto le dita).
+    const TOPBAR_H = 60;   // altezza topbar sticky (58px) + margine
+    function updatePickerFromScroll(){
+      spyTick = 0;
+      if (el("viewAgenda").hidden || performance.now() < spySuppressUntil) return;
+      if (document.activeElement === el("day")) return;
+      const secs = el("timeline").querySelectorAll(".day");
+      if (!secs.length) return;
+      let current = null;
+      for (const s of secs){
+        const r = s.getBoundingClientRect();
+        // sezioni il cui bordo alto ha già superato la topbar ma il basso è ancora
+        // sotto: l'ultima nel DOM (= la più "in basso") è quella davanti agli occhi.
+        if (r.top - TOPBAR_H <= 1 && r.bottom > TOPBAR_H) current = s;
+      }
+      if (!current){                       // in cima alla pagina: prendi la prima
+        const r0 = secs[0].getBoundingClientRect();
+        if (r0.top >= TOPBAR_H) current = secs[0];
+      }
+      if (current) setPickerDay(current.id.slice(4));   // id = "day-YYYY-MM-DD"
+    }
+    function scheduleSpy(){ if (!spyTick) spyTick = setTimeout(updatePickerFromScroll, 90); }
+    addEventListener("scroll", scheduleSpy, { passive: true });
+    addEventListener("resize", scheduleSpy, { passive: true });
+
     el("day").onchange = () => goToDay(el("day").value);
     el("timeline").onclick = (e) => {
       const dl = e.target.closest(".day-dl");
       if (dl) { downloadRecap(dl.dataset.day, dl); return; }
       const h = e.target.closest(".day-head");
-      if (h) toggleDay(h.dataset.day);
+      if (h) { toggleDay(h.dataset.day); if (openDays.has(h.dataset.day)) setPickerDay(h.dataset.day); }
     };
     el("timeline").onkeydown = (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       const h = e.target.closest(".day-head");
-      if (h && e.target === h) { e.preventDefault(); toggleDay(h.dataset.day); }
+      if (h && e.target === h) { e.preventDefault(); toggleDay(h.dataset.day); if (openDays.has(h.dataset.day)) setPickerDay(h.dataset.day); }
     };
 
     async function downloadRecap(day, btn){
