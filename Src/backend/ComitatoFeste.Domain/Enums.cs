@@ -30,3 +30,15 @@ public enum MediaType
     Audio,
     Documento
 }
+
+/// <summary>
+/// Ruolo di accesso di un <see cref="Member"/> al login "casereccio" (vedi AuthService).
+/// Persistito come stringa minuscola ("lettore" | "amministratore") con CHECK lato DB.
+/// Oggi nessun endpoint distingue i due ruoli: la colonna prepara future funzionalità
+/// riservate agli amministratori.
+/// </summary>
+public enum MemberRole
+{
+    Lettore,
+    Amministratore
+}

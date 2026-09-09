@@ -18,8 +18,9 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   macchina non c'è l'SDK 8 (solo 9/10) quindi i reference pack .NET 8
   arrivano da NuGet — funziona, ma per coerenza totale servirebbe l'SDK 8
   + un `global.json`.
-- **Migration applicate** al container `local-postgres` (compose esterno
-  dell'utente, `postgres:16-alpine`, db `postgres`, `postgres/postgres`):
+- **Migration applicate** al container `comitatofeste-db` (compose esterno
+  dell'utente, `postgres:16-alpine`, db `postgres`, `postgres/postgres` — il
+  nome nel compose non è più `local-postgres`, corretto qui il 9/9/2026):
   `InitialCreate` + `AddMediaBlobs` + `AddMemberProfilePhotos` +
   `AddRumoreDigestPointType` (`'rumore'` nel CHECK di `DigestPoints.Type`) +
   `AddVerbali` (tabella `Verbali`: verbale giornaliero in cache, UNIQUE
@@ -27,8 +28,11 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   di `DigestPoints.Type`: idea/proposta operativa non ancora decisa —
   distinta da `decisione`) + `AddPushSubscriptions` (tabella
   `PushSubscriptions`, `Endpoint` UNIQUE — notifiche push PWA, vedi
-  `docs/PUSH-NOTIFICHE.md`). Le stesse migration sono applicate ad **Aiven**
-  (da `Database.Migrate()` al boot dell'API). Connessione di default in
+  `docs/PUSH-NOTIFICHE.md`) + `AddMemberRole` (colonna `Members.Role`,
+  CHECK `'lettore'|'amministratore'`, default `lettore` — vedi login sotto).
+  Le stesse migration sono applicate ad **Aiven**
+  (da `Database.Migrate()` al boot dell'API — `AddMemberRole` non ancora
+  deployata lì, lo sarà al prossimo autoDeploy). Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
 - **Dati importati** (gruppo `Comitato feste 87`, stato all'8/9/2026):
@@ -64,7 +68,9 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   Service Docker, autoDeploy da `main`) contro **DB Aiven** (`pg_dump`/`pg_restore`
   dal locale — Aiven gira **Postgres 18**, il `local-postgres` di dev è alla **16**).
   Env impostate nel dashboard Render: `COMITATOFESTE_CONNECTION`, `_AUTH_PASSWORD`,
-  `_AUTH_SECRET`, `GROQ_API_KEY`, e per le notifiche push `COMITATOFESTE_VAPID_PUBLIC`
+  `_AUTH_PASSWORD_ADMIN` (passphrase separata per il ruolo amministratore,
+  vedi login sotto — non ancora impostata su Render, da fare), `_AUTH_SECRET`,
+  `GROQ_API_KEY`, e per le notifiche push `COMITATOFESTE_VAPID_PUBLIC`
   / `_PRIVATE` / `_SUBJECT` + `_HOOK_SECRET` (vedi `docs/PUSH-NOTIFICHE.md`).
   Backup: `scripts/backup-db.ps1`. Tutto in `docs/DEPLOY.md`.
 
@@ -78,12 +84,21 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   - `ComitatoFeste.Api` — Web API ASP.NET Core.
     - **Login "casereccio"** (`AuthService` + `TokenAuthAttribute`):
       `GET /api/auth/status` → `{enabled}`; `POST /api/auth/login
-      {username,password}` → `{token,username,memberId,displayName}`.
-      Username = `iniziale.cognome`
-      di un `Member` (derivato a runtime, niente colonna DB), password =
-      passphrase condivisa (env `COMITATOFESTE_AUTH_PASSWORD` o config
-      `Auth:Password`; vuota → login disattivato). Token HMAC firmato
-      (`username|scadenza`, 30 gg) rimandato come `Authorization: Bearer`.
+      {username,password}` → `{token,username,memberId,displayName,role}`.
+      Username = `iniziale.cognome` di un `Member` (derivato a runtime).
+      Ogni `Member` ha un `Role` a DB (`Lettore` default | `Amministratore`,
+      colonna `AddMemberRole`). **Due passphrase condivise**: quella lettore
+      (env `COMITATOFESTE_AUTH_PASSWORD` o config `Auth:Password`; vuota →
+      login disattivato) vale per chiunque e restituisce sempre un token
+      `lettore`; quella admin (env `COMITATOFESTE_AUTH_PASSWORD_ADMIN` o
+      config `Auth:PasswordAdmin`, opzionale) eleva a token `amministratore`
+      **solo** se il membro che sta accedendo ha già `Role=Amministratore`
+      a DB — un lettore che la indovina resta comunque respinto (401), non
+      viene declassato silenziosamente. Nessun endpoint usa ancora il ruolo
+      per bloccare l'accesso: `TokenAuthAttribute` accetta un
+      `MemberRole` minimo opzionale (es. `[TokenAuth(MemberRole.Amministratore)]`)
+      pronto per le prossime funzionalità admin-only. Token HMAC firmato
+      (`username|ruolo|scadenza`, 30 gg) rimandato come `Authorization: Bearer`.
       `[TokenAuth]` protegge **solo** i due endpoint JSON qui sotto; gli
       endpoint binari (foto/media) restano aperti per `<img>/<audio>/<video>`.
     - `GET /api/digestpoints?date=yyyy-MM-dd` (+ filtri `author`, `type`) →

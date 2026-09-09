@@ -1,5 +1,6 @@
 using ComitatoFeste.Api.Services;
 using ComitatoFeste.Data;
+using ComitatoFeste.Domain;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,15 +20,17 @@ public sealed class AuthController : ControllerBase
     }
 
     public sealed record LoginRequest(string? Username, string? Password);
-    public sealed record LoginResponse(string Token, string Username, int MemberId, string DisplayName);
+    public sealed record LoginResponse(string Token, string Username, int MemberId, string DisplayName, string Role);
 
     /// <summary>Il frontend lo chiama all'avvio: se <c>enabled</c> è false salta la schermata di login.</summary>
     [HttpGet("status")]
     public IActionResult Status() => Ok(new { enabled = _auth.Enabled });
 
     /// <summary>
-    /// Login: lo username deve corrispondere a un membro (forma <c>iniziale.cognome</c>) e la
-    /// password alla passphrase condivisa. Restituisce un token da rimandare come Bearer.
+    /// Login: lo username deve corrispondere a un membro (forma <c>iniziale.cognome</c>). Due
+    /// passphrase condivise: quella lettore vale per chiunque (token Lettore); quella admin eleva
+    /// a token Amministratore ma solo se il membro ha già quel ruolo a DB — un lettore che la
+    /// indovina resta comunque fuori. Restituisce un token da rimandare come Bearer.
     /// </summary>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest req, CancellationToken ct)
@@ -36,12 +39,9 @@ public sealed class AuthController : ControllerBase
         if (username.Length == 0)
             return BadRequest("Username mancante.");
 
-        if (!_auth.PasswordOk(req.Password))
-            return Unauthorized("Credenziali non valide.");
-
         var members = await _db.Members
             .Where(m => m.DisplayName != "Sistema")
-            .Select(m => new { m.Id, m.DisplayName })
+            .Select(m => new { m.Id, m.DisplayName, m.Role })
             .ToListAsync(ct);
 
         var match = members.FirstOrDefault(m =>
@@ -50,6 +50,23 @@ public sealed class AuthController : ControllerBase
         if (match is null)
             return Unauthorized("Credenziali non valide.");
 
-        return Ok(new LoginResponse(_auth.IssueToken(username), username, match.Id, match.DisplayName));
+        MemberRole role;
+        if (_auth.AdminPasswordOk(req.Password))
+        {
+            if (match.Role != MemberRole.Amministratore)
+                return Unauthorized("Credenziali non valide.");
+            role = MemberRole.Amministratore;
+        }
+        else if (_auth.ReaderPasswordOk(req.Password))
+        {
+            role = MemberRole.Lettore;
+        }
+        else
+        {
+            return Unauthorized("Credenziali non valide.");
+        }
+
+        var roleName = role.ToString().ToLowerInvariant();
+        return Ok(new LoginResponse(_auth.IssueToken(username, role), username, match.Id, match.DisplayName, roleName));
     }
 }

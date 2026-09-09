@@ -1,28 +1,32 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using ComitatoFeste.Domain;
 
 namespace ComitatoFeste.Api.Services;
 
 /// <summary>
 /// Login "casereccio": username = <c>iniziale.cognome</c> di un membro (derivato dal
-/// <see cref="Domain.Member.DisplayName"/>), password unica condivisa. Al successo emette un
-/// token firmato HMAC (<c>username|scadenza</c>) che il frontend rimanda nell'header
-/// <c>Authorization: Bearer</c>. Non è sicurezza vera: tiene fuori chi capita per sbaglio.
+/// <see cref="Domain.Member.DisplayName"/>). Due passphrase condivise: quella lettore (storica)
+/// funziona per chiunque; quella admin eleva a token Amministratore, ma solo per un membro che ha
+/// già <see cref="MemberRole.Amministratore"/> a DB (vedi <see cref="AuthController.Login"/>). Al
+/// successo emette un token firmato HMAC (<c>username|ruolo|scadenza</c>) che il frontend rimanda
+/// nell'header <c>Authorization: Bearer</c>. Non è sicurezza vera: tiene fuori chi capita per sbaglio.
 /// </summary>
 public sealed class AuthService
 {
     private static readonly TimeSpan TokenLifetime = TimeSpan.FromDays(30);
 
-    private readonly string? _sharedPassword;
+    private readonly string? _readerPassword;
+    private readonly string? _adminPassword;
     private readonly byte[] _secret;
 
     public AuthService(IConfiguration config)
     {
-        _sharedPassword = Environment.GetEnvironmentVariable("COMITATOFESTE_AUTH_PASSWORD")
-                          ?? config["Auth:Password"];
-        if (string.IsNullOrWhiteSpace(_sharedPassword))
-            _sharedPassword = null;
+        _readerPassword = Normalize(Environment.GetEnvironmentVariable("COMITATOFESTE_AUTH_PASSWORD")
+                                     ?? config["Auth:Password"]);
+        _adminPassword = Normalize(Environment.GetEnvironmentVariable("COMITATOFESTE_AUTH_PASSWORD_ADMIN")
+                                    ?? config["Auth:PasswordAdmin"]);
 
         // Segreto per firmare i token: da config se c'è, altrimenti effimero (i token
         // scadono a ogni riavvio dell'API — accettabile per l'uso previsto).
@@ -33,12 +37,18 @@ public sealed class AuthService
             : Encoding.UTF8.GetBytes(configured);
     }
 
-    /// <summary>Se <c>false</c> il login è disattivato: l'API è aperta e il frontend salta la schermata.</summary>
-    public bool Enabled => _sharedPassword is not null;
+    private static string? Normalize(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
 
-    /// <summary>Password corretta (o login disattivato).</summary>
-    public bool PasswordOk(string? password) =>
-        !Enabled || string.Equals(password, _sharedPassword, StringComparison.Ordinal);
+    /// <summary>Se <c>false</c> il login è disattivato: l'API è aperta e il frontend salta la schermata.</summary>
+    public bool Enabled => _readerPassword is not null;
+
+    /// <summary>Password lettore corretta (o login disattivato).</summary>
+    public bool ReaderPasswordOk(string? password) =>
+        !Enabled || string.Equals(password, _readerPassword, StringComparison.Ordinal);
+
+    /// <summary>Password admin corretta. <c>false</c> se non configurata (nessuno può elevare via password).</summary>
+    public bool AdminPasswordOk(string? password) =>
+        _adminPassword is not null && string.Equals(password, _adminPassword, StringComparison.Ordinal);
 
     /// <summary><c>"Giovanni Lima"</c> → <c>"g.lima"</c>; spazi, apostrofi e accenti rimossi.</summary>
     public static string NormalizeUsername(string displayName)
@@ -65,15 +75,21 @@ public sealed class AuthService
         return sb.ToString();
     }
 
-    public string IssueToken(string username)
+    /// <summary>Username + ruolo estratti da un token valido (vedi <see cref="ValidatePrincipal"/>).</summary>
+    public sealed record Principal(string Username, MemberRole Role);
+
+    public string IssueToken(string username, MemberRole role)
     {
         var exp = DateTimeOffset.UtcNow.Add(TokenLifetime).ToUnixTimeSeconds();
-        var payload = $"{username}|{exp}";
+        var payload = $"{username}|{role.ToString().ToLowerInvariant()}|{exp}";
         return $"{B64(Encoding.UTF8.GetBytes(payload))}.{B64(Sign(payload))}";
     }
 
     /// <summary>Restituisce lo username se il token è valido e non scaduto, altrimenti <c>null</c>.</summary>
-    public string? ValidateToken(string? token)
+    public string? ValidateToken(string? token) => ValidatePrincipal(token)?.Username;
+
+    /// <summary>Restituisce username + ruolo se il token è valido e non scaduto, altrimenti <c>null</c>.</summary>
+    public Principal? ValidatePrincipal(string? token)
     {
         if (string.IsNullOrWhiteSpace(token))
             return null;
@@ -89,15 +105,18 @@ public sealed class AuthService
             if (!CryptographicOperations.FixedTimeEquals(sig, Sign(payload)))
                 return null;
 
-            var bar = payload.LastIndexOf('|');
-            if (bar <= 0)
+            var parts = payload.Split('|');
+            if (parts.Length != 3)
                 return null;
 
-            var exp = long.Parse(payload[(bar + 1)..], CultureInfo.InvariantCulture);
+            var exp = long.Parse(parts[2], CultureInfo.InvariantCulture);
             if (DateTimeOffset.FromUnixTimeSeconds(exp) < DateTimeOffset.UtcNow)
                 return null;
 
-            return payload[..bar];
+            if (!Enum.TryParse<MemberRole>(parts[1], true, out var role))
+                return null;
+
+            return new Principal(parts[0], role);
         }
         catch (Exception ex) when (ex is FormatException or ArgumentException)
         {
