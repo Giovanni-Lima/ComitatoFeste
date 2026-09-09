@@ -238,6 +238,26 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   file). In locale: `dotnet run` dell'API e apri `http://localhost:5065/`,
   oppure servi il file a parte con `?api=`; vedi
   `Src/backend/ComitatoFeste.Api/README.md`.
+  **Tre viste** nella sidebar (`setView`, ordine Agenda → Importanti →
+  Media), titolo in topbar con l'icona della vista (`VIEW_ICONS`): Agenda
+  (l'accordion sopra), Media (griglia foto/video/documenti per giorno,
+  **non** l'audio — vedi `mediaKind`), e **Importanti**
+  (`viewImportant`/`renderImportant`) — punti con `isImportant=true`, stessi
+  badge di tipo dell'Agenda ma **timeline unica e continua, non raggruppata
+  in accordion**: i punti sono appiattiti in un solo `.rail` (giorno più
+  recente in alto, cronologico nel giorno, come l'Agenda) con un componente
+  separatore (`.date-sep`, una pillola che "buca" la linea verticale del
+  rail, `id="isep-<data>"`) inserito ogni volta che il giorno cambia. La
+  stellina in alto a destra su ogni card (`importantBtnHtml`) esiste **solo
+  per gli admin** (bottone on/off, `PUT .../important`, colore pieno
+  `--yellow` da acceso — niente cerchio/glow) — i lettori non la vedono mai,
+  né qui né in Agenda. Il date picker in topbar è condiviso e attivo anche
+  qui (`goToImportantDay` + `updatePickerFromScroll` esteso): segue lo
+  scroll aggiornandosi sull'ultimo `.date-sep` il cui bordo alto ha superato
+  la propria `scroll-margin-top` (non un `TOPBAR_H` fisso, per restare
+  coerente col punto di arrivo di `goToImportantDay`), e cambiare data nel
+  picker scorre al separatore corrispondente (no-op se quel giorno non ha
+  punti importanti, come `goToDay` in Agenda).
 - `Export/` — dati sorgente della pipeline sul PC dell'utente:
   `digest_<data>.json`, sottocartella `<data>/` con i media rinominati
   (le sottocartelle `_da-attribuire` / `_conflitto-autore` /
