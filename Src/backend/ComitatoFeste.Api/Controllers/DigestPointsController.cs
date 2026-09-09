@@ -75,6 +75,7 @@ public sealed class DigestPointsController : ControllerBase
                 AuthorHasPhoto = d.Member.ProfilePhoto != null,
                 d.Type,
                 d.Text,
+                d.IsImportant,
                 Media = d.MediaAsset == null
                     ? null
                     : new
@@ -101,6 +102,7 @@ public sealed class DigestPointsController : ControllerBase
                 : null,
             Type = r.Type.ToString().ToLowerInvariant(),
             Text = r.Text,
+            IsImportant = r.IsImportant,
             Media = r.Media is null
                 ? null
                 : new MediaDto
@@ -120,6 +122,21 @@ public sealed class DigestPointsController : ControllerBase
         }).ToList();
 
         return Ok(result);
+    }
+
+    /// <summary>Evidenzia/rimuove un punto come importante. Riservato agli amministratori.</summary>
+    [HttpPut("{id:int}/important")]
+    [TokenAuth(MemberRole.Amministratore)]
+    public async Task<IActionResult> SetImportant(int id, [FromBody] SetImportantRequest req, CancellationToken ct)
+    {
+        var point = await _db.DigestPoints.FindAsync(new object[] { id }, ct);
+        if (point is null)
+            return NotFound();
+
+        point.IsImportant = req.Important;
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { id = point.Id, important = point.IsImportant });
     }
 
     /// <summary>Contenuto binario originale di un media (immagine/audio/documento), servito inline.</summary>

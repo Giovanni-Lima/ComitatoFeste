@@ -29,10 +29,12 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   distinta da `decisione`) + `AddPushSubscriptions` (tabella
   `PushSubscriptions`, `Endpoint` UNIQUE — notifiche push PWA, vedi
   `docs/PUSH-NOTIFICHE.md`) + `AddMemberRole` (colonna `Members.Role`,
-  CHECK `'lettore'|'amministratore'`, default `lettore` — vedi login sotto).
-  Le stesse migration sono applicate ad **Aiven**
-  (da `Database.Migrate()` al boot dell'API — `AddMemberRole` non ancora
-  deployata lì, lo sarà al prossimo autoDeploy). Connessione di default in
+  CHECK `'lettore'|'amministratore'`, default `lettore` — vedi login sotto) +
+  `AddDigestPointImportant` (colonna `DigestPoints.IsImportant`, bool,
+  default `false` — flag "importante" toggleabile solo dagli admin, vedi
+  `PUT /api/digestpoints/{id}/important` sotto; non ancora deployata su
+  Aiven, lo sarà al prossimo autoDeploy). Le stesse migration sono applicate ad **Aiven**
+  (da `Database.Migrate()` al boot dell'API). Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
 - **Dati importati** (gruppo `Comitato feste 87`, stato all'8/9/2026):
@@ -69,7 +71,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   dal locale — Aiven gira **Postgres 18**, il `local-postgres` di dev è alla **16**).
   Env impostate nel dashboard Render: `COMITATOFESTE_CONNECTION`, `_AUTH_PASSWORD`,
   `_AUTH_PASSWORD_ADMIN` (passphrase separata per il ruolo amministratore,
-  vedi login sotto — non ancora impostata su Render, da fare), `_AUTH_SECRET`,
+  vedi login sotto — impostata e testata in prod il 9/9/2026), `_AUTH_SECRET`,
   `GROQ_API_KEY`, e per le notifiche push `COMITATOFESTE_VAPID_PUBLIC`
   / `_PRIVATE` / `_SUBJECT` + `_HOOK_SECRET` (vedi `docs/PUSH-NOTIFICHE.md`).
   Backup: `scripts/backup-db.ps1`. Tutto in `docs/DEPLOY.md`.
@@ -106,7 +108,14 @@ Il backend .NET compila pulito e gira contro Postgres locale.
       tutti i giorni (non paginato). Ogni punto porta `authorId` +
       `authorPhotoUrl` e, per i media, `media.contentUrl`. Senza `type`
       esplicito la vista è pulita: niente `rumore` e niente vocali non
-      ancora digeriti (audio con `TranscribedAt == null`).
+      ancora digeriti (audio con `TranscribedAt == null`). Ogni punto porta
+      anche `isImportant`.
+    - `PUT /api/digestpoints/{id}/important {important:bool}` → evidenzia/
+      rimuove il flag "importante" su un punto. `[TokenAuth(MemberRole.
+      Amministratore)]`: 403 se il token non è admin, 401 senza token.
+      Nel frontend è la stellina in alto a destra su ogni card (non sui
+      gruppi foto/documenti): per gli admin è un bottone on/off, per gli
+      altri un indicatore statico visibile solo se già flaggato.
     - `GET /api/digestpoints/recap?date=yyyy-MM-dd[&refresh=true][&format=md]`
       → verbale in prosa della giornata, **PDF** di default (`format=md` per
       il Markdown grezzo), `Content-Disposition: attachment`. Il testo è
