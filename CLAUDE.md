@@ -31,8 +31,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `docs/PUSH-NOTIFICHE.md`) + `AddMemberRole` (colonna `Members.Role`,
   CHECK `'lettore'|'amministratore'`, default `lettore` — vedi login sotto).
   Le stesse migration sono applicate ad **Aiven**
-  (da `Database.Migrate()` al boot dell'API — `AddMemberRole` non ancora
-  deployata lì, lo sarà al prossimo autoDeploy). Connessione di default in
+  (da `Database.Migrate()` al boot dell'API). Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
 - **Dati importati** (gruppo `Comitato feste 87`, stato all'8/9/2026):
@@ -69,7 +68,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   dal locale — Aiven gira **Postgres 18**, il `local-postgres` di dev è alla **16**).
   Env impostate nel dashboard Render: `COMITATOFESTE_CONNECTION`, `_AUTH_PASSWORD`,
   `_AUTH_PASSWORD_ADMIN` (passphrase separata per il ruolo amministratore,
-  vedi login sotto — non ancora impostata su Render, da fare), `_AUTH_SECRET`,
+  vedi login sotto — impostata e testata in prod il 9/9/2026), `_AUTH_SECRET`,
   `GROQ_API_KEY`, e per le notifiche push `COMITATOFESTE_VAPID_PUBLIC`
   / `_PRIVATE` / `_SUBJECT` + `_HOOK_SECRET` (vedi `docs/PUSH-NOTIFICHE.md`).
   Backup: `scripts/backup-db.ps1`. Tutto in `docs/DEPLOY.md`.
