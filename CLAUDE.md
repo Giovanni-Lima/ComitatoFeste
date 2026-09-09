@@ -242,8 +242,8 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   file). In locale: `dotnet run` dell'API e apri `http://localhost:5065/`,
   oppure servi il file a parte con `?api=`; vedi
   `Src/backend/ComitatoFeste.Api/README.md`.
-  **Tre viste** nella sidebar (`setView`, ordine Agenda → Importanti →
-  Media), titolo in topbar con l'icona della vista (`VIEW_ICONS`): Agenda
+  **Quattro viste** nella sidebar (`setView`, ordine Agenda → Importanti →
+  Media → Guida), titolo in topbar con l'icona della vista (`VIEW_ICONS`): Agenda
   (l'accordion sopra), Media (griglia foto/video/documenti per giorno,
   **non** l'audio — vedi `mediaKind`), e **Importanti**
   (`viewImportant`/`renderImportant`) — punti con `isImportant=true`, stessi
@@ -261,7 +261,12 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   la propria `scroll-margin-top` (non un `TOPBAR_H` fisso, per restare
   coerente col punto di arrivo di `goToImportantDay`), e cambiare data nel
   picker scorre al separatore corrispondente (no-op se quel giorno non ha
-  punti importanti, come `goToDay` in Agenda).
+  punti importanti, come `goToDay` in Agenda). **Guida** (`viewGuide`) —
+  contenuto statico, nessuna chiamata API: due card fianco a fianco (una
+  colonna su mobile), **Android prima** (Chrome → menu ⋮ → "Installa app")
+  poi **iPhone/iPad** (Safari → icona di condivisione → "Aggiungi alla
+  schermata Home", con nota che le notifiche push su iOS servono
+  l'installazione).
 - `Export/` — dati sorgente della pipeline sul PC dell'utente:
   `digest_<data>.json`, sottocartella `<data>/` con i media rinominati
   (le sottocartelle `_da-attribuire` / `_conflitto-autore` /

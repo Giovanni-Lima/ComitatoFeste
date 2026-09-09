@@ -375,6 +375,17 @@
     .login-box button:disabled{opacity:.5;cursor:default}
     .login-err{color:var(--danger);font-size:12px}
 
+    /* --- vista Guida: due card affiancate, contenuto statico ------------- */
+    .guide{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    @media (max-width:820px){.guide{grid-template-columns:1fr}}
+    .guide-card{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:24px 26px}
+    .guide-card h2{margin:0 0 4px;font-family:var(--font-display);font-weight:400;font-size:24px;letter-spacing:.02em;color:var(--ink)}
+    .guide-sub{margin:0 0 16px;color:var(--muted);font-size:13px}
+    .guide-card ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:11px;color:var(--text);line-height:1.5}
+    .guide-card ol li::marker{color:var(--muted);font-weight:700}
+    .guide-note{margin:18px 0 0;padding:11px 13px;border-radius:10px;background:var(--surface);
+      border:1px solid var(--hair);color:var(--muted);font-size:13px;line-height:1.5}
+
     .to-top{position:fixed;right:18px;bottom:18px;z-index:50;width:42px;height:42px;border-radius:50%;
       border:1px solid var(--brand-line);background:var(--brand);color:var(--on-brand);cursor:pointer;
       display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(38,50,56,.18);
@@ -455,6 +466,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5L7 21"/></svg>
           Media
         </button>
+        <button class="navitem" data-view="guide" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          Guida
+        </button>
       </nav>
     </aside>
 
@@ -485,6 +500,32 @@
       <section class="view" id="viewImportant" hidden>
         <div class="typebar"><div class="filters" id="importantFilters"></div></div>
         <main class="timeline" id="importantTimeline"></main>
+      </section>
+
+      <section class="view" id="viewGuide" hidden>
+        <div class="guide">
+          <div class="guide-card">
+            <h2>Android</h2>
+            <p class="guide-sub">Chrome — l'app dedicata più diffusa su Android.</p>
+            <ol>
+              <li>Apri il sito con <strong>Chrome</strong>.</li>
+              <li>Tocca i tre puntini (⋮) in alto a destra.</li>
+              <li>Tocca <strong>"Installa app"</strong> — a volte compare da solo un banner "Aggiungi alla schermata Home", basta toccarlo.</li>
+              <li>Conferma nel riquadro che appare.</li>
+            </ol>
+          </div>
+          <div class="guide-card">
+            <h2>iPhone / iPad</h2>
+            <p class="guide-sub">Safari — funziona solo da questo browser, non da Chrome o altri su iOS.</p>
+            <ol>
+              <li>Apri il sito con <strong>Safari</strong>.</li>
+              <li>Tocca l'icona di condivisione (il quadrato con la freccia verso l'alto) nella barra in basso.</li>
+              <li>Scorri i pulsanti e tocca <strong>"Aggiungi alla schermata Home"</strong>.</li>
+              <li>Conferma il nome e tocca <strong>"Aggiungi"</strong> in alto a destra.</li>
+            </ol>
+            <p class="guide-note">Le notifiche push su iPhone/iPad funzionano <strong>solo</strong> se installi l'app così (serve iOS 16.4 o successivo) — da Safari senza installazione non arrivano.</p>
+          </div>
+        </div>
       </section>
     </div>
   </div>
@@ -1489,18 +1530,20 @@
 
     // --- viste (menu sidebar) --------------------------------------------
     let view = "agenda";
-    const VIEW_TITLES = { agenda: "Agenda", media: "Media", important: "Importanti" };
+    const VIEW_TITLES = { agenda: "Agenda", media: "Media", important: "Importanti", guide: "Guida" };
     // Stesse icone dei bottoni della sidebar, riusate nel titolo topbar.
     const VIEW_ICONS = {
       agenda: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,
       media: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5L7 21"/></svg>`,
       important: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2Z"/></svg>`,
+      guide: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`,
     };
     function setView(v){
       view = v;
       el("viewAgenda").hidden    = v !== "agenda";
       el("viewMedia").hidden     = v !== "media";
       el("viewImportant").hidden = v !== "important";
+      el("viewGuide").hidden     = v !== "guide";
       el("daynav").hidden     = v !== "agenda" && v !== "important";
       // Ri-renderizza sempre l'Agenda al rientro: il flag "importante" può essere
       // cambiato altrove (es. dalla vista Importanti) mentre un giorno restava
