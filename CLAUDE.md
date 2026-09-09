@@ -32,8 +32,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   CHECK `'lettore'|'amministratore'`, default `lettore` — vedi login sotto) +
   `AddDigestPointImportant` (colonna `DigestPoints.IsImportant`, bool,
   default `false` — flag "importante" toggleabile solo dagli admin, vedi
-  `PUT /api/digestpoints/{id}/important` sotto; non ancora deployata su
-  Aiven, lo sarà al prossimo autoDeploy). Le stesse migration sono applicate ad **Aiven**
+  `PUT /api/digestpoints/{id}/important` sotto). Le stesse migration sono applicate ad **Aiven**
   (da `Database.Migrate()` al boot dell'API). Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
@@ -114,8 +113,9 @@ Il backend .NET compila pulito e gira contro Postgres locale.
       rimuove il flag "importante" su un punto. `[TokenAuth(MemberRole.
       Amministratore)]`: 403 se il token non è admin, 401 senza token.
       Nel frontend è la stellina in alto a destra su ogni card (non sui
-      gruppi foto/documenti): per gli admin è un bottone on/off, per gli
-      altri un indicatore statico visibile solo se già flaggato.
+      gruppi foto/documenti), **solo per gli admin** — un bottone on/off,
+      colore pieno `--yellow` da acceso; i lettori non la vedono mai, né
+      qui né in Agenda (`importantBtnHtml`).
     - `GET /api/digestpoints/recap?date=yyyy-MM-dd[&refresh=true][&format=md]`
       → verbale in prosa della giornata, **PDF** di default (`format=md` per
       il Markdown grezzo), `Content-Disposition: attachment`. Il testo è
