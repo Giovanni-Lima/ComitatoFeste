@@ -1340,7 +1340,7 @@
         }
         const d = await r.json();
         setToken(d.token);
-        setUser({ username: d.username, memberId: d.memberId, displayName: d.displayName });
+        setUser({ username: d.username, memberId: d.memberId, displayName: d.displayName, role: d.role });
         el("lgPass").value = "";
         hideLogin();
         load();

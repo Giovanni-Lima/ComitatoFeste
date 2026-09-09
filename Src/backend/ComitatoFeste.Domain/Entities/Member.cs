@@ -14,6 +14,9 @@ public class Member
     /// <summary>Nome visualizzato in WhatsApp. Unico all'interno del gruppo.</summary>
     public string DisplayName { get; set; } = null!;
 
+    /// <summary>Ruolo di accesso al login. Default <see cref="MemberRole.Lettore"/>.</summary>
+    public MemberRole Role { get; set; } = MemberRole.Lettore;
+
     /// <summary>Foto profilo (relazione 1:1). Null finché non ne viene importata una.</summary>
     public MemberProfilePhoto? ProfilePhoto { get; set; }
 
