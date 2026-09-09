@@ -32,6 +32,9 @@ public class DigestPoint
     /// <summary>Testo del punto di digest (la sintesi prodotta dalla pipeline).</summary>
     public string Text { get; set; } = null!;
 
+    /// <summary>Evidenziato dal comitato come rilevante. Toggle riservato agli amministratori.</summary>
+    public bool IsImportant { get; set; }
+
     /// <summary>File scaricato collegato, presente solo per alcuni punti di tipo media (relazione 1:1).</summary>
     public MediaAsset? MediaAsset { get; set; }
 }

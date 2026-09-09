@@ -268,6 +268,19 @@
       box-shadow:0 0 0 3px var(--panel),0 0 0 4px var(--hair)}
     .badge svg{width:15px;height:15px}
 
+    .important-btn{position:absolute;top:8px;right:8px;width:32px;height:32px;border:1px solid transparent;
+      background:none;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      color:var(--muted);cursor:pointer;z-index:2;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
+    .important-btn svg{width:19px;height:19px}
+    .important-btn:hover{background:var(--bg)}
+    /* stesso trattamento "acceso" del chip filtro attivo (.fitem.active), colore --yellow */
+    .important-btn.on{border-color:var(--yellow);
+      background:color-mix(in srgb, var(--yellow) 13%, var(--surface));
+      color:color-mix(in srgb, var(--yellow) 66%, #fff);
+      box-shadow:0 0 0 1px var(--yellow), 0 0 12px -4px var(--yellow)}
+    .important-btn:disabled{cursor:default;opacity:.6}
+    .important-btn.static{cursor:default}
+
     .tag{display:inline-block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
       padding:2px 7px;border-radius:999px;margin-bottom:9px;
       background:color-mix(in srgb, var(--c) var(--tag-mix,14%), var(--tag-base,#fff));
@@ -511,6 +524,10 @@
     function currentUser(){
       try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (e) { return null; }
     }
+    function isAdmin(){
+      const u = currentUser();
+      return !!u && u.role === "amministratore";
+    }
     function setUser(u){
       try { u ? localStorage.setItem(USER_KEY, JSON.stringify(u)) : localStorage.removeItem(USER_KEY); } catch (e) {}
     }
@@ -578,6 +595,9 @@
       logout:    I(`<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>`),
       play:      `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
     };
+    const starIcon = (on) => `<svg viewBox="0 0 24 24" fill="${on ? "currentColor" : "none"}" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m12 2 3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2Z"/></svg>`;
     function iconFor(p){
       if (p.type === "media") {
         const ct = (p.media && p.media.contentType) || "";
@@ -755,6 +775,7 @@
         <div class="row ${side}">
           <div class="badge" style="background:${c}">${iconFor(p)}</div>
           <div class="card">
+            ${importantBtnHtml(p)}
             <span class="tag" style="--c:${c}">${p.type}</span>
             <div class="card-head">
               ${avatar}
@@ -765,6 +786,16 @@
             ${media}
           </div>
         </div>`;
+    }
+
+    // Stella in alto a destra sulla card: per gli admin è un bottone attivo (PUT
+    // .../important), per gli altri un indicatore statico visibile solo se il punto
+    // è già segnato importante (niente stelle vuote non cliccabili in giro).
+    function importantBtnHtml(p){
+      if (!isAdmin()) return p.isImportant ? `<span class="important-btn on static">${starIcon(true)}</span>` : "";
+      const on = !!p.isImportant;
+      return `<button type="button" class="important-btn${on ? " on" : ""}" data-id="${p.id}"
+        aria-pressed="${on}" title="${on ? "Importante" : "Segna come importante"}">${starIcon(on)}</button>`;
     }
 
     const romeDay = (iso) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
@@ -803,7 +834,9 @@
 
     function renderStats(){
       if (!data.length) { el("stats").innerHTML = ""; return; }
-      const media = data.filter(p => p.media).length;
+      // Stesso conteggio della pagina Media (mediaKind esclude l'audio: i vocali
+      // si ascoltano inline in agenda, non sono "media" da sfogliare a griglia).
+      const media = data.filter(p => mediaKind(p)).length;
       const days = new Set(data.map(p => romeDay(p.occurredAt))).size;
       const card = (v, k) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`;
       el("stats").innerHTML =
@@ -1260,9 +1293,40 @@
     el("timeline").onclick = (e) => {
       const dl = e.target.closest(".day-dl");
       if (dl) { downloadRecap(dl.dataset.day, dl); return; }
+      const imp = e.target.closest(".important-btn");
+      if (imp) { toggleImportant(imp); return; }
       const h = e.target.closest(".day-head");
       if (h) { toggleDay(h.dataset.day); if (openDays.has(h.dataset.day)) setPickerDay(h.dataset.day); }
     };
+
+    // Toggle "importante": ottimistico lato bottone, ma sincrono con `data` così un
+    // ri-render successivo (cambio giorno, filtro) resta coerente col server.
+    async function toggleImportant(btn){
+      const id = Number(btn.dataset.id);
+      const next = !btn.classList.contains("on");
+      btn.disabled = true;
+      try {
+        const r = await fetch(`${API}/api/digestpoints/${id}/important`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ important: next }),
+        });
+        if (r.status === 401) { setToken(null); showLogin(); return; }
+        if (r.status === 403) { toast("Riservato agli amministratori", "err"); return; }
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const point = data.find(p => p.id === id);
+        if (point) point.isImportant = next;
+        btn.classList.toggle("on", next);
+        btn.setAttribute("aria-pressed", String(next));
+        btn.title = next ? "Importante" : "Segna come importante";
+        btn.innerHTML = starIcon(next);
+      } catch (e) {
+        console.error("toggleImportant", e);
+        toast("Impossibile aggiornare", "err");
+      } finally {
+        btn.disabled = false;
+      }
+    }
     el("timeline").onkeydown = (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       const h = e.target.closest(".day-head");

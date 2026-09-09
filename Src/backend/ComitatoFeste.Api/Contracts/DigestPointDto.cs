@@ -20,9 +20,15 @@ public sealed record DigestPointDto
 
     public required string Text { get; init; }
 
+    /// <summary>Evidenziato dal comitato come rilevante. Toggle riservato agli amministratori.</summary>
+    public bool IsImportant { get; init; }
+
     /// <summary>Presente solo per i punti con un media collegato.</summary>
     public MediaDto? Media { get; init; }
 }
+
+/// <summary>Body di <c>PUT /api/digestpoints/{id}/important</c>.</summary>
+public sealed record SetImportantRequest(bool Important);
 
 /// <summary>Metadati del media collegato a un punto. I byte NON viaggiano qui: si scaricano da <see cref="ContentUrl"/>.</summary>
 public sealed record MediaDto

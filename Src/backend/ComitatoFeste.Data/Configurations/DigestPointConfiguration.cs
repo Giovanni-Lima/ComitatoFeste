@@ -19,6 +19,10 @@ public class DigestPointConfiguration : IEntityTypeConfiguration<DigestPoint>
 
         builder.Property(d => d.Text).IsRequired();
 
+        builder.Property(d => d.IsImportant)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(d => d.Type)
             .IsRequired()
             .HasMaxLength(20)
