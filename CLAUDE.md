@@ -48,8 +48,12 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   vanno esportate nell'ambiente anche `COMITATOFESTE_HOOK_URL=https://comitatofeste.onrender.com`
   e `COMITATOFESTE_HOOK_SECRET`** (segreto dal dashboard Render), accanto a
   `COMITATOFESTE_CONNECTION`: così `PushHook.NotifyAsync` invia davvero la
-  notifica push a fine run (con dati nuovi). Senza quelle due env Importer e
-  Transcriber stampano `notifiche push: … non impostati — salto` e nessuno
+  notifica push a fine run. **Solo il Transcriber notifica** (titolo "Comitato
+  feste 87", corpo statico "Nuovi messaggi in arrivo!" — testo deciso il
+  9/9/2026, prima riportava i conteggi): è l'ultimo passo della pipeline
+  normale (Importer → Transcriber), una sola notifica a processo completato
+  invece di una per l'import e una per la trascrizione. Senza quelle due env
+  il Transcriber stampa `notifiche push: … non impostati — salto` e nessuno
   riceve nulla. A DB:
   **804 `DigestPoint`** (per giorno dal 01-09 all'08-09: 211 / 167 / 131 /
   37 / 163 / 10 / 24 / 61; **288** classificati `rumore`), **597 `MediaAsset`**

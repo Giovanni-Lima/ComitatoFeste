@@ -94,7 +94,43 @@ CURATED = {
         "Alla luce del report di Emilio e del trend emerso, propone come obiettivi la "
         "vendita paritaria dei biglietti e l'aumento delle sponsorizzazioni, puntando a "
         "riportare gli sponsor ai livelli del 1983 per avere più margine."),
+    ("18:34", "Emilio Caniglia"): ("decisione",
+        "Comunica a tutti che la riunione si terrà presso il rustico di Alessandra "
+        "Toracchio, che provvederà a inviare la posizione."),
+    ("18:35", "Alessandra Simonetti"): ("domanda",
+        "Chiede conferma ad Alessandra Toracchio se il rustico sia quello di nonna Giulia "
+        "(risposta affermativa alle 20:19)."),
+    ("19:54", "Emanuele Sciarra"): ("info",
+        "Ricorda ai partecipanti che chi ha un'attività paga la sponsorizzazione doppia, "
+        "trattandosi di beneficenza per il comitato \"87\"; fa i conti a voce alta: il "
+        "pacchetto \"massima visibilità\" costa 500€, moltiplicato per 3 fa 1500€, "
+        "raddoppiato (quota attività) arriva a 3000€."),
+    ("19:55", "Elvis Ippoliti"): ("info",
+        "Aggiunge alla lista di chi ha un'attività (e quindi paga la sponsorizzazione "
+        "doppia) anche Maikel Montano."),
+    ("19:56", "Emanuele Sciarra"): ("info",
+        "Commenta che così si parte meglio rispetto al comitato della classe '86."),
+    ("19:56", "Dante Caniglia"): ("proposta",
+        "Trovando la cifra ancora bassa, propone di chiedere un contributo più alto (circa "
+        "10mila euro) a Daniele, da mostrare come esempio agli altri, ricordando che "
+        "Cesare quest'anno ha incassato molto bene."),
+    ("19:57", "Dante Caniglia"): ("proposta",
+        "Suggerisce, in alternativa/aggiunta, di chiedere una donazione pari all'1% del "
+        "fatturato."),
+    ("20:16", "Elvis Ippoliti"): ("info",
+        "A seguito della battuta di Luca Cicchelli sulla SIAE, chiarisce che il relativo "
+        "costo dovrebbe essere già compreso nel budget stimato di 100.000 euro; Emanuele "
+        "Sciarra conferma che è incluso nel prezzo finale."),
+    ("20:19", "Alessandra Toracchio"): ("info",
+        "Conferma ad Alessandra Simonetti che il rustico per la riunione è quello di "
+        "nonna Giulia."),
 }
+
+
+def _skip_1921_1944(time_, fname):
+    """Regola richiesta dall'utente il 9/9/2026: ignorare tutti i messaggi (media inclusi)
+    della finestra 19:21-19:44 di questa giornata."""
+    return "19:21" <= time_ <= "19:44"
 
 MEDIA_OVERRIDES = {
     (DATE, "14:28", "Emilio Caniglia", "IMG-20260909-WA0006.jpg"):
@@ -109,4 +145,5 @@ MEDIA_OVERRIDES = {
 }
 
 if __name__ == "__main__":
-    build_digest(DATE, CURATED, MEDIA_OVERRIDES)
+    build_digest(DATE, CURATED, MEDIA_OVERRIDES, extra_skip_media=_skip_1921_1944,
+                 extra_skip_label="messaggi 19:21-19:44 esclusi su richiesta")
