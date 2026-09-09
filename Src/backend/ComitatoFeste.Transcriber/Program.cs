@@ -215,16 +215,14 @@ Console.WriteLine($"  modelli a fine run: {groq.CurrentWhisperModel} + {groq.Cur
 foreach (var (t, n) in byType.OrderByDescending(kv => kv.Value))
     Console.WriteLine($"  {t}: {n}");
 
-// Notifica push (best-effort, vedi PushHook). Solo su scritture reali.
+// Notifica push (best-effort, vedi PushHook). Solo su scritture reali, e solo qui:
+// nella pipeline normale è l'ultimo passo (dopo l'Importer), un'unica notifica a
+// processo completato invece di una per l'import e una per la trascrizione.
 if (!dryRun && ok > 0)
 {
     var single = doneDays.Count == 1 ? doneDays.First() : null;
-    var vocali = ok == 1 ? "1 vocale" : $"{ok} vocali";
-    var body = single is not null
-        ? $"Digest {single}: {vocali} trascritti"
-        : $"{vocali} trascritti in {doneDays.Count} giornate";
     await PushHook.NotifyAsync(
-        "Comitato feste 87", body,
+        "Comitato feste 87", "Nuovi messaggi in arrivo!",
         url: single is not null ? $"/?date={single}" : "/",
         tag: single is not null ? $"digest-{single}" : "digest");
 }

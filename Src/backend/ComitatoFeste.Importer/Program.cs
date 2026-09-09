@@ -127,7 +127,6 @@ Console.WriteLine(fuzzy
     : "dedup fuzzy: OFF");
 
 int totInserted = 0, totDup = 0, totFuzzy = 0, totMediaDup = 0, totMedia = 0, totMissing = 0, totMembers = 0;
-var insertedDays = new List<(string Day, int Count)>();
 
 foreach (var file in files)
 {
@@ -146,12 +145,6 @@ foreach (var file in files)
     foreach (var w in r.Warnings)
         Console.WriteLine($"  ! {w}");
 
-    if (r.PointsInserted > 0)
-    {
-        var day = System.Text.RegularExpressions.Regex.Match(r.SourceFile, @"\d{4}-\d{2}-\d{2}").Value;
-        insertedDays.Add((day, r.PointsInserted));
-    }
-
     totInserted += r.PointsInserted;
     totDup += r.DuplicatesSkipped;
     totFuzzy += r.FuzzyDuplicatesSkipped;
@@ -165,18 +158,8 @@ Console.WriteLine($"\n== totale: {files.Count} file, {totInserted} punti, " +
                   $"{totDup} dup esatti, {totFuzzy} dup fuzzy, {totMediaDup} dup media, " +
                   $"{totMembers} membri, {totMedia} media ({totMissing} mancanti) ==");
 
-// Notifica push a chi ha attivato le notifiche sulla PWA (best-effort, vedi PushHook).
-if (totInserted > 0)
-{
-    var single = insertedDays.Count == 1 ? insertedDays[0].Day : null;
-    var body = single is { Length: > 0 }
-        ? $"Digest {single}: {totInserted} nuovi punti"
-        : $"{totInserted} nuovi punti in {insertedDays.Count} giornate";
-    await PushHook.NotifyAsync(
-        "Comitato feste 87", body,
-        url: single is { Length: > 0 } ? $"/?date={single}" : "/",
-        tag: single is { Length: > 0 } ? $"digest-{single}" : "digest");
-}
+// Niente notifica push qui: nella pipeline normale l'Importer è sempre seguito dal
+// Transcriber, che notifica una sola volta a processo completato (vedi PushHook lì).
 }
 
 // --- foto profilo ------------------------------------------------------------
