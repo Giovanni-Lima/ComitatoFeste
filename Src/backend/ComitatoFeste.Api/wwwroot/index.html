@@ -127,7 +127,9 @@
     .topbar{position:sticky;top:0;z-index:10;background:var(--brand);
       border-bottom:1px solid var(--brand-line);
       height:58px;padding:0 24px;display:flex;flex-wrap:nowrap;gap:8px 16px;align-items:center}
-    .topbar h1{font-family:var(--font-display);font-size:25px;margin:0;font-weight:400;letter-spacing:.04em;color:var(--on-brand)}
+    .topbar h1{font-family:var(--font-display);font-size:25px;margin:0;font-weight:400;letter-spacing:.04em;color:var(--on-brand);
+      display:flex;align-items:center;gap:10px}
+    .topbar h1 svg{width:21px;height:21px;flex:none}
     .topbar .me.sm{margin-left:auto;padding:4px 12px 4px 4px;gap:8px;background:var(--brand-chip)}
     .topbar .me.sm .me-av{width:28px;height:28px}
     .topbar .me.sm .me-name{font-weight:400}
@@ -201,7 +203,7 @@
       .topbar h1{font-size:22px}
       .topbar .me.sm{display:none}
       .view{padding:16px 12px calc(96px + env(safe-area-inset-bottom,0px))}
-      .day{scroll-margin-top:56px}
+      .day,.date-sep{scroll-margin-top:56px}
       .day-body{padding:20px 8px 24px}
       .content{grid-template-columns:1fr;grid-template-areas:"timeline"}
       .stats{display:none}
@@ -245,6 +247,15 @@
     .rail{position:relative;max-width:1000px;margin:0 auto}
     .rail::before{content:"";position:absolute;left:50%;top:4px;bottom:4px;width:1px;background:var(--hair);transform:translateX(-50%)}
 
+    /* separatore tra un giorno e l'altro nella timeline continua (vista Importanti):
+       una pillola centrata che "buca" la linea verticale del rail */
+    .date-sep{position:relative;z-index:1;display:flex;justify-content:center;margin:8px 0 24px;
+      scroll-margin-top:80px}
+    .date-sep:first-child{margin-top:0}
+    .date-sep span{background:var(--bg);padding:5px 16px;border-radius:999px;border:1px solid var(--hair);
+      font-family:var(--font-display);font-weight:400;font-size:17px;text-transform:capitalize;
+      letter-spacing:.03em;color:var(--muted)}
+
     .row{position:relative;display:flex;align-items:flex-start}
     .row.left{justify-content:flex-start}
     .row.right{justify-content:flex-end}
@@ -268,18 +279,13 @@
       box-shadow:0 0 0 3px var(--panel),0 0 0 4px var(--hair)}
     .badge svg{width:15px;height:15px}
 
-    .important-btn{position:absolute;top:8px;right:8px;width:32px;height:32px;border:1px solid transparent;
+    .important-btn{position:absolute;top:8px;right:8px;width:32px;height:32px;border:0;
       background:none;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
-      color:var(--muted);cursor:pointer;z-index:2;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
+      color:var(--muted);cursor:pointer;z-index:2;transition:background .12s,color .12s}
     .important-btn svg{width:19px;height:19px}
     .important-btn:hover{background:var(--bg)}
-    /* stesso trattamento "acceso" del chip filtro attivo (.fitem.active), colore --yellow */
-    .important-btn.on{border-color:var(--yellow);
-      background:color-mix(in srgb, var(--yellow) 13%, var(--surface));
-      color:color-mix(in srgb, var(--yellow) 66%, #fff);
-      box-shadow:0 0 0 1px var(--yellow), 0 0 12px -4px var(--yellow)}
+    .important-btn.on{color:var(--yellow)}
     .important-btn:disabled{cursor:default;opacity:.6}
-    .important-btn.static{cursor:default}
 
     .tag{display:inline-block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
       padding:2px 7px;border-radius:999px;margin-bottom:9px;
@@ -421,6 +427,7 @@
 
     @media (max-width:680px){
       .rail::before{left:16px}
+      .date-sep{justify-content:flex-start;padding-left:2px}
       .row,.row.left,.row.right{justify-content:flex-start}
       /* colonna unica: annulla il margine negativo pensato per le righe alternate */
       .row + .row{margin-top:14px}
@@ -440,6 +447,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
           Agenda
         </button>
+        <button class="navitem" data-view="important" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2Z"/></svg>
+          Importanti
+        </button>
         <button class="navitem" data-view="media" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5L7 21"/></svg>
           Media
@@ -449,7 +460,7 @@
 
     <div class="main">
       <header class="topbar" id="topbar">
-        <h1 id="viewTitle">Agenda</h1>
+        <h1 id="viewTitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Agenda</h1>
         <div class="daynav" id="daynav">
           <input type="date" id="day">
         </div>
@@ -469,6 +480,11 @@
       <section class="view" id="viewMedia" hidden>
         <div class="typebar"><div class="filters" id="mediaFilters"></div></div>
         <div id="mediaGrid"></div>
+      </section>
+
+      <section class="view" id="viewImportant" hidden>
+        <div class="typebar"><div class="filters" id="importantFilters"></div></div>
+        <main class="timeline" id="importantTimeline"></main>
       </section>
     </div>
   </div>
@@ -540,12 +556,12 @@
     // include un menu a comparsa (click per aprirlo/chiuderlo) con la sola voce "esci".
     function renderMe(){
       const u = currentUser();
-      for (const [id, greet] of [["meTop", true], ["meSide", true]]) {
+      for (const id of ["meTop", "meSide"]) {
         const box = el(id);
         if (!box) continue;
         box.classList.remove("open");
         if (!u) { box.innerHTML = ""; continue; }
-        const label = greet ? `Ciao ${esc(u.displayName.split(" ")[0])}` : esc(u.displayName);
+        const label = esc(u.displayName.split(" ")[0]);
         box.innerHTML =
           `<div class="me-av ph" style="background:hsl(${hue(u.displayName)} 42% 55%)">${esc(initials(u.displayName))}</div>` +
           `<span class="me-name">${label}</span>` +
@@ -788,11 +804,10 @@
         </div>`;
     }
 
-    // Stella in alto a destra sulla card: per gli admin è un bottone attivo (PUT
-    // .../important), per gli altri un indicatore statico visibile solo se il punto
-    // è già segnato importante (niente stelle vuote non cliccabili in giro).
+    // Stella in alto a destra sulla card: solo per gli admin (bottone attivo, PUT
+    // .../important) — i lettori non la vedono mai, né accesa né spenta.
     function importantBtnHtml(p){
-      if (!isAdmin()) return p.isImportant ? `<span class="important-btn on static">${starIcon(true)}</span>` : "";
+      if (!isAdmin()) return "";
       const on = !!p.isImportant;
       return `<button type="button" class="important-btn${on ? " on" : ""}" data-id="${p.id}"
         aria-pressed="${on}" title="${on ? "Importante" : "Segna come importante"}">${starIcon(on)}</button>`;
@@ -1242,6 +1257,7 @@
         renderStats();
         mediaDirty = true;
         if (view === "media") renderMedia();
+        if (view === "important") renderImportant();
       } catch (e) {
         el("timeline").innerHTML = `<div class="error">API non raggiungibile su <code>${API}</code>.<br>Avvia <code>ComitatoFeste.Api</code>.</div>`;
         return;
@@ -1268,28 +1284,55 @@
     const TOPBAR_H = 60;   // altezza topbar sticky (58px) + margine
     function updatePickerFromScroll(){
       spyTick = 0;
-      if (el("viewAgenda").hidden || performance.now() < spySuppressUntil) return;
+      if (performance.now() < spySuppressUntil) return;
       if (document.activeElement === el("day")) return;
-      const secs = el("timeline").querySelectorAll(".day");
-      if (!secs.length) return;
-      let current = null;
-      for (const s of secs){
-        const r = s.getBoundingClientRect();
-        // sezioni il cui bordo alto ha già superato la topbar ma il basso è ancora
-        // sotto: l'ultima nel DOM (= la più "in basso") è quella davanti agli occhi.
-        if (r.top - TOPBAR_H <= 1 && r.bottom > TOPBAR_H) current = s;
+
+      if (!el("viewAgenda").hidden) {
+        const secs = el("timeline").querySelectorAll(".day");
+        if (!secs.length) return;
+        let current = null;
+        for (const s of secs){
+          const r = s.getBoundingClientRect();
+          // sezioni il cui bordo alto ha già superato la topbar ma il basso è ancora
+          // sotto: l'ultima nel DOM (= la più "in basso") è quella davanti agli occhi.
+          if (r.top - TOPBAR_H <= 1 && r.bottom > TOPBAR_H) current = s;
+        }
+        if (!current){                       // in cima alla pagina: prendi la prima
+          const r0 = secs[0].getBoundingClientRect();
+          if (r0.top >= TOPBAR_H) current = secs[0];
+        }
+        if (current) setPickerDay(current.id.slice(4));   // id = "day-YYYY-MM-DD"
+        return;
       }
-      if (!current){                       // in cima alla pagina: prendi la prima
-        const r0 = secs[0].getBoundingClientRect();
-        if (r0.top >= TOPBAR_H) current = secs[0];
+
+      if (!el("viewImportant").hidden) {
+        // timeline continua: niente sezioni con un basso/alto propri, solo i separatori
+        // data — il "corrente" è l'ultimo separatore il cui bordo alto ha già superato
+        // la propria linea di riposo (sono in ordine di scroll, quindi ci si può fermare
+        // al primo che non l'ha superata). Soglia = scroll-margin-top dell'elemento
+        // stesso (non TOPBAR_H fisso): deve combaciare con dove goToImportantDay lo
+        // fa atterrare, altrimenti subito dopo un salto da picker lo scroll-spy
+        // lo giudicherebbe "non ancora arrivato" e tornerebbe indietro di un giorno.
+        const seps = el("importantTimeline").querySelectorAll(".date-sep");
+        if (!seps.length) return;
+        let current = seps[0];
+        for (const s of seps){
+          const margin = parseFloat(getComputedStyle(s).scrollMarginTop) || TOPBAR_H;
+          const r = s.getBoundingClientRect();
+          if (r.top - margin > 1) break;
+          current = s;
+        }
+        setPickerDay(current.dataset.day);
       }
-      if (current) setPickerDay(current.id.slice(4));   // id = "day-YYYY-MM-DD"
     }
     function scheduleSpy(){ if (!spyTick) spyTick = setTimeout(updatePickerFromScroll, 90); }
     addEventListener("scroll", scheduleSpy, { passive: true });
     addEventListener("resize", scheduleSpy, { passive: true });
 
-    el("day").onchange = () => goToDay(el("day").value);
+    el("day").onchange = () => {
+      if (view === "important") goToImportantDay(el("day").value);
+      else goToDay(el("day").value);
+    };
     el("timeline").onclick = (e) => {
       const dl = e.target.closest(".day-dl");
       if (dl) { downloadRecap(dl.dataset.day, dl); return; }
@@ -1297,6 +1340,10 @@
       if (imp) { toggleImportant(imp); return; }
       const h = e.target.closest(".day-head");
       if (h) { toggleDay(h.dataset.day); if (openDays.has(h.dataset.day)) setPickerDay(h.dataset.day); }
+    };
+    el("importantTimeline").onclick = (e) => {
+      const imp = e.target.closest(".important-btn");
+      if (imp) toggleImportant(imp);
     };
 
     // Toggle "importante": ottimistico lato bottone, ma sincrono con `data` così un
@@ -1316,6 +1363,9 @@
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const point = data.find(p => p.id === id);
         if (point) point.isImportant = next;
+        // Nella vista Importanti la card deve sparire/comparire subito col nuovo
+        // stato (la vista mostra solo i punti flaggati); altrove basta la stellina.
+        if (view === "important") { renderImportant(); return; }
         btn.classList.toggle("on", next);
         btn.setAttribute("aria-pressed", String(next));
         btn.title = next ? "Importante" : "Segna come importante";
@@ -1363,16 +1413,103 @@
       render();
     };
 
+    // --- vista Importanti: timeline unica e continua (niente accordion per
+    // giorno), stessi badge di tipo dell'Agenda, separata da un divisore data
+    // ogni volta che il giorno cambia. ------------------------------------
+    let impFilterType = null;   // null = mostra tutti i tipi
+
+    function buildImportantFilters(){
+      const item = (k, c, label) =>
+        `<button class="fitem" data-k="${k}" style="--c:${c}"><span class="dot"></span>${label}</button>`;
+      el("importantFilters").innerHTML =
+        item("", "var(--yellow)", "Tutti") +
+        Object.keys(TYPES).map(k => item(k, TYPES[k].color, TYPE_LABELS[k])).join("");
+      syncImportantChips();
+    }
+    function syncImportantChips(){
+      for (const b of el("importantFilters").children)
+        b.classList.toggle("active", b.dataset.k === (impFilterType || ""));
+    }
+    el("importantFilters").onclick = (e) => {
+      const b = e.target.closest(".fitem");
+      if (!b) return;
+      const k = b.dataset.k || null;
+      impFilterType = (k === impFilterType) ? null : k;
+      syncImportantChips();
+      renderImportant();
+    };
+
+    const importantItems = () => data.filter(p => p.isImportant);
+    const visibleImportantItems = () =>
+      impFilterType ? importantItems().filter(p => p.type === impFilterType) : importantItems();
+
+    // Giorno (Roma) di un'entry, sia essa un punto singolo o un gruppo foto/documenti.
+    function entryDay(entry){
+      const p = entry.photoGroup ? entry.photoGroup[0] : entry.docGroup ? entry.docGroup[0] : entry;
+      return romeDay(p.occurredAt);
+    }
+    const dateSepHtml = (day) => `<div class="date-sep" id="isep-${day}" data-day="${day}"><span>${fmtDay(day)}</span></div>`;
+
+    function renderImportant(){
+      const all = importantItems();
+      if (!all.length) { el("importantTimeline").innerHTML = `<div class="empty">Nessun punto importante.</div>`; return; }
+
+      const items = visibleImportantItems();
+      if (!items.length) { el("importantTimeline").innerHTML = `<div class="empty">Nessun punto importante "${impFilterType}".</div>`; return; }
+
+      // stesso ordine dell'Agenda (giorno più recente in alto, cronologico
+      // all'interno del giorno), ma appiattito in un'unica lista continua.
+      const ordered = groupByDay(items).flatMap(([, pts]) => pts);
+      const grouped = groupMedia(ordered);
+
+      let lastDay = null;
+      const rows = grouped.map((entry, i) => {
+        const day = entryDay(entry);
+        const sep = day !== lastDay ? dateSepHtml(day) : "";
+        lastDay = day;
+        return sep + rowHtml(entry, i);
+      });
+
+      // il date picker (condiviso con l'Agenda) riflette il giorno più recente
+      // in cima alla lista, coerente col comportamento iniziale dell'Agenda.
+      setPickerDay(entryDay(grouped[0]));
+
+      el("importantTimeline").innerHTML = `<div class="rail">${rows.join("")}</div>`;
+      hydrateLinkPreviews(el("importantTimeline"));
+      scheduleSpy();
+    }
+
+    function goToImportantDay(day){
+      const sep = document.getElementById("isep-" + day);
+      if (!sep) return;
+      el("day").value = day;
+      spySuppressUntil = performance.now() + 900;
+      requestAnimationFrame(() => sep.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
+
     // --- viste (menu sidebar) --------------------------------------------
     let view = "agenda";
+    const VIEW_TITLES = { agenda: "Agenda", media: "Media", important: "Importanti" };
+    // Stesse icone dei bottoni della sidebar, riusate nel titolo topbar.
+    const VIEW_ICONS = {
+      agenda: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,
+      media: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5L7 21"/></svg>`,
+      important: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2Z"/></svg>`,
+    };
     function setView(v){
       view = v;
-      el("viewAgenda").hidden = v !== "agenda";
-      el("viewMedia").hidden  = v !== "media";
-      el("daynav").hidden     = v !== "agenda";
+      el("viewAgenda").hidden    = v !== "agenda";
+      el("viewMedia").hidden     = v !== "media";
+      el("viewImportant").hidden = v !== "important";
+      el("daynav").hidden     = v !== "agenda" && v !== "important";
+      // Ri-renderizza sempre l'Agenda al rientro: il flag "importante" può essere
+      // cambiato altrove (es. dalla vista Importanti) mentre un giorno restava
+      // aperto in background, e il suo .day-body non si aggiorna da solo.
+      if (v === "agenda") render();
       if (v === "media") renderMediaIfNeeded();
-      el("viewTitle").textContent = v === "media" ? "Media" : "Agenda";
-      document.title = "Comitato feste 87 — " + el("viewTitle").textContent;
+      if (v === "important") renderImportant();
+      el("viewTitle").innerHTML = VIEW_ICONS[v] + VIEW_TITLES[v];
+      document.title = "Comitato feste 87 — " + VIEW_TITLES[v];
       for (const b of el("nav").children) b.classList.toggle("active", b.dataset.view === v);
       scrollTo({ top: 0 });
     }
@@ -1419,6 +1556,7 @@
     el("day").value = qs.get("date") || todayRome();
     buildFilters();
     buildMediaFilters();
+    buildImportantFilters();
 
     (async () => {
       let enabled = true;
