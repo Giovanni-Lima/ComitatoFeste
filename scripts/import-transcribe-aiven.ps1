@@ -43,7 +43,11 @@ $env:COMITATOFESTE_HOOK_SECRET = $hookSecret
 $env:COMITATOFESTE_HOOK_URL = "https://comitatofeste.onrender.com"
 
 Write-Host "== Import verso Aiven ==" -ForegroundColor Cyan
-dotnet run --project (Join-Path $repoRoot "Src/backend/ComitatoFeste.Importer") -- $ImporterArgs.Split(" ", [StringSplitOptions]::RemoveEmptyEntries)
+# --export-root esplicito: il default hardcoded nel Program.cs dell'Importer
+# (C:\ComitatoFeste\Export) e' il vecchio percorso pre-trasloco, non esiste piu'.
+$exportRoot = Join-Path $repoRoot "Export"
+$importerExtra = $ImporterArgs.Split(" ", [StringSplitOptions]::RemoveEmptyEntries)
+dotnet run --project (Join-Path $repoRoot "Src/backend/ComitatoFeste.Importer") -- --export-root $exportRoot @importerExtra
 if ($LASTEXITCODE -ne 0) { throw "Importer terminato con errore (exit $LASTEXITCODE)." }
 
 Write-Host "`n== Trascrizione verso Aiven ==" -ForegroundColor Cyan
