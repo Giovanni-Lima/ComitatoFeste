@@ -77,6 +77,15 @@ CURATED = {
         "visita a Corinaldo (tabella allegata): Bianchi Tour 1100€ per 54 posti / "
         "1250€ per 64 / 1800€ per 83; Di Curzio 1200€ per 54 posti; Passalacqua 1100€ "
         "per 54 posti."),
+    # --- coda serale importata l'11/9/2026 (nuovi messaggi dopo il checkpoint 14:15,
+    # in mezzo perlopiù chiacchiere nostalgiche su una gita scolastica a Verona, non
+    # curate) ---
+    ("19:32", "Dante Caniglia"): ("info",
+        "Condivide un video (https://www.facebook.com/share/v/18QpcPb2tT/) di "
+        "un'esibizione di un coro abruzzese."),
+    ("19:56", "Maria Buttari"): ("proposta",
+        "Ispirata dal video condiviso da Dante, propone di organizzare una serata a "
+        "tema con cori abruzzesi."),
 }
 
 MEDIA_OVERRIDES = {
@@ -107,7 +116,7 @@ MEDIA_OVERRIDES = {
         "calcolato per ciascuna riga (~19-22€).",
 }
 
-# Le 5 GIF di reazione del giorno travestite da .mp4: nessuna ha traccia audio
+# Le 6 GIF di reazione del giorno travestite da .mp4: nessuna ha traccia audio
 # (verificato ispezionando i box MP4 -> nessun handler 'soun'), quindi vanno
 # escluse come sticker/GIF (regola 4/9/2026). Sono elencate qui esplicitamente
 # perché nella sessione in cui è stato generato questo digest ffprobe non era
@@ -119,6 +128,8 @@ _REACTION_GIF_MP4 = {
     "VID-20260910-WA0053.mp4",
     "VID-20260910-WA0058.mp4",
     "VID-20260910-WA0066.mp4",
+    "VID-20260910-WA0159.mp4",  # aggiunta 11/9/2026 (coda pomeridiana/serale),
+                                 # verificata con ffprobe: nessuna traccia audio
 }
 
 
