@@ -1,6 +1,8 @@
+using System.IO.Compression;
 using System.Net;
 using ComitatoFeste.Api.Services;
 using ComitatoFeste.Data;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
@@ -53,6 +55,23 @@ builder.Services.AddSingleton<PushKeys>();
 // Invio Web Push: typed client (un solo HttpClient riusato dal WebPushClient).
 builder.Services.AddHttpClient<PushSender>();
 
+// Compressione delle risposte testuali (JSON/HTML/JS/CSS/SVG): senza, l'API manda
+// ~355 KB non compressi a ogni GET /api/digestpoints. La whitelist MIME di default
+// esclude già image/audio/video/pdf (inutile ri-comprimere binari già compressi);
+// aggiungiamo solo il manifest PWA. Level=Optimal: qui la risorsa scarsa è la banda,
+// non la CPU (traffico basso, piano free), e con Optimal la stessa risposta scende a
+// ~55-65 KB invece dei ~106 KB di Fastest. EnableForHttps: Render fa da proxy TLS, il
+// client vede HTTPS quindi va abilitato — rischio BREACH trascurabile (token nell'header, non nel body).
+builder.Services.AddResponseCompression(o =>
+{
+    o.EnableForHttps = true;
+    o.Providers.Add<BrotliCompressionProvider>();
+    o.Providers.Add<GzipCompressionProvider>();
+    o.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/manifest+json" });
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Optimal);
+builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Optimal);
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -72,6 +91,10 @@ using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<ComitatoFesteDbContext>().Database.Migrate();
 }
+
+// Primo nella pipeline: comprime tutto ciò che passa (risposte testuali; i binari
+// sono esclusi dalla whitelist MIME). Le risposte 304/206 non vengono compresse.
+app.UseResponseCompression();
 
 if (app.Environment.IsDevelopment())
 {
