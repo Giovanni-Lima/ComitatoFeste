@@ -430,6 +430,14 @@ sopra):
   dichiara esplicitamente l'esito (es. "Considerato l'esito del sondaggio,
   la riunione viene confermata per..."), quello va curato come una entry
   separata di tipo `decisione`.
+- **Menzioni di Giovanni Lima (regola aggiunta l'11/9/2026)**: quando un
+  altro membro del gruppo nomina Giovanni Lima in un messaggio, non è
+  necessario inserirlo automaticamente in `CURATED` (vale comunque la
+  regola generale: se il contenuto è "rumore" si scarta come qualsiasi
+  altro messaggio). Va però sempre segnalato a Giovanni nel recap finale
+  della sessione di export — orario, autore e breve contesto — anche
+  quando il messaggio non è finito nel digest, così può decidere se
+  intervenire.
 
 ## Convenzioni già in uso — seguile per coerenza
 

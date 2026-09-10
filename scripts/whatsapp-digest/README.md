@@ -148,6 +148,14 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
   dell'export: il sondaggio resta aperto), riportando per intero domanda e
   tutte le opzioni con il conteggio voti. Se un messaggio successivo
   dichiara l'esito, va curato come `decisione` in una entry separata.
+- **Menzioni di Giovanni Lima (regola aggiunta l'11/9/2026)**: quando un
+  altro membro nomina Giovanni Lima in un messaggio, non è necessario
+  creare un'entry in `CURATED` solo per questo (resta soggetto alle
+  normali regole di curatela come qualsiasi altro messaggio: se è
+  "rumore" si scarta comunque). In compenso, alla fine della sessione di
+  export, nel recap finale a Giovanni va segnalato che è stato nominato
+  (con orario, autore e un breve contesto), così può valutare se rispondere
+  o intervenire, anche quando il messaggio non è finito nel digest.
 
 ## Percorsi
 
