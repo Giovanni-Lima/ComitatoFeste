@@ -195,7 +195,10 @@ public sealed class DigestImporter
         // già presente è lo stesso messaggio anche se il Transcriber ne ha nel frattempo riscritto
         // il Text (placeholder "non trascritto" -> sintesi), caso in cui il match esatto/fuzzy sul
         // Text non lo riconoscerebbe più. Il nome file è "HHMM_Autore_descrizione.ext": stabile e
-        // di fatto unico nel giorno, quindi due vocali diversi dello stesso minuto restano distinti.
+        // di fatto unico nel giorno. Nota: al PRIMO import di due vocali diversi dello stesso
+        // autore nello stesso minuto questo livello non basta (i file non sono ancora a DB) — a
+        // tenerli distinti è il placeholder disambiguato dal generatore del digest ("... (2)"),
+        // altrimenti collassano sul vincolo UNIQUE (vedi docs/CONTEXT.md, dati del 10/9/2026).
         var existingMedia = new HashSet<(string Author, string FileName)>();
         if (group.Id != 0)
         {

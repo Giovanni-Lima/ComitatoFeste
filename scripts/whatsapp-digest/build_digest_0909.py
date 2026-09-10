@@ -124,6 +124,25 @@ CURATED = {
     ("20:19", "Alessandra Toracchio"): ("info",
         "Conferma ad Alessandra Simonetti che il rustico per la riunione è quello di "
         "nonna Giulia."),
+    # --- coda serale importata il 10/9/2026 (nuovi messaggi dopo il checkpoint 20:19) ---
+    ("23:30", "Giovanni Lima"): ("info",
+        "Annuncia che l'app del comitato è online e utilizzabile (pur non ancora "
+        "completa al 100%): https://comitatofeste.onrender.com . Per accedere si usa "
+        "l'iniziale del nome puntata più il cognome (es. e.caniglia, c.mariani, "
+        "e.sciarra) e la password condivisa branco87. Chi non vede la propria foto "
+        "profilo (WhatsApp non la espone all'app) può inviarla in privato a Giovanni "
+        "perché la carichi; per richieste, modifiche o correzioni si scrive a lui."),
+    ("23:35", "Dante Caniglia"): ("proposta",
+        "Propone di integrare nell'app un agente/chatbot su API gratuita (cita i modelli "
+        "Gemini di Google AI Studio) che risponda alle domande sul contenuto, in stile "
+        "RAG. Giovanni Lima fa notare che i piani gratuiti danno un credito giornaliero "
+        "limitato, ma si può provare."),
+    ("23:40", "Dante Caniglia"): ("proposta",
+        "Propone di invertire l'ordine dei punti nell'app, dal più recente al più "
+        "vecchio. Giovanni Lima obietta che così si leggerebbe la risposta prima della "
+        "domanda e che l'app è pensata come riassunto della giornata, non come chat; "
+        "Dante concorda di lasciare l'ordine cronologico attuale (\"No lascia così, è "
+        "più sensato\")."),
 }
 
 
@@ -142,6 +161,14 @@ MEDIA_OVERRIDES = {
         "pacchetti (Totem piccolo/grande, logo sul retro o sul fronte dei biglietti della "
         "lotteria, striscione in piazza) con prezzi da 50 a 500 euro, condiviso come esempio "
         "da cui prendere spunto.",
+    (DATE, "23:33", "Giovanni Lima", "IMG-20260909-WA0047.jpg"):
+        "Screenshot della chat che mostra un messaggio di Emanuele Sciarra privo di foto "
+        "profilo, inviato per scherzo da Giovanni Lima nella discussione sulle foto profilo "
+        "mancanti nell'app.",
+    (DATE, "23:41", "Dante Caniglia", "IMG-20260909-WA0049.jpg"):
+        "Screenshot dell'app comitatofeste (vista Agenda del 9 settembre) con alcuni punti "
+        "classificati come 'proposta' attribuiti a Dante Caniglia, condiviso nel siparietto "
+        "scherzoso sull'app.",
 }
 
 if __name__ == "__main__":

@@ -31,6 +31,18 @@ EXT_KIND = {
     ".pdf": "documento",
 }
 
+# Normalizzazione del nome autore: il .txt di WhatsApp usa il display name reale
+# (es. con apostrofo), ma altrove nella pipeline lo stesso membro compare con una
+# forma diversa (tipicamente quella del file foto profilo, es. "Nome-Cognome.jpg").
+# Senza allinearli l'Importer — che fa match esatto su DisplayName — crea un membro
+# duplicato a ogni import (vedi "Domanda aperta" in CLAUDE.md). La mappa rimappa
+# SOLO il nome scritto nelle entry (campo "author", nome file media, testo del
+# placeholder vocale); le chiavi di CURATED / MEDIA_OVERRIDES restano il nome
+# grezzo del .txt. Aggiungere una riga qui quando emerge un nuovo disallineamento.
+AUTHOR_ALIASES = {
+    "Valentina D'Arcadia": "Valentina DArcadia",
+}
+
 
 def slug(name):
     s = name.replace("'", "").replace("'", "")
@@ -51,15 +63,26 @@ def is_reaction_gif(path):
         return False  # in dubbio, non escludere
 
 
-def media_text(sender, ext, caption, override):
+def media_text(sender, ext, caption, override, n=1):
     """Testo dell'entry per un media. `override` (da MEDIA_OVERRIDES) ha sempre
     la precedenza — ricordati la regola 6/9/2026: niente tratti fisici delle
-    persone ritratte, solo azione/contesto."""
+    persone ritratte, solo azione/contesto.
+
+    `n` è la progressione del media nella coppia (minuto, mittente): serve solo
+    per il placeholder dei vocali non trascritti. Due (o più) vocali diversi
+    dello stesso autore nello stesso minuto avrebbero altrimenti testo identico
+    e collasserebbero sul vincolo UNIQUE (GroupId, MemberId, OccurredAt, Text)
+    dell'Importer (falso positivo descritto in docs/CONTEXT.md, visto sui dati
+    del 10/9/2026). Dal 2° in poi si aggiunge " (n)" per renderli distinti; il
+    testo resta un placeholder ("non trascritt" c'è ancora, così l'Importer lo
+    continua a escludere dal dedup fuzzy) e il Transcriber lo riscrive comunque.
+    """
     if override:
         return override
     kind = EXT_KIND.get(ext.lower(), "file")
     if kind == "audio":
-        return f"Vocale di {sender}, non trascritto."
+        return (f"Vocale di {sender}, non trascritto. ({n})" if n > 1
+                else f"Vocale di {sender}, non trascritto.")
     if kind == "foto":
         t = f"Foto condivisa da {sender}."
         if caption:
@@ -124,6 +147,9 @@ def build_digest(date, curated, media_overrides, curated_system=None,
 
     for m in msgs:
         time_, sender, kind = m["time"], m["sender"], m["kind"]
+        # nome grezzo del .txt -> chiavi CURATED/MEDIA_OVERRIDES e log diagnostici;
+        # `author` (rimappato) -> campo "author" delle entry, nome file media, placeholder vocale.
+        author = AUTHOR_ALIASES.get(sender, sender)
 
         if kind == "system":
             hit = curated_system.get(time_)
@@ -148,7 +174,7 @@ def build_digest(date, curated, media_overrides, curated_system=None,
                     continue
                 used_curated_keys.add(key)
                 typ, text = hit
-                entries.append({"date": date, "time": time_, "author": sender, "type": typ,
+                entries.append({"date": date, "time": time_, "author": author, "type": typ,
                                  "text": text, "file": None})
             else:
                 skipped_text.append((time_, sender))
@@ -170,16 +196,16 @@ def build_digest(date, curated, media_overrides, curated_system=None,
             if ext.lower() == ".mp4" and is_reaction_gif(src_path):
                 skipped_reaction_gifs.append((time_, sender, fname))
                 continue
-            k = (time_.replace(":", ""), sender)
+            k = (time_.replace(":", ""), author)
             seq[k] += 1
             n = seq[k]
             suffix = f"-{n}" if n > 1 else ""
-            dest_name = f"{time_.replace(':', '')}_{slug(sender)}{suffix}{ext.lower()}"
+            dest_name = f"{time_.replace(':', '')}_{slug(author)}{suffix}{ext.lower()}"
             shutil.copy2(src_path, os.path.join(dest_dir, dest_name))
             kept_filenames.add(dest_name)
             override = media_overrides.get((date, time_, sender, fname))
-            text = media_text(sender, ext, m.get("text"), override)
-            entries.append({"date": date, "time": time_, "author": sender, "type": "media",
+            text = media_text(author, ext, m.get("text"), override, n=n)
+            entries.append({"date": date, "time": time_, "author": author, "type": "media",
                              "text": text, "file": dest_name})
             continue
 
