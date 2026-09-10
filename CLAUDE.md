@@ -490,13 +490,20 @@ implementarlo.
    overage $0,15/GB). Gli endpoint blob non hanno alcun header di cache, quindi
    ogni foto / PDF / vocale riprodotto viene ri-scaricato a ogni visita di ogni
    membro. Interventi previsti, dal più economico:
-   a. `Cache-Control` + `ETag`/`Last-Modified` su `/api/digestpoints/media/{id}/content`,
-      `/api/members/{id}/photo` e `recap` (i blob sono immutabili, hanno lo
-      `Sha256` → `max-age` lungo + `immutable`);
-   b. keep-alive (quando si attiva) puntato **solo** su `/api/auth/status`
+   a. **FATTO** (develop `e2ee28c`, non ancora su main): `Cache-Control` + `ETag`
+      su `/api/digestpoints/media/{id}/content` (immutable, max-age 1 anno) e
+      `/api/members/{id}/photo` (max-age 1 g). `recap` non toccato. Range/304 ok.
+   b. **FATTO** (develop `88fb26b`, non ancora su main): response compression
+      brotli/gzip (`Program.cs`) sulle risposte testuali — `GET /api/digestpoints`
+      355 KB → ~76 KB, `index.html` 92 → 26 KB; binari non compressi.
+   b-bis. keep-alive (quando si attiva) puntato **solo** su `/api/auth/status`
       (~200 byte), mai su `/` (92 KB);
-   c. thumbnail foto lato server (vedi punto 1);
+   c. thumbnail foto lato server (vedi punto 1): la vista Media carica ~70 foto
+      (~12 MB) a ogni apertura; con thumbnail ~1-2 MB;
    d. Cloudflare gratis davanti al dominio (CDN edge; richiede dominio custom +
       gli header di (a));
    e. blob su Cloudflare R2 (egress gratuito) — `MediaBlob` è già tabella 1:1
-      separata, vedi `docs/DEPLOY.md` §"Storage Aiven".
+      separata, vedi `docs/DEPLOY.md` §"Storage Aiven". N.B. i **documenti**
+      pesano ~2 MB l'uno (uno 7 MB), 26 MB su 66 MB di blob totali.
+   Follow-up: `ETag`/`max-age` breve anche su `GET /api/digestpoints` (unica
+   risposta testuale ancora rimandata intera a ogni apertura).
