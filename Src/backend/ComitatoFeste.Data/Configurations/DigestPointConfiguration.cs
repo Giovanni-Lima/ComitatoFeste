@@ -30,8 +30,12 @@ public class DigestPointConfiguration : IEntityTypeConfiguration<DigestPoint>
                 v => v.ToString().ToLowerInvariant(),
                 v => Enum.Parse<DigestPointType>(v, true));
 
-        // Dedup livello 1 — vincolo UNIQUE hard: blocca i rerun letterali (stesso testo esatto),
-        // senza falsi positivi sui due vocali diversi dello stesso autore nello stesso minuto.
+        // Dedup livello 1 — vincolo UNIQUE hard: blocca i rerun letterali (stesso testo esatto).
+        // Due vocali diversi dello stesso autore nello stesso minuto NON collassano qui solo
+        // perché il generatore del digest (scripts/whatsapp-digest/digest_lib.py) rende distinto
+        // il placeholder dal 2° in poi ("Vocale di X, non trascritto. (2)"): senza quella
+        // disambiguazione il testo sarebbe identico e questo indice li fonderebbe (falso
+        // positivo descritto in docs/CONTEXT.md, visto sui dati del 10/9/2026).
         builder.HasIndex(d => new { d.GroupId, d.MemberId, d.OccurredAt, d.Text })
             .IsUnique()
             .HasDatabaseName("UX_DigestPoints_Group_Member_OccurredAt_Text");

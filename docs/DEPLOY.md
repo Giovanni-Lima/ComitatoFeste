@@ -223,7 +223,20 @@ schedulato → `pg_dump` → Cloudflare R2 (10 GB free) con lifecycle a 30 giorn
   inattività; la richiesta successiva attende ~40-60 s. Per tenerlo caldo
   gratis: un ping schedulato (es. <https://cron-job.org>) su
   `/api/auth/status` ogni 10 min — quell'endpoint **non** tocca il DB, quindi
-  non consuma risorse Aiven. Sta nelle 750 h/mese del free.
+  non consuma risorse Aiven. Sta nelle 750 h/mese del free. **Punta il
+  keep-alive su `/api/auth/status`, mai su `/`**: l'HTML è ~92 KB e a 4320
+  ping/mese sarebbe ~400 MB di banda in uscita (vedi punto sotto).
+- **Banda in uscita (5 GB/mese sul piano Hobby)**: sforata il 10/9/2026 →
+  *"Workspace suspended — you've used the 5 GB of free bandwidth"*; sbloccata
+  aggiungendo una carta (overage $0,15/GB; Pro include 25 GB). Causa: gli
+  endpoint che servono i byte dal DB
+  (`/api/digestpoints/media/{id}/content`, `/api/members/{id}/photo`,
+  `recap`) **non emettono header di cache**, quindi ogni foto / PDF / vocale
+  riprodotto viene ri-scaricato per intero a ogni visita di ogni membro. Con
+  ~20 persone che aprono l'app più volte al giorno dal telefono, 5 GB si
+  bruciano in ~2 settimane. Mitigazioni in `CLAUDE.md` → "Prossimi passi noti"
+  punto 5 (la prima: `Cache-Control` + `ETag` sui blob, immutabili perché
+  hanno lo `Sha256`).
 - **Endpoint media non autenticati**: `/api/digestpoints/media/{id}/content` e
   `/api/members/{id}/photo` non hanno `[TokenAuth]` (servono agli
   `<img>`/`<audio>`). Su un URL pubblico sono enumerabili da chiunque

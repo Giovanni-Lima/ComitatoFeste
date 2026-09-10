@@ -25,9 +25,21 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
 ## Come si genera un nuovo giorno
 
 1. **Esporta di nuovo la chat** da WhatsApp Android ("Esporta chat" con
-   media): il file arriva/si aggiorna come
-   `C:\Users\giova\Dropbox\Chat WhatsApp con Il branco dei pazzi 87.zip`
-   (root di Dropbox, ~150 MB, contiene sia il `.txt` che tutti i media).
+   media): il file arriva/si aggiorna nella root di Dropbox come
+   `Chat WhatsApp con Il branco dei pazzi 87.zip` (~150 MB, contiene sia il
+   `.txt` che tutti i media). La cartella Dropbox è quella dell'utente loggato
+   (vista finora: `C:\Users\giova\Dropbox`, in altre sessioni
+   `C:\Users\glima\Dropbox`).
+
+   > **Usa SEMPRE e SOLO lo zip senza suffisso numerico.** Se nella cartella
+   > trovi anche `Chat WhatsApp con Il branco dei pazzi 87_1.zip`, `_2.zip`,
+   > ecc., **vanno ignorati**: sono copie vecchie che il download tiene quando
+   > arriva un nuovo export con lo stesso nome. Lo zip senza suffisso è quello
+   > corrente, anche se risulta più piccolo di un `_N.zip` (WhatsApp include
+   > nel `.txt` solo le righe dei media effettivamente esportati in quella
+   > finestra, quindi un export più recente può avere meno righe-media di uno
+   > vecchio — è normale, non è un troncamento).
+
    Estrai lo zip per procedere (in una cartella di lavoro qualsiasi, non
    necessariamente dentro il repo — es. nella sessione cloud se manca una
    shell diretta sul PC, vedi nota sotto). Più a lungo i partecipanti hanno

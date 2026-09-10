@@ -6,6 +6,7 @@ using ComitatoFeste.Data;
 using ComitatoFeste.Domain;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 
 namespace ComitatoFeste.Api.Controllers;
 
@@ -145,14 +146,20 @@ public sealed class DigestPointsController : ControllerBase
     {
         var blob = await _db.MediaBlobs
             .Where(b => b.MediaAssetId == mediaId)
-            .Select(b => new { b.Content, b.ContentType })
+            .Select(b => new { b.Content, b.ContentType, b.Sha256 })
             .FirstOrDefaultAsync(ct);
 
         if (blob is null)
             return NotFound();
 
         var contentType = string.IsNullOrWhiteSpace(blob.ContentType) ? "application/octet-stream" : blob.ContentType;
-        return File(blob.Content, contentType, enableRangeProcessing: true);
+        // Il contenuto di un mediaId non cambia mai (l'Importer non riscrive i blob, il
+        // Transcriber tocca solo il Text): cache lunga + immutable, così il browser non
+        // ri-richiede nemmeno. L'ETag (SHA-256 del blob) lascia gestire a ASP.NET i 304
+        // su If-None-Match per i client che comunque rivalidano.
+        Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+        var etag = new EntityTagHeaderValue($"\"{blob.Sha256}\"");
+        return File(blob.Content, contentType, lastModified: null, entityTag: etag, enableRangeProcessing: true);
     }
 
     /// <summary>

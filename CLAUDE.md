@@ -297,7 +297,11 @@ più dentro il repo**: da oggi (6/9/2026) arriva sempre come file
 scompattato a mano in una sottocartella del progetto (`Chat WhatsApp con
 Il branco dei pazzi 87\`), ora si parte direttamente dallo zip Dropbox e lo
 si estrae dove serve per la rigenerazione (non necessariamente sotto
-`C:\temp\ComitatoFeste`). Gli script Python che generano i
+`C:\temp\ComitatoFeste`). **Si usa sempre e solo lo zip senza suffisso
+numerico**: eventuali `..._1.zip` / `..._2.zip` nella stessa cartella sono
+copie vecchie tenute dal download e vanno ignorati, anche se più grandi
+(un export più recente può avere meno righe-media nel `.txt`, è normale —
+vedi `scripts/whatsapp-digest/README.md` passo 1). Gli script Python che generano i
 `digest_<data>.json` in `Export/` a partire dal `.txt` estratto sono
 versionati nel repo in **`scripts/whatsapp-digest/`**: `parse_wa.py`,
 **`digest_lib.py`** (logica comune: parsing/copia media, `is_reaction_gif`,
@@ -481,3 +485,25 @@ implementarlo.
    `/api/members/{id}/photo`): oggi senza `[TokenAuth]`, su URL pubblico sono
    enumerabili. Follow-up con token in querystring (tocca il rendering media
    del frontend).
+5. **Ridurre la banda in uscita di Render** (il piano Hobby ha un tetto di
+   **5 GB/mese**, sforato il 10/9/2026 → workspace sospeso, aggiunta una carta:
+   overage $0,15/GB). Gli endpoint blob non hanno alcun header di cache, quindi
+   ogni foto / PDF / vocale riprodotto viene ri-scaricato a ogni visita di ogni
+   membro. Interventi previsti, dal più economico:
+   a. **FATTO** (develop `e2ee28c`, non ancora su main): `Cache-Control` + `ETag`
+      su `/api/digestpoints/media/{id}/content` (immutable, max-age 1 anno) e
+      `/api/members/{id}/photo` (max-age 1 g). `recap` non toccato. Range/304 ok.
+   b. **FATTO** (develop `88fb26b`, non ancora su main): response compression
+      brotli/gzip (`Program.cs`) sulle risposte testuali — `GET /api/digestpoints`
+      355 KB → ~76 KB, `index.html` 92 → 26 KB; binari non compressi.
+   b-bis. keep-alive (quando si attiva) puntato **solo** su `/api/auth/status`
+      (~200 byte), mai su `/` (92 KB);
+   c. thumbnail foto lato server (vedi punto 1): la vista Media carica ~70 foto
+      (~12 MB) a ogni apertura; con thumbnail ~1-2 MB;
+   d. Cloudflare gratis davanti al dominio (CDN edge; richiede dominio custom +
+      gli header di (a));
+   e. blob su Cloudflare R2 (egress gratuito) — `MediaBlob` è già tabella 1:1
+      separata, vedi `docs/DEPLOY.md` §"Storage Aiven". N.B. i **documenti**
+      pesano ~2 MB l'uno (uno 7 MB), 26 MB su 66 MB di blob totali.
+   Follow-up: `ETag`/`max-age` breve anche su `GET /api/digestpoints` (unica
+   risposta testuale ancora rimandata intera a ogni apertura).
