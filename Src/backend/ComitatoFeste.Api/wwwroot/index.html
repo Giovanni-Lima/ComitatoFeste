@@ -611,7 +611,7 @@
         img.className = "me-av";
         img.alt = "";
         img.onload = () => { const ph = box.querySelector(".me-av.ph"); if (ph) box.replaceChild(img, ph); };
-        img.src = `${API}/api/members/${u.memberId}/photo`;
+        img.src = `${API}/api/members/${u.memberId}/photo?w=192`;
       }
     }
 
@@ -714,7 +714,7 @@
     }
 
     const avatarHtml = (p) => p.authorPhotoUrl
-      ? `<img class="avatar" loading="lazy" src="${API}${p.authorPhotoUrl}" alt="">`
+      ? `<img class="avatar" loading="lazy" src="${API}${p.authorPhotoUrl}?w=192" alt="">`
       : `<div class="avatar ph" style="background:hsl(${hue(p.author)} 42% 55%)">${esc(initials(p.author))}</div>`;
 
     const isImage = (p) => p.media && p.media.contentUrl &&
@@ -758,7 +758,7 @@
       const side = i % 2 ? "right" : "left";
       const thumbs = grp.map(p => {
         const url = `${API}${p.media.contentUrl}`;
-        return `<a href="${url}" target="_blank" rel="noopener"><img loading="lazy" decoding="async" src="${url}" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)"></a>`;
+        return `<a href="${url}" target="_blank" rel="noopener"><img loading="lazy" decoding="async" src="${url}?w=960" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)"></a>`;
       }).join("");
       const caps = [...new Set(grp.map(p => p.text).filter(t => t && !GENERIC_CAPTION.test(t)))];
       const textHtml = caps.length ? caps.map(linkify).join("<br>") : `${grp.length} immagini`;
@@ -817,7 +817,7 @@
         const url = `${API}${p.media.contentUrl}`;
         const ct = p.media.contentType || "";
         if (ct.startsWith("image/") || p.media.mediaType === "foto")
-          media = `<div class="media"><a href="${url}" target="_blank" rel="noopener"><img loading="lazy" decoding="async" src="${url}" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)"></a></div>`;
+          media = `<div class="media"><a href="${url}" target="_blank" rel="noopener"><img loading="lazy" decoding="async" src="${url}?w=960" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)"></a></div>`;
         else if (ct.startsWith("video/"))
           media = `<div class="media"><video controls preload="none" src="${url}"></video></div>`;
         else if (ct.startsWith("audio/") || p.media.mediaType === "audio")
@@ -1057,8 +1057,12 @@
       const n = (+img.dataset.retry || 0) + 1;
       if (n > 3) return;   // tentativi esauriti: resta l'alt (nome file), come prima
       img.dataset.retry = n;
-      const base = img.src.split("?")[0];
-      setTimeout(() => { img.src = n >= 3 ? `${base}?r=${n}` : base; }, 300 * 2 ** (n - 1));
+      const [base, qs] = img.src.split("?");
+      const q = new URLSearchParams(qs || "");   // conserva ?w= (thumbnail), tocca solo r
+      q.delete("r");
+      if (n >= 3) q.set("r", n);   // 3a prova: scavalca un'eventuale cache guasta
+      const s = q.toString();
+      setTimeout(() => { img.src = s ? `${base}?${s}` : base; }, 300 * 2 ** (n - 1));
     };
 
     // --- lightbox media: apre immagine/PDF/video dentro l'app --------------
@@ -1237,7 +1241,7 @@
         (p.media.contentType === "application/pdf" || /\.pdf$/i.test(p.media.fileName));
       let inner;
       if (kind === "foto") {
-        inner = `<img loading="lazy" decoding="async" src="${url}" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)">`;
+        inner = `<img loading="lazy" decoding="async" src="${url}?w=480" alt="${esc(p.media.fileName)}" onerror="mediaImgRetry(this)">`;
       } else if (kind === "video") {
         inner = `<video preload="metadata" muted playsinline src="${url}#t=0.1"></video>
           <div class="mplay"><span>${ICONS.play}</span></div>`;

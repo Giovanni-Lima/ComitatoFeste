@@ -16,11 +16,13 @@ public sealed class DigestPointsController : ControllerBase
 {
     private readonly ComitatoFesteDbContext _db;
     private readonly GroqRecapClient _groq;
+    private readonly ImageThumbnailer _thumbs;
 
-    public DigestPointsController(ComitatoFesteDbContext db, GroqRecapClient groq)
+    public DigestPointsController(ComitatoFesteDbContext db, GroqRecapClient groq, ImageThumbnailer thumbs)
     {
         _db = db;
         _groq = groq;
+        _thumbs = thumbs;
     }
 
     /// <summary>
@@ -140,9 +142,13 @@ public sealed class DigestPointsController : ControllerBase
         return Ok(new { id = point.Id, important = point.IsImportant });
     }
 
-    /// <summary>Contenuto binario originale di un media (immagine/audio/documento), servito inline.</summary>
+    /// <summary>
+    /// Contenuto binario di un media (immagine/audio/documento), servito inline.
+    /// Con <c>?w=192|480|960</c> su un'immagine restituisce un thumbnail WebP di quella
+    /// larghezza (vedi <see cref="ImageThumbnailer"/>); ogni altro valore o tipo → originale.
+    /// </summary>
     [HttpGet("media/{mediaId:int}/content")]
-    public async Task<IActionResult> GetMediaContent(int mediaId, CancellationToken ct)
+    public async Task<IActionResult> GetMediaContent(int mediaId, [FromQuery] int? w, CancellationToken ct)
     {
         var blob = await _db.MediaBlobs
             .Where(b => b.MediaAssetId == mediaId)
@@ -153,11 +159,22 @@ public sealed class DigestPointsController : ControllerBase
             return NotFound();
 
         var contentType = string.IsNullOrWhiteSpace(blob.ContentType) ? "application/octet-stream" : blob.ContentType;
+
         // Il contenuto di un mediaId non cambia mai (l'Importer non riscrive i blob, il
         // Transcriber tocca solo il Text): cache lunga + immutable, così il browser non
-        // ri-richiede nemmeno. L'ETag (SHA-256 del blob) lascia gestire a ASP.NET i 304
-        // su If-None-Match per i client che comunque rivalidano.
+        // ri-richiede nemmeno. L'ETag (SHA-256 del blob) lascia gestire a ASP.NET i 304.
         Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+
+        if (w is int width && ImageThumbnailer.IsAllowedWidth(width)
+            && contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            var thumb = await _thumbs.GetWebpAsync($"m:{mediaId}:{width}", blob.Content, width, ct);
+            if (thumb is not null)
+                return File(thumb, "image/webp", lastModified: null,
+                    entityTag: new EntityTagHeaderValue($"\"{blob.Sha256}-w{width}\""));
+            // non decodificabile: ripiega sull'originale sotto
+        }
+
         var etag = new EntityTagHeaderValue($"\"{blob.Sha256}\"");
         return File(blob.Content, contentType, lastModified: null, entityTag: etag, enableRangeProcessing: true);
     }

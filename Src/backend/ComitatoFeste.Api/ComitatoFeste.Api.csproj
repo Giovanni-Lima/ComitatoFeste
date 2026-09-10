@@ -11,6 +11,11 @@
 
   <ItemGroup>
     <PackageReference Include="QuestPDF" Version="2026.8.0" />
+    <!-- Thumbnail WebP delle immagini (ImageThumbnailer): pure-managed, nessuna dipendenza
+         nativa. Restare sulla linea 3.1.x: è l'ultima sotto la "Six Labors Split License"
+         (gratis per il nostro caso, come QuestPDF Community); la 4.x richiede una licenza
+         a pagamento (chiave al build). 3.1.11 è senza vulnerabilità note. -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="WebPush" Version="1.0.13" />
   </ItemGroup>
