@@ -49,8 +49,9 @@ builder.Services.AddHttpClient<LinkPreviewService>(c =>
 // Login "casereccio": passphrase condivisa da env COMITATOFESTE_AUTH_PASSWORD o config Auth:Password.
 builder.Services.AddSingleton<AuthService>();
 
-// Thumbnail WebP al volo per gli endpoint immagine (?w=), cache in IMemoryCache.
-builder.Services.AddSingleton<ImageThumbnailer>();
+// Thumbnail WebP per gli endpoint immagine (?w=), generati una volta e persistiti in
+// ImageThumbnails. Scoped: usa il DbContext della richiesta.
+builder.Services.AddScoped<ImageThumbnailer>();
 
 // Chiavi VAPID per il Web Push (env COMITATOFESTE_VAPID_* o config Vapid:*).
 builder.Services.AddSingleton<PushKeys>();

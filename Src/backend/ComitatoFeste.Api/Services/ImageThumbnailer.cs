@@ -1,53 +1,63 @@
-using Microsoft.Extensions.Caching.Memory;
+using ComitatoFeste.Data;
+using ComitatoFeste.Domain;
+using Microsoft.EntityFrameworkCore;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 
 namespace ComitatoFeste.Api.Services;
 
 /// <summary>
-/// Genera al volo versioni WebP ridimensionate delle immagini servite dagli endpoint blob
-/// (foto profilo e media), con cache in memoria. Serve a non mandare il file originale
-/// (foto profilo ~73 KB medi, foto condivise ~175 KB) dove il frontend lo mostra piccolo
-/// — avatar, griglia della vista Media. Vedi CLAUDE.md "Prossimi passi noti" punto 5c.
+/// Genera versioni WebP ridimensionate delle immagini servite dagli endpoint blob (foto
+/// profilo e media) e le **persiste** in <c>ImageThumbnails</c>: così ogni <c>(sorgente,
+/// larghezza)</c> si ridimensiona una volta sola nella vita e le richieste "calde" leggono
+/// una riga piccola dal DB senza toccare ImageSharp né il blob originale. Vedi CLAUDE.md
+/// "Prossimi passi noti" punto 5c.
 ///
-/// Storage: <see cref="IMemoryCache"/> — semplice, si perde a ogni restart del container
-/// (frequente sul piano free) e si rigenera su richiesta. Se in futuro serve persistenza,
-/// il candidato è una tabella <c>MediaThumbnails</c> 1:1 come <c>MediaBlobs</c>: cambia
-/// solo l'implementazione di questo servizio, non i controller.
+/// Servizio **scoped** (usa il <see cref="ComitatoFesteDbContext"/> della richiesta); il
+/// freno alla concorrenza è statico perché limita una risorsa globale — la RAM: ImageSharp
+/// tiene l'immagine decompressa in memoria (una JPEG da 600 KB può essere decine di MB) e il
+/// free tier ha 512 MB.
 /// </summary>
 public sealed class ImageThumbnailer
 {
-    /// <summary>Larghezze ammesse (il resto → nessun thumbnail, si serve l'originale).
-    /// Tenerle poche limita le voci di cache per immagine. Valori pensati retina:
-    /// 192 = avatar, 480 = tile griglia Media, 960 = foto inline nelle card.</summary>
+    /// <summary>Larghezze ammesse (il resto → nessun thumbnail, si serve l'originale). Poche
+    /// per limitare le righe per immagine. Pensate retina: 192 avatar, 480 tile griglia
+    /// Media, 960 foto inline nelle card.</summary>
     private static readonly int[] AllowedWidths = { 192, 480, 960 };
 
-    private readonly IMemoryCache _cache;
-    // Serializza il lavoro pesante: ImageSharp tiene l'immagine decompressa in RAM
-    // (una JPEG da 600 KB può essere decine di MB) e il free tier ha 512 MB.
-    private readonly SemaphoreSlim _gate = new(2, 2);
+    private static readonly SemaphoreSlim Gate = new(2, 2);
 
-    public ImageThumbnailer(IMemoryCache cache) => _cache = cache;
+    private readonly ComitatoFesteDbContext _db;
+
+    public ImageThumbnailer(ComitatoFesteDbContext db) => _db = db;
 
     public static bool IsAllowedWidth(int w) => Array.IndexOf(AllowedWidths, w) >= 0;
 
     /// <summary>
-    /// WebP di <paramref name="original"/> ridotto a <paramref name="width"/> px di larghezza
-    /// (mai ingrandito), con caching per <paramref name="cacheKey"/>. <c>null</c> se i byte non
-    /// sono un'immagine decodificabile (il chiamante ripiega sull'originale).
+    /// WebP di larghezza <paramref name="width"/> (mai ingrandito) per la sorgente
+    /// <paramref name="kind"/>/<paramref name="sourceId"/>. Se esiste già in
+    /// <c>ImageThumbnails</c> per lo stesso <paramref name="sourceSha256"/> lo restituisce
+    /// senza altro lavoro; altrimenti chiama <paramref name="loadOriginal"/> (che scarica il
+    /// blob grande), genera, salva e restituisce. <c>null</c> se i byte non sono un'immagine
+    /// decodificabile (il chiamante ripiega sull'originale).
     /// </summary>
-    public async Task<byte[]?> GetWebpAsync(string cacheKey, byte[] original, int width, CancellationToken ct)
+    public async Task<byte[]?> GetWebpAsync(
+        string kind, int sourceId, int width, string sourceSha256,
+        Func<Task<byte[]>> loadOriginal, CancellationToken ct)
     {
-        if (_cache.TryGetValue(cacheKey, out byte[]? cached)) return cached;
+        var hit = await FindAsync(kind, sourceId, width, sourceSha256, ct);
+        if (hit is not null) return hit;
 
-        await _gate.WaitAsync(ct);
+        await Gate.WaitAsync(ct);
         try
         {
-            if (_cache.TryGetValue(cacheKey, out cached)) return cached;   // ricontrolla dopo il gate
+            hit = await FindAsync(kind, sourceId, width, sourceSha256, ct);   // un'altra richiesta può averlo appena inserito
+            if (hit is not null) return hit;
 
             byte[] webp;
             try
             {
+                var original = await loadOriginal();
                 using var image = Image.Load(original);
                 var target = Math.Min(width, image.Width);
                 image.Mutate(x => x.Resize(new ResizeOptions
@@ -64,18 +74,37 @@ public sealed class ImageThumbnailer
                 return null;   // formato non supportato / immagine corrotta
             }
 
-            // ~100 immagini × 3 larghezze × ~30 KB ≈ pochi MB; la sliding expiration
-            // evita crescita illimitata nel tempo. Niente Size: il MemoryCache di
-            // AddMemoryCache() non ha SizeLimit.
-            _cache.Set(cacheKey, webp, new MemoryCacheEntryOptions
+            _db.ImageThumbnails.Add(new ImageThumbnail
             {
-                SlidingExpiration = TimeSpan.FromHours(24),
+                Kind = kind,
+                SourceId = sourceId,
+                Width = width,
+                SourceSha256 = sourceSha256,
+                Content = webp,
+                ContentType = "image/webp",
+                CreatedAt = DateTimeOffset.UtcNow,
             });
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException)
+            {
+                // Corsa: un'altra richiesta ha inserito la stessa (Kind, SourceId, Width).
+                // I byte sono equivalenti: si scarta la Add e si restituisce quanto generato.
+                _db.ChangeTracker.Clear();
+            }
             return webp;
         }
         finally
         {
-            _gate.Release();
+            Gate.Release();
         }
     }
+
+    private Task<byte[]?> FindAsync(string kind, int sourceId, int width, string sha, CancellationToken ct) =>
+        _db.ImageThumbnails.AsNoTracking()
+            .Where(t => t.Kind == kind && t.SourceId == sourceId && t.Width == width && t.SourceSha256 == sha)
+            .Select(t => (byte[]?)t.Content)
+            .FirstOrDefaultAsync(ct);
 }
