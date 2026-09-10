@@ -17,6 +17,7 @@ public class ComitatoFesteDbContext : DbContext
     public DbSet<DigestPoint> DigestPoints => Set<DigestPoint>();
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<MediaBlob> MediaBlobs => Set<MediaBlob>();
+    public DbSet<ImageThumbnail> ImageThumbnails => Set<ImageThumbnail>();
     public DbSet<Verbale> Verbali => Set<Verbale>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 

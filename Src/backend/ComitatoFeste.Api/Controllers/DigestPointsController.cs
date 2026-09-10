@@ -150,6 +150,36 @@ public sealed class DigestPointsController : ControllerBase
     [HttpGet("media/{mediaId:int}/content")]
     public async Task<IActionResult> GetMediaContent(int mediaId, [FromQuery] int? w, CancellationToken ct)
     {
+        // Il contenuto di un mediaId non cambia mai (l'Importer non riscrive i blob, il
+        // Transcriber tocca solo il Text): cache lunga + immutable, così il browser non
+        // ri-richiede nemmeno. L'ETag (SHA-256) lascia gestire a ASP.NET i 304.
+        Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+
+        // Percorso thumbnail: prima solo i metadati (tipo + SHA); il blob grande si scarica
+        // solo se il thumbnail non è già in ImageThumbnails.
+        if (w is int width && ImageThumbnailer.IsAllowedWidth(width))
+        {
+            var meta = await _db.MediaBlobs
+                .Where(b => b.MediaAssetId == mediaId)
+                .Select(b => new { b.ContentType, b.Sha256 })
+                .FirstOrDefaultAsync(ct);
+
+            if (meta is null)
+                return NotFound();
+
+            if (meta.Sha256 is not null
+                && (meta.ContentType ?? "").StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                var thumb = await _thumbs.GetWebpAsync("media", mediaId, width, meta.Sha256,
+                    () => _db.MediaBlobs.Where(b => b.MediaAssetId == mediaId).Select(b => b.Content).FirstAsync(ct),
+                    ct);
+                if (thumb is not null)
+                    return File(thumb, "image/webp", lastModified: null,
+                        entityTag: new EntityTagHeaderValue($"\"{meta.Sha256}-w{width}\""));
+                // non immagine decodificabile: ripiega sull'originale sotto
+            }
+        }
+
         var blob = await _db.MediaBlobs
             .Where(b => b.MediaAssetId == mediaId)
             .Select(b => new { b.Content, b.ContentType, b.Sha256 })
@@ -159,22 +189,6 @@ public sealed class DigestPointsController : ControllerBase
             return NotFound();
 
         var contentType = string.IsNullOrWhiteSpace(blob.ContentType) ? "application/octet-stream" : blob.ContentType;
-
-        // Il contenuto di un mediaId non cambia mai (l'Importer non riscrive i blob, il
-        // Transcriber tocca solo il Text): cache lunga + immutable, così il browser non
-        // ri-richiede nemmeno. L'ETag (SHA-256 del blob) lascia gestire a ASP.NET i 304.
-        Response.Headers.CacheControl = "public, max-age=31536000, immutable";
-
-        if (w is int width && ImageThumbnailer.IsAllowedWidth(width)
-            && contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-        {
-            var thumb = await _thumbs.GetWebpAsync($"m:{mediaId}:{width}", blob.Content, width, ct);
-            if (thumb is not null)
-                return File(thumb, "image/webp", lastModified: null,
-                    entityTag: new EntityTagHeaderValue($"\"{blob.Sha256}-w{width}\""));
-            // non decodificabile: ripiega sull'originale sotto
-        }
-
         var etag = new EntityTagHeaderValue($"\"{blob.Sha256}\"");
         return File(blob.Content, contentType, lastModified: null, entityTag: etag, enableRangeProcessing: true);
     }

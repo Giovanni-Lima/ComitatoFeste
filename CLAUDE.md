@@ -32,7 +32,10 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   CHECK `'lettore'|'amministratore'`, default `lettore` — vedi login sotto) +
   `AddDigestPointImportant` (colonna `DigestPoints.IsImportant`, bool,
   default `false` — flag "importante" toggleabile solo dagli admin, vedi
-  `PUT /api/digestpoints/{id}/important` sotto). Le stesse migration sono applicate ad **Aiven**
+  `PUT /api/digestpoints/{id}/important` sotto) + `AddImageThumbnails`
+  (tabella `ImageThumbnails`: WebP ridimensionati e persistiti delle immagini
+  servite dagli endpoint blob, chiave UNIQUE `(Kind, SourceId, Width)`, niente
+  FK — vedi `?w=` e `ImageThumbnailer` sotto). Le stesse migration sono applicate ad **Aiven**
   (da `Database.Migrate()` al boot dell'API). Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
@@ -498,8 +501,14 @@ implementarlo.
       355 KB → ~76 KB, `index.html` 92 → 26 KB; binari non compressi.
    b-bis. keep-alive (quando si attiva) puntato **solo** su `/api/auth/status`
       (~200 byte), mai su `/` (92 KB);
-   c. thumbnail foto lato server (vedi punto 1): la vista Media carica ~70 foto
-      (~12 MB) a ogni apertura; con thumbnail ~1-2 MB;
+   c. **FATTO** (develop): thumbnail WebP lato server via `?w=192|480|960` su
+      `/api/digestpoints/media/{id}/content` e `/api/members/{id}/photo`
+      (`ImageThumbnailer` + SixLabors.ImageSharp 3.1.x). Persistiti in
+      `ImageThumbnails` (migration `AddImageThumbnails`), generati una volta
+      sola: sopravvivono ai cold start, una richiesta calda legge una riga
+      piccola dal DB senza toccare ImageSharp né il blob originale. Frontend:
+      avatar `?w=192`, tile Media `?w=480`, foto inline card `?w=960`; l'`<a
+      href>` resta sull'originale. Vista Media ~12 MB → ~1 MB;
    d. Cloudflare gratis davanti al dominio (CDN edge; richiede dominio custom +
       gli header di (a));
    e. blob su Cloudflare R2 (egress gratuito) — `MediaBlob` è già tabella 1:1
