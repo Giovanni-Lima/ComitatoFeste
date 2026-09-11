@@ -438,6 +438,16 @@ sopra):
   della sessione di export — orario, autore e breve contesto — anche
   quando il messaggio non è finito nel digest, così può decidere se
   intervenire.
+- **Condivisione di posizione (regola aggiunta l'11/9/2026)**: nel `.txt`
+  una posizione condivisa è una riga di **testo** con un link Google Maps
+  (`posizione: https://maps.google.com/?q=lat,long`), non un file media —
+  quindi nessuna voce in `MEDIA_OVERRIDES`. Una posizione **statica** (un
+  pin, es. il punto di ritrovo di una riunione) va curata come un link
+  qualsiasi: testo integrale del link in `CURATED`, tipo `info` (o
+  `decisione` se è la posizione definitiva di un appuntamento già deciso).
+  Una posizione **in tempo reale** (`live location`) va invece sempre
+  scartata come rumore in fase di curatela — l'eventuale visualizzazione
+  lato frontend è da definire.
 
 ## Convenzioni già in uso — seguile per coerenza
 

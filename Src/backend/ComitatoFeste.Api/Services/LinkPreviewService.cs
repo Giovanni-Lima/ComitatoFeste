@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -22,13 +23,25 @@ namespace ComitatoFeste.Api.Services;
 ///   <item>massimo 3 redirect, timeout dal typed client, corpo letto e troncato a
 ///     <see cref="MaxBytes"/>, solo <c>Content-Type</c> HTML.</item>
 /// </list>
+///
+/// I link a una posizione condivisa (<c>https://maps.google.com/?q=lat,lon</c>, il formato con
+/// cui WhatsApp esporta una posizione statica — vedi CLAUDE.md, regola 11/9/2026) non passano
+/// dallo scraping: Google serve a un client anonimo una pagina di consenso cookie, non la mappa,
+/// quindi l'anteprima OG sarebbe fuorviante ("Prima di continuare su Google Maps"). Le coordinate
+/// sono già nell'URL: <see cref="TryBuildMapsPreview"/> le legge direttamente e costruisce
+/// un'anteprima sintetica con una tile statica di OpenStreetMap (nessuna chiave/costo, ma niente
+/// marker sul punto esatto — solo l'area), evitando del tutto la richiesta verso Google.
 /// </summary>
 public sealed class LinkPreviewService
 {
     private const int MaxBytes = 512 * 1024;
+    private const int MapZoom = 15;
     private static readonly TimeSpan OkTtl = TimeSpan.FromHours(12);
     private static readonly TimeSpan FailTtl = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
+    private static readonly Regex MapsQueryRe = new(
+        @"[?&]q=(-?\d{1,3}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)",
+        RegexOptions.None, RegexTimeout);
 
     private readonly HttpClient _http;
     private readonly IMemoryCache _cache;
@@ -49,12 +62,46 @@ public sealed class LinkPreviewService
         if (_cache.TryGetValue(CacheKey(url), out LinkPreviewDto? cached))
             return cached;
 
-        var preview = await FetchAsync(url, ct);
+        var preview = TryBuildMapsPreview(url) ?? await FetchAsync(url, ct);
         _cache.Set(CacheKey(url), preview, preview is null ? FailTtl : OkTtl);
         return preview;
     }
 
     private static string CacheKey(string url) => "linkpreview::" + url;
+
+    /// <summary>
+    /// Anteprima sintetica per una posizione statica di Google Maps (<c>maps.google.com</c> con
+    /// <c>?q=lat,lon</c>), senza alcuna richiesta di rete verso Google. <c>null</c> se l'URL non è
+    /// in questa forma (in quel caso <see cref="GetAsync"/> ricade sullo scraping OG generico).
+    /// </summary>
+    private static LinkPreviewDto? TryBuildMapsPreview(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || !string.Equals(uri.Host, "maps.google.com", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var m = MapsQueryRe.Match(uri.Query);
+        if (!m.Success
+            || !double.TryParse(m.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
+            || !double.TryParse(m.Groups[2].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var lon)
+            || lat is < -90 or > 90 || lon is < -180 or > 180)
+            return null;
+
+        var n = Math.Pow(2, MapZoom);
+        var xTile = (int)Math.Clamp((lon + 180.0) / 360.0 * n, 0, n - 1);
+        var latRad = lat * Math.PI / 180.0;
+        var yTile = (int)Math.Clamp((1.0 - Math.Asinh(Math.Tan(latRad)) / Math.PI) / 2.0 * n, 0, n - 1);
+
+        return new LinkPreviewDto
+        {
+            Url = url,
+            Title = "Posizione condivisa",
+            Description = $"{lat.ToString("0.#####", CultureInfo.InvariantCulture)}, "
+                         + $"{lon.ToString("0.#####", CultureInfo.InvariantCulture)}",
+            Image = $"https://tile.openstreetmap.org/{MapZoom}/{xTile}/{yTile}.png",
+            SiteName = "Google Maps",
+        };
+    }
 
     private async Task<LinkPreviewDto?> FetchAsync(string url, CancellationToken ct)
     {
