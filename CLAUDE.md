@@ -111,11 +111,33 @@ Il backend .NET compila pulito e gira contro Postgres locale.
       endpoint binari (foto/media) restano aperti per `<img>/<audio>/<video>`.
     - `GET /api/digestpoints?date=yyyy-MM-dd` (+ filtri `author`, `type`) →
       lista `DigestPointDto`; **`date` opzionale**, se omesso restituisce
-      tutti i giorni (non paginato). Ogni punto porta `authorId` +
+      tutti i giorni. Con `from`/`to` (yyyy-MM-dd, entrambi opzionali e
+      inclusivi, ignorati se `date` è presente) restituisce un range —
+      è quello che usa il frontend per caricare l'Agenda un mese alla volta
+      invece di tutto lo storico (11/9/2026, dopo che una proiezione a un
+      anno di attività ha mostrato che scaricare tutto ogni apertura non
+      avrebbe retto la banda Render, vedi punto 5 sotto). `important=true`
+      ignora `date`/`from`/`to` e restituisce solo i punti flaggati, storico
+      completo: è la query dedicata della vista Importanti, separata da
+      quella (paginata) dell'Agenda — pochi punti anche su base annua, non
+      serve paginarla. Ogni punto porta `authorId` +
       `authorPhotoUrl` e, per i media, `media.contentUrl`. Senza `type`
       esplicito la vista è pulita: niente `rumore` e niente vocali non
       ancora digeriti (audio con `TranscribedAt == null`). Ogni punto porta
       anche `isImportant`.
+    - `GET /api/digestpoints/bounds` → `{earliest, latest}` (date, fuso Roma;
+      entrambe `null` se non c'è ancora nessun punto), i due estremi della
+      vista pulita. Il frontend la interroga una volta all'avvio per
+      scegliere il mese di default dell'Agenda — quello di `latest`, non il
+      mese solare corrente, così un mese nuovo ancora senza punti non appare
+      vuoto (si continua a vedere l'ultimo mese popolato) — e per nascondere
+      il bottone "carica mese precedente" una volta raggiunto `earliest`.
+    - `GET /api/digestpoints/media` → tutti i punti con un media scaricabile
+      che non sia audio (foto/video/documento, stesso criterio del client
+      `mediaKind()`), storico completo. Query dedicata della vista Media,
+      separata da quella (paginata per mese) dell'Agenda perché la galleria
+      deve restare sfogliabile per intero anche quando l'Agenda carica solo
+      il mese corrente.
     - `PUT /api/digestpoints/{id}/important {important:bool}` → evidenzia/
       rimuove il flag "importante" su un punto. `[TokenAuth(MemberRole.
       Amministratore)]`: 403 se il token non è admin, 401 senza token.
@@ -224,8 +246,20 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   overlay di login (username membro + passphrase → `POST /api/auth/login`),
   altrimenti carica; il token va in `Authorization: Bearer` su ogni fetch
   JSON, un 401 riporta al login, il bottone "esci" in topbar lo cancella.
-  Consuma `GET /api/digestpoints` **senza
-  `date`** (tutti i giorni) e li raggruppa lato client per giorno Roma in
+  **Tre fonti dati indipendenti** (`data`/`mediaData`/`importantData`),
+  caricate in parallelo da `load()` all'avvio: l'Agenda **non** scarica più
+  tutto lo storico (vedi sopra il perché), ma un mese alla volta via
+  `GET /api/digestpoints?from=&to=` — di default il mese di
+  `GET /api/digestpoints/bounds`'s `latest` (esteso a includere il mese di
+  un eventuale `?date=` più vecchio); un bottone "carica mese precedente" in
+  fondo alla timeline (`loadPreviousMonth`, nascosto da `canLoadPreviousMonth`
+  quando si è già raggiunto `bounds.earliest`) estende `data` un mese indietro
+  alla volta. Il date picker in topbar, se punta a un giorno non ancora
+  caricato, fa risalire `goToDay` mese per mese prima di scrollarci (stesso
+  meccanismo, silenzioso). Media e Importanti restano invece full-history,
+  ciascuna con la propria query dedicata (`GET /api/digestpoints/media` e
+  `?important=true`) indipendente dal mese caricato in Agenda — vedi sopra.
+  `data` raggruppata lato client per giorno Roma in
   un **accordion**: una `<section class="day">` per data, collassata, con
   la timeline verticale (righe alternate sx/dx, badge per tipo) nel
   `.day-body`. All'atterraggio è espanso solo il giorno `?date=` (default

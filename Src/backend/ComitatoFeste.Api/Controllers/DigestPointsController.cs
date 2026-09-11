@@ -27,8 +27,12 @@ public sealed class DigestPointsController : ControllerBase
 
     /// <summary>
     /// Punti di digest in ordine cronologico (fuso Europe/Rome).
-    /// Con <c>date</c> (yyyy-MM-dd) restituisce solo quella giornata; senza, tutti i giorni
-    /// (non paginato — il volume atteso è piccolo, il frontend li raggruppa per data).
+    /// Con <c>date</c> (yyyy-MM-dd) restituisce solo quella giornata; con <c>from</c>/<c>to</c>
+    /// (entrambi opzionali e inclusivi) un range di giorni — usato dal frontend per caricare
+    /// l'Agenda un mese alla volta invece di tutto lo storico. Senza nessuno dei tre, tutti i
+    /// giorni (nessun limite: uso interno/di servizio, il frontend non lo fa più per l'Agenda).
+    /// <c>important=true</c> restituisce solo i punti flaggati (storico completo, a prescindere
+    /// da date/from/to: sono pochi anche su base annua, è la query della vista Importanti).
     /// Filtri opzionali per autore (<c>DisplayName</c> esatto) e tipo.
     /// Senza filtro esplicito su 'type' la vista è "pulita": esclude i punti "rumore" e i
     /// vocali non ancora digeriti dal Transcriber (audio senza <c>TranscribedAt</c> — sia i
@@ -39,8 +43,11 @@ public sealed class DigestPointsController : ControllerBase
     [TokenAuth]
     public async Task<ActionResult<IReadOnlyList<DigestPointDto>>> GetByDay(
         [FromQuery] DateOnly? date,
+        [FromQuery] DateOnly? from,
+        [FromQuery] DateOnly? to,
         [FromQuery] string? author,
         [FromQuery] string? type,
+        [FromQuery] bool important,
         CancellationToken ct)
     {
         DigestPointType? typeFilter = null;
@@ -51,6 +58,9 @@ public sealed class DigestPointsController : ControllerBase
             typeFilter = parsed;
         }
 
+        if (from is not null && to is not null && from > to)
+            return BadRequest("'from' non può essere successivo a 'to'.");
+
         var query = _db.DigestPoints.AsQueryable();
 
         if (date is not null)
@@ -58,8 +68,24 @@ public sealed class DigestPointsController : ControllerBase
             var (startUtc, endUtc) = RomeTime.DayRangeUtc(date.Value);
             query = query.Where(d => d.OccurredAt >= startUtc && d.OccurredAt < endUtc);
         }
+        else
+        {
+            if (from is not null)
+            {
+                var (startUtc, _) = RomeTime.DayRangeUtc(from.Value);
+                query = query.Where(d => d.OccurredAt >= startUtc);
+            }
+            if (to is not null)
+            {
+                var (_, endUtc) = RomeTime.DayRangeUtc(to.Value);
+                query = query.Where(d => d.OccurredAt < endUtc);
+            }
+        }
 
-        var rows = await query
+        if (important)
+            query = query.Where(d => d.IsImportant);
+
+        query = query
             .Where(d => author == null || d.Member.DisplayName == author)
             .Where(d => typeFilter == null ? d.Type != DigestPointType.Rumore : d.Type == typeFilter)
             // Vista di default: nasconde i vocali non ancora digeriti — audio senza
@@ -67,7 +93,70 @@ public sealed class DigestPointsController : ControllerBase
             .Where(d => typeFilter != null
                         || d.MediaAsset == null
                         || d.MediaAsset.MediaType != MediaType.Audio
-                        || d.MediaAsset.TranscribedAt != null)
+                        || d.MediaAsset.TranscribedAt != null);
+
+        return Ok(await ProjectToDtoAsync(query, ct));
+    }
+
+    /// <summary>
+    /// Primo/ultimo giorno (fuso Europe/Rome) con almeno un punto nella vista "pulita" (vedi
+    /// <see cref="GetByDay"/>). Il frontend lo interroga una volta all'avvio per scegliere il
+    /// mese di default dell'Agenda (quello di <c>Latest</c>, non necessariamente il mese
+    /// solare corrente — così un mese ancora senza punti non appare vuoto) e per sapere quando
+    /// nascondere "carica mese precedente" (una volta raggiunto <c>Earliest</c>).
+    /// </summary>
+    [HttpGet("bounds")]
+    [TokenAuth]
+    public async Task<ActionResult<DigestPointsBoundsDto>> GetBounds(CancellationToken ct)
+    {
+        var query = CleanViewQuery();
+
+        if (!await query.AnyAsync(ct))
+            return Ok(new DigestPointsBoundsDto());
+
+        var minUtc = await query.MinAsync(d => d.OccurredAt, ct);
+        var maxUtc = await query.MaxAsync(d => d.OccurredAt, ct);
+
+        return Ok(new DigestPointsBoundsDto
+        {
+            Earliest = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(minUtc, RomeTime.Zone).DateTime),
+            Latest = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(maxUtc, RomeTime.Zone).DateTime),
+        });
+    }
+
+    /// <summary>
+    /// Tutti i punti con un media scaricabile che non sia audio (foto/video/documento — i
+    /// vocali si ascoltano inline in Agenda, non compaiono nella griglia Media). Storico
+    /// completo, a prescindere da date: è la query dedicata della vista Media, separata da
+    /// quella (paginata per mese) dell'Agenda perché la galleria deve restare sfogliabile per
+    /// intero anche quando l'Agenda carica solo il mese corrente.
+    /// </summary>
+    [HttpGet("media")]
+    [TokenAuth]
+    public async Task<ActionResult<IReadOnlyList<DigestPointDto>>> GetMediaItems(CancellationToken ct)
+    {
+        var query = _db.DigestPoints
+            .Where(d => d.MediaAsset != null
+                        && d.MediaAsset.Blob != null
+                        && d.MediaAsset.MediaType != MediaType.Audio);
+
+        return Ok(await ProjectToDtoAsync(query, ct));
+    }
+
+    /// <summary>Punti della vista "pulita": niente rumore, niente audio non ancora digerito.</summary>
+    private IQueryable<DigestPoint> CleanViewQuery() =>
+        _db.DigestPoints
+            .Where(d => d.Type != DigestPointType.Rumore)
+            .Where(d => d.MediaAsset == null
+                        || d.MediaAsset.MediaType != MediaType.Audio
+                        || d.MediaAsset.TranscribedAt != null);
+
+    /// <summary>Proiezione comune a <see cref="GetByDay"/> e <see cref="GetMediaItems"/>: righe
+    /// piatte dal DB (niente <c>Url.Action</c>, non traducibile in SQL), poi mappate a
+    /// <see cref="DigestPointDto"/> in memoria.</summary>
+    private async Task<List<DigestPointDto>> ProjectToDtoAsync(IQueryable<DigestPoint> query, CancellationToken ct)
+    {
+        var rows = await query
             .OrderBy(d => d.OccurredAt).ThenBy(d => d.Id)
             .Select(d => new
             {
@@ -94,7 +183,7 @@ public sealed class DigestPointsController : ControllerBase
             })
             .ToListAsync(ct);
 
-        var result = rows.Select(r => new DigestPointDto
+        return rows.Select(r => new DigestPointDto
         {
             Id = r.Id,
             OccurredAt = r.OccurredAt,
@@ -123,8 +212,6 @@ public sealed class DigestPointsController : ControllerBase
                         : null,
                 },
         }).ToList();
-
-        return Ok(result);
     }
 
     /// <summary>Evidenzia/rimuove un punto come importante. Riservato agli amministratori.</summary>
@@ -140,6 +227,45 @@ public sealed class DigestPointsController : ControllerBase
         await _db.SaveChangesAsync(ct);
 
         return Ok(new { id = point.Id, important = point.IsImportant });
+    }
+
+    /// <summary>
+    /// Elimina un punto. Riservato agli amministratori. Il <see cref="MediaAsset"/> collegato
+    /// (e il suo <see cref="MediaBlob"/>) sono cancellati a cascata a DB (vedi
+    /// <c>DigestPointConfiguration</c>); <c>ImageThumbnails</c> non ha FK e va ripulita a mano
+    /// per non lasciare thumbnail orfane. Invalida anche l'eventuale verbale già generato per
+    /// quel giorno, così la prossima richiesta lo rigenera senza il punto cancellato.
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    [TokenAuth(MemberRole.Amministratore)]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        var point = await _db.DigestPoints
+            .Where(d => d.Id == id)
+            .Select(d => new
+            {
+                d.GroupId,
+                d.OccurredAt,
+                MediaAssetId = d.MediaAsset == null ? (int?)null : d.MediaAsset.Id,
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (point is null)
+            return NotFound();
+
+        if (point.MediaAssetId is int mediaAssetId)
+            await _db.ImageThumbnails
+                .Where(t => t.Kind == "media" && t.SourceId == mediaAssetId)
+                .ExecuteDeleteAsync(ct);
+
+        var day = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(point.OccurredAt, RomeTime.Zone).DateTime);
+        await _db.Verbali
+            .Where(v => v.GroupId == point.GroupId && v.Date == day)
+            .ExecuteDeleteAsync(ct);
+
+        await _db.DigestPoints.Where(d => d.Id == id).ExecuteDeleteAsync(ct);
+
+        return NoContent();
     }
 
     /// <summary>

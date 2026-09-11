@@ -244,6 +244,15 @@
     .empty,.loading,.error{text-align:center;color:var(--muted);padding:40px 20px}
     .error{color:var(--danger)}
 
+    .load-more{max-width:1000px;margin:8px auto 20px;text-align:center}
+    .load-more button{border:1px solid var(--line);border-radius:999px;background:var(--panel);
+      color:var(--ink);padding:10px 22px;font-size:14px;cursor:pointer;transition:background .12s,color .12s}
+    .load-more button:hover{background:var(--surface);color:var(--accent)}
+    .load-more button.busy{pointer-events:none;color:var(--muted)}
+    .load-more button.busy::after{content:"";display:inline-block;width:12px;height:12px;margin-left:8px;
+      vertical-align:-2px;border:2px solid var(--line);border-top-color:var(--ink-soft);border-radius:50%;
+      animation:spin .7s linear infinite}
+
     .rail{position:relative;max-width:1000px;margin:0 auto}
     .rail::before{content:"";position:absolute;left:50%;top:4px;bottom:4px;width:1px;background:var(--hair);transform:translateX(-50%)}
 
@@ -286,6 +295,15 @@
     .important-btn:hover{background:var(--bg)}
     .important-btn.on{color:var(--yellow)}
     .important-btn:disabled{cursor:default;opacity:.6}
+
+    /* stessa forma della stellina, un posto più a sinistra: le due convivono in alto a
+       destra sulla card, solo per gli admin. */
+    .delete-btn{position:absolute;top:8px;right:44px;width:32px;height:32px;border:0;
+      background:none;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      color:var(--muted);cursor:pointer;z-index:2;transition:background .12s,color .12s}
+    .delete-btn svg{width:17px;height:17px}
+    .delete-btn:hover{background:var(--bg);color:var(--danger)}
+    .delete-btn:disabled{cursor:default;opacity:.6}
 
     .tag{display:inline-block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
       padding:2px 7px;border-radius:999px;margin-bottom:9px;
@@ -347,6 +365,12 @@
       display:flex;align-items:center;justify-content:center;color:#fff}
     .mtile .msize{position:absolute;top:5px;right:6px;padding:1px 6px;border-radius:6px;
       background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:600}
+    .mtile .mdelete{position:absolute;top:5px;left:6px;width:26px;height:26px;border:0;border-radius:50%;
+      background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;
+      cursor:pointer;z-index:3;transition:background .12s}
+    .mtile .mdelete svg{width:14px;height:14px}
+    .mtile .mdelete:hover{background:rgba(200,40,40,.85)}
+    .mtile .mdelete:disabled{cursor:default;opacity:.6}
     .mtile .mcap{position:absolute;left:0;right:0;bottom:0;padding:16px 6px 5px;
       background:linear-gradient(transparent,rgba(0,0,0,.62));color:#fff;font-size:10px;line-height:1.3;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -650,6 +674,7 @@
       bell:      I(`<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>`),
       bellOff:   I(`<path d="M8.7 3A6 6 0 0 1 18 8c0 4 1.2 6.4 2.2 7.8M17 17H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>`),
       logout:    I(`<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>`),
+      trash:     I(`<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>`),
       play:      `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
     };
     const starIcon = (on) => `<svg viewBox="0 0 24 24" fill="${on ? "currentColor" : "none"}" stroke="currentColor"
@@ -694,7 +719,16 @@
       .toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "long", year: "numeric" })
       .replace(/\.(?=\s)/, "");
 
+    // `data`: solo l'Agenda, caricata un mese alla volta (vedi load()/loadPreviousMonth()).
+    // Media e Importanti hanno ognuna la propria query full-history, indipendente dal mese
+    // caricato in Agenda — vedi rispettivamente GET /api/digestpoints/media e
+    // GET /api/digestpoints?important=true.
     let data = [];
+    let mediaData = [];
+    let importantData = [];
+    let agendaFrom = null;      // yyyy-MM-01: inizio del mese più vecchio già caricato in Agenda
+    let boundsEarliest = null;  // yyyy-MM-dd: giorno più vecchio con dati in tutta la storia (null = nessuno)
+    let loadingPrevMonth = false;
     let filterType = null;   // null = mostra tutti i tipi
 
     const TYPE_LABELS = { decisione: "Decisioni", proposta: "Proposte", domanda: "Domande", media: "Media", info: "Info" };
@@ -833,6 +867,7 @@
           <div class="badge" style="background:${c}">${iconFor(p)}</div>
           <div class="card">
             ${importantBtnHtml(p)}
+            ${deleteBtnHtml(p)}
             <span class="tag" style="--c:${c}">${p.type}</span>
             <div class="card-head">
               ${avatar}
@@ -854,6 +889,13 @@
         aria-pressed="${on}" title="${on ? "Importante" : "Segna come importante"}">${starIcon(on)}</button>`;
     }
 
+    // Come importantBtnHtml: solo per gli admin, non sui gruppi foto/documenti (stessa
+    // ragione — un gruppo è più punti insieme, non è chiaro quale eliminare).
+    function deleteBtnHtml(p){
+      if (!isAdmin()) return "";
+      return `<button type="button" class="delete-btn" data-id="${p.id}" title="Elimina">${ICONS.trash}</button>`;
+    }
+
     const romeDay = (iso) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
     const todayRome = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
 
@@ -862,6 +904,51 @@
     let spySuppressUntil = 0;     // ms performance.now(): spy sospeso durante lo scroll di goToDay
 
     const visibleItems = () => filterType ? data.filter(p => p.type === filterType) : data;
+
+    // --- paginazione Agenda: un mese alla volta, dal più recente all'indietro -----------
+    const monthStart = (d) => d.slice(0, 7) + "-01";
+    function addMonths(d, delta){
+      const [y, m] = d.split("-").map(Number);
+      return new Date(Date.UTC(y, m - 1 + delta, 1)).toISOString().slice(0, 10);
+    }
+    // Ultimo giorno del mese che contiene d: pura aritmetica di calendario (il fuso Roma lo
+    // applica l'API via RomeTime quando traduce from/to in istanti).
+    function monthEnd(d){
+      const [y, m, day] = addMonths(monthStart(d), 1).split("-").map(Number);
+      return new Date(Date.UTC(y, m - 1, day - 1)).toISOString().slice(0, 10);
+    }
+    const canLoadPreviousMonth = () =>
+      !!boundsEarliest && !!agendaFrom && agendaFrom > monthStart(boundsEarliest);
+
+    function loadMoreHtml(){
+      return canLoadPreviousMonth()
+        ? `<div class="load-more"><button type="button" class="load-prev-month">Carica mese precedente</button></div>`
+        : "";
+    }
+
+    // btn è opzionale: goToDay() la richiama in silenzio (senza un bottone da disabilitare)
+    // quando il giorno scelto dal date picker non è ancora tra i mesi caricati.
+    async function loadPreviousMonth(btn){
+      if (loadingPrevMonth || !canLoadPreviousMonth()) return;
+      loadingPrevMonth = true;
+      if (btn) { btn.classList.add("busy"); btn.disabled = true; }
+      try {
+        const prevAnchor = addMonths(agendaFrom, -1);
+        const from = monthStart(prevAnchor);
+        const to = monthEnd(prevAnchor);
+        const pts = await fetchAgendaRange(from, to);
+        if (pts === null) return;   // 401: già gestito da fetchJson
+        data = pts.concat(data);
+        agendaFrom = from;
+        renderStats();
+        render();
+      } catch (e) {
+        if (btn) { btn.classList.remove("busy"); btn.disabled = false; }
+        toast("Impossibile caricare il mese precedente", "err");
+      } finally {
+        loadingPrevMonth = false;
+      }
+    }
 
     function groupByDay(items){
       const map = new Map();
@@ -890,9 +977,9 @@
 
     function renderStats(){
       if (!data.length) { el("stats").innerHTML = ""; return; }
-      // Stesso conteggio della pagina Media (mediaKind esclude l'audio: i vocali
-      // si ascoltano inline in agenda, non sono "media" da sfogliare a griglia).
-      const media = data.filter(p => mediaKind(p)).length;
+      // "media scaricati" è lo storico completo (vista Media, propria query full-history),
+      // non solo quelli caduti nel mese attualmente caricato in Agenda.
+      const media = mediaData.length;
       const days = new Set(data.map(p => romeDay(p.occurredAt))).size;
       const card = (v, k) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`;
       el("stats").innerHTML =
@@ -943,10 +1030,10 @@
       const items = visibleItems();
       const groups = groupByDay(items);
 
-      if (!data.length) { el("timeline").innerHTML = `<div class="empty">Nessun punto.</div>`; return; }
-      if (!groups.length) { el("timeline").innerHTML = `<div class="empty">Nessun punto "${filterType}".</div>`; return; }
+      if (!data.length) { el("timeline").innerHTML = `<div class="empty">Nessun punto.</div>` + loadMoreHtml(); return; }
+      if (!groups.length) { el("timeline").innerHTML = `<div class="empty">Nessun punto "${filterType}".</div>` + loadMoreHtml(); return; }
 
-      el("timeline").innerHTML = groups.map(([day, pts]) => dayHtml(day, pts)).join("");
+      el("timeline").innerHTML = groups.map(([day, pts]) => dayHtml(day, pts)).join("") + loadMoreHtml();
       hydrateLinkPreviews(el("timeline"));
       scheduleSpy();
     }
@@ -969,9 +1056,15 @@
       scheduleSpy();   // le altezze sotto sono cambiate: riallinea il picker allo scroll
     }
 
-    function goToDay(day){
+    async function goToDay(day){
+      el("day").value = day;
+      // Il giorno scelto dal date picker può cadere in un mese non ancora caricato in
+      // Agenda (paginata): risali all'indietro finché non lo trovi o non c'è più storico.
+      while (!document.getElementById("day-" + day) && day < agendaFrom && canLoadPreviousMonth())
+        await loadPreviousMonth();
+
       const sec = document.getElementById("day-" + day);
-      if (!sec) return;
+      if (!sec) return;   // giorno senza punti, anche dopo aver caricato tutto lo storico disponibile
       // Navigazione da date picker / frecce: apri SOLO il giorno scelto. Se restano
       // aperti giorni più recenti (che stanno sopra nel DOM) le loro immagini lazy si
       // caricano dopo il primo paint, allungano la pagina e lo scroll finisce in mezzo
@@ -1227,11 +1320,11 @@
         b.classList.toggle("active", b.dataset.k === (mediaFilter || ""));
     }
 
-    const mediaItems = () => data.filter(p => mediaKind(p));
-    const visibleMediaItems = () => {
-      const all = mediaItems();
-      return mediaFilter ? all.filter(p => mediaKind(p) === mediaFilter) : all;
-    };
+    // mediaData arriva già filtrata dal server (foto/video/documento, niente audio): nessun
+    // filtro aggiuntivo qui, mediaKind() serve solo per il sotto-filtro per categoria.
+    const mediaItems = () => mediaData;
+    const visibleMediaItems = () =>
+      mediaFilter ? mediaData.filter(p => mediaKind(p) === mediaFilter) : mediaData;
 
     function tileHtml(p){
       const kind = mediaKind(p);
@@ -1251,7 +1344,10 @@
       } else {
         inner = `<div class="micon">${ICONS[kind]}</div><div class="mcap">${esc(p.media.fileName)}</div>`;
       }
-      return `<a class="mtile" href="${url}" target="_blank" rel="noopener" title="${esc(p.media.fileName)}">${inner}${sizeBadge}</a>`;
+      const deleteBadge = isAdmin()
+        ? `<button type="button" class="mdelete" data-id="${p.id}" title="Elimina">${ICONS.trash}</button>`
+        : "";
+      return `<a class="mtile" href="${url}" target="_blank" rel="noopener" title="${esc(p.media.fileName)}">${inner}${sizeBadge}${deleteBadge}</a>`;
     }
 
     function mediaGroupHtml(day, pts){
@@ -1291,14 +1387,59 @@
       syncMediaChips();
       renderMedia();
     };
+    // Le tile sono <a href> (il click sul resto apre la lightbox via il listener globale
+    // su document): preventDefault+stopPropagation, altrimenti eliminare aprirebbe anche
+    // il media appena cancellato.
+    el("mediaGrid").onclick = (e) => {
+      const del = e.target.closest(".mdelete");
+      if (!del) return;
+      e.preventDefault();
+      e.stopPropagation();
+      deletePoint(Number(del.dataset.id), del);
+    };
+
+    // GET con gestione comune di 401 (token scaduto → login) e HTTP non-ok (propaga
+    // l'eccezione al chiamante, che la mostra come errore di rete/API).
+    async function fetchJson(url){
+      const r = await fetch(url, { headers: authHeaders() });
+      if (r.status === 401) { setToken(null); showLogin(); return null; }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    }
+    const fetchBounds = () => fetchJson(`${API}/api/digestpoints/bounds`);
+    const fetchAgendaRange = (from, to) => fetchJson(`${API}/api/digestpoints?from=${from}&to=${to}`);
+    const fetchMediaItems = () => fetchJson(`${API}/api/digestpoints/media`);
+    const fetchImportantData = () => fetchJson(`${API}/api/digestpoints?important=true`);
 
     async function load(){
       el("timeline").innerHTML = `<div class="loading">Carico…</div>`;
       try {
-        const r = await fetch(`${API}/api/digestpoints`, { headers: authHeaders() });
-        if (r.status === 401) { setToken(null); showLogin(); return; }
-        if (!r.ok) { el("timeline").innerHTML = `<div class="error">Errore API: HTTP ${r.status}</div>`; return; }
-        data = await r.json();
+        const bounds = await fetchBounds();
+        if (bounds === null) return;   // 401: già gestito da fetchJson
+        boundsEarliest = bounds.earliest || null;
+
+        // Mese di default: quello dell'ultimo giorno con dati (bounds.latest), non il mese
+        // solare corrente — così un mese nuovo ancora senza punti non appare vuoto, si
+        // continua a vedere l'ultimo mese popolato. Se l'URL punta a un giorno più vecchio
+        // (?date=), estende subito la finestra invece di lasciarlo scoperto.
+        const anchor = bounds.latest || todayRome();
+        let from = monthStart(anchor);
+        const to = monthEnd(anchor);
+        const qsDate = qs.get("date");
+        if (qsDate && monthStart(qsDate) < from) from = monthStart(qsDate);
+        agendaFrom = from;
+
+        const [agendaPts, mediaPts, importantPts] = await Promise.all([
+          fetchAgendaRange(from, to),
+          fetchMediaItems(),
+          fetchImportantData(),
+        ]);
+        if (agendaPts === null || mediaPts === null || importantPts === null) return;   // 401
+
+        data = agendaPts;
+        mediaData = mediaPts;
+        importantData = importantPts;
+
         renderStats();
         mediaDirty = true;
         if (view === "media") renderMedia();
@@ -1379,17 +1520,49 @@
       else goToDay(el("day").value);
     };
     el("timeline").onclick = (e) => {
+      const lm = e.target.closest(".load-prev-month");
+      if (lm) { loadPreviousMonth(lm); return; }
       const dl = e.target.closest(".day-dl");
       if (dl) { downloadRecap(dl.dataset.day, dl); return; }
       const imp = e.target.closest(".important-btn");
       if (imp) { toggleImportant(imp); return; }
+      const del = e.target.closest(".delete-btn");
+      if (del) { deletePoint(Number(del.dataset.id), del); return; }
       const h = e.target.closest(".day-head");
       if (h) { toggleDay(h.dataset.day); if (openDays.has(h.dataset.day)) setPickerDay(h.dataset.day); }
     };
     el("importantTimeline").onclick = (e) => {
       const imp = e.target.closest(".important-btn");
-      if (imp) toggleImportant(imp);
+      if (imp) { toggleImportant(imp); return; }
+      const del = e.target.closest(".delete-btn");
+      if (del) deletePoint(Number(del.dataset.id), del);
     };
+
+    // Eliminazione: condivisa da Agenda/Importanti (.delete-btn nelle card) e Media
+    // (.mdelete nelle tile). Il punto può vivere in `data`/`mediaData`/`importantData`
+    // contemporaneamente (fetch indipendenti, vedi load()): va tolto da tutte e tre.
+    async function deletePoint(id, btn){
+      if (!confirm("Eliminare questo punto? L'azione è irreversibile.")) return;
+      btn.disabled = true;
+      try {
+        const r = await fetch(`${API}/api/digestpoints/${id}`, { method: "DELETE", headers: authHeaders() });
+        if (r.status === 401) { setToken(null); showLogin(); return; }
+        if (r.status === 403) { toast("Riservato agli amministratori", "err"); return; }
+        if (!r.ok && r.status !== 404) throw new Error(`HTTP ${r.status}`);
+
+        data = data.filter(p => p.id !== id);
+        mediaData = mediaData.filter(p => p.id !== id);
+        importantData = importantData.filter(p => p.id !== id);
+        renderStats();
+        if (view === "agenda") render();
+        else if (view === "media") renderMedia();
+        else if (view === "important") renderImportant();
+      } catch (e) {
+        console.error("deletePoint", e);
+        toast("Impossibile eliminare", "err");
+        btn.disabled = false;
+      }
+    }
 
     // Toggle "importante": ottimistico lato bottone, ma sincrono con `data` così un
     // ri-render successivo (cambio giorno, filtro) resta coerente col server.
@@ -1408,6 +1581,11 @@
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const point = data.find(p => p.id === id);
         if (point) point.isImportant = next;
+        // importantData è una query separata (storico completo, isImportant=true) — il modo
+        // più semplice per restarci coerenti (es. un punto flaggato ora per la prima volta
+        // deve comparire subito nella vista Importanti) è rileggerla dal server invece di
+        // ricostruirla a mano.
+        importantData = await fetchImportantData() ?? importantData;
         // Nella vista Importanti la card deve sparire/comparire subito col nuovo
         // stato (la vista mostra solo i punti flaggati); altrove basta la stellina.
         if (view === "important") { renderImportant(); return; }
@@ -1484,7 +1662,9 @@
       renderImportant();
     };
 
-    const importantItems = () => data.filter(p => p.isImportant);
+    // importantData arriva già filtrata dal server (storico completo, solo isImportant):
+    // nessun filtro aggiuntivo qui.
+    const importantItems = () => importantData;
     const visibleImportantItems = () =>
       impFilterType ? importantItems().filter(p => p.type === impFilterType) : importantItems();
 
