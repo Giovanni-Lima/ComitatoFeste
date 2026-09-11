@@ -156,6 +156,13 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
   export, nel recap finale a Giovanni va segnalato che è stato nominato
   (con orario, autore e un breve contesto), così può valutare se rispondere
   o intervenire, anche quando il messaggio non è finito nel digest.
+- **Condivisione di posizione (regola aggiunta l'11/9/2026)**: nel `.txt`
+  è una riga di testo con un link Google Maps (`posizione:
+  https://maps.google.com/?q=lat,long`), non un media — nessuna voce in
+  `MEDIA_OVERRIDES`. Statica (es. punto di ritrovo) → curata come un link
+  qualsiasi, testo integrale in `CURATED`, tipo `info` (o `decisione` se è
+  la posizione definitiva di un appuntamento già deciso). In tempo reale
+  (`live location`) → sempre rumore, scartata in curatela.
 
 ## Percorsi
 
