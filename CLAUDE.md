@@ -41,12 +41,17 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `COMITATOFESTE_CONNECTION`.
 - **Dati importati** (gruppo `Comitato feste 87`, stato all'8/9/2026):
   **10 `IngestionRun`** dai `digest_2026-09-01.json` … `digest_2026-09-08.json`
-  (i file 01–05 non sono più in `Export/`, restano solo 06/07/08; alcuni
+  (i file già importati e verificati vengono rimossi da `Export/` —
+  all'11/9/2026 restano solo `digest_2026-09-0[9-11].json`; alcuni
   giorni hanno più di un run per reimport). **DB Aiven e locale allineati**
   via `pg_dump`/`pg_restore` (workflow corrente: import + trascrizione si
-  fanno **direttamente su Aiven**, poi si riallinea il locale con un dump —
-  vedi `docs/DEPLOY.md`; nota: pg_dump 18 emette `SET transaction_timeout`
-  che Postgres 16 rifiuta, va filtrato in fase di restore).
+  fanno **direttamente su Aiven** con `scripts/import-transcribe-aiven.ps1`
+  — Importer poi Transcriber, notifica push automatica a fine run —, poi si
+  riallinea il locale con un dump — vedi `docs/DEPLOY.md`; **nota**: pg_dump
+  18 emette sia `SET transaction_timeout` (GUC non riconosciuto da Postgres
+  16) sia le direttive psql `\restrict`/`\unrestrict` (introdotte in pg_dump
+  18, sconosciute al client psql 16) — **entrambe** vanno filtrate in fase
+  di restore, non solo la prima).
   **Regola: quando si lancia l'import (o il Transcriber) puntando ad Aiven,
   vanno esportate nell'ambiente anche `COMITATOFESTE_HOOK_URL=https://comitatofeste.onrender.com`
   e `COMITATOFESTE_HOOK_SECRET`** (segreto dal dashboard Render), accanto a

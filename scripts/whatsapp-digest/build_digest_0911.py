@@ -2,24 +2,45 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-09-11 — solo dati di curatela, logica comune in digest_lib.py.
 
-Giornata (parziale, fino alle 14:07) dominata dai saluti mattutini e da un
-lungo siparietto scherzoso in dialetto tra Elvis/Luca/Raffaele/Maria su
+Giornata COMPLETA (fino alle 17:45, ultimo messaggio del giorno all'atto di
+questo export). Mattina/primo pomeriggio dominati dai saluti mattutini e da
+un lungo siparietto scherzoso in dialetto tra Elvis/Luca/Raffaele/Maria su
 vecchi ricordi (incidente in bicicletta, mongolfiera, "panda verde") — rumore,
 niente di attinente al comitato; la stessa vena nostalgica riprende con
-Gilda (12:22, mongolfiera) e con Dante che ricorda di avere vecchie
-videocassette (asilo, vendemmia 1991, 13:45/13:53) e la battuta di Raffaele
-sul vino del '91 — trattati anch'essi come rumore/nostalgia, non risulta
-un uso concreto per il comitato dal testo (segnalare se il gruppo ne parla
-in modo più esplicito in una finestra successiva).
+Gilda (12:22, mongolfiera), Dante che ricorda vecchie videocassette (asilo,
+vendemmia 1991, 13:45/13:53) e la battuta di Raffaele sul vino del '91, poi
+ancora con Martina/Costantino nel primo pomeriggio (15:02-15:26, chi stava
+"alle stanze"/l'asilo di Pescina) — trattati come rumore/nostalgia, nessun
+uso concreto per il comitato dal testo.
 
-Punti rilevanti: Tina Giarrante completa la lista di cosa porta per la
-riunione di stasera (vedi anche il thread iniziato il 10/9 da Alessandra
+Punti rilevanti mattina: Tina Giarrante completa la lista di cosa porta per
+la riunione di stasera (vedi anche il thread iniziato il 10/9 da Alessandra
 Toracchio/Barbara Rizio); Alessandra Toracchio manda la posizione del
 rustico (pin statico via link Maps, non "in tempo reale" — vedi regola
 11/9/2026 in CLAUDE.md) con due screenshot di Google Street View come
 riferimento visivo; Emanuele Sciarra avvisa che stasera arriva più tardi;
-Raffaele Di Cesare chiede a che ora è la riunione, Tina risponde. Nessuna
-menzione di Giovanni Lima in questa finestra.
+Raffaele Di Cesare chiede a che ora è la riunione, Tina risponde.
+
+Coda pomeridiana/serale (16:13-17:45): Emilio Caniglia manda la foto del
+promemoria/ordine del giorno della riunione di stasera (8 punti, trascritti
+per intero in MEDIA_OVERRIDES) e lo introduce nel messaggio successivo,
+annunciando che porterà il computer per iniziare a verbalizzare; comunica
+anche di essere già in contatto con il direttore artistico di Francesco De
+Gregori e dei Dire Straits, contatto utile per scegliere un artista
+importante senza passare da agenzie locali. **Menzione di Giovanni Lima**
+(regola 11/9/2026): il punto 5 dell'ordine del giorno nella foto di Emilio
+cita testualmente "app di Giovanni e app di Dante" — segnalato nel recap
+finale della sessione, non genera di per sé una entry (l'immagine è comunque
+in digest con la trascrizione completa). Resto della coda: due vocali
+(Elvis 16:17, Emanuele 16:17), uno sticker di Emanuele (14:28, ignorato) e
+un video reale di Dante (17:44, VID-20260911-WA0048.mp4 — verificato con
+grep sui box MP4 che ha sia traccia video che audio, "vide"/"avc1" e
+"soun"/"mp4a" tutti presenti: non è una GIF di reazione, niente skip),
+didascalia in dialetto ("t so truvat la Spa") lasciata al meccanismo
+automatico di digest_lib (Didascalia: ...). Chiusura in rumore/battute
+sugli orari di arrivo (Alessandra Toracchio, Alessandra Simonetti, Martina,
+Tina) — nessun contenuto nuovo rispetto a quanto già stabilito da Tina
+alle 14:07.
 """
 import os
 import sys
@@ -47,6 +68,16 @@ CURATED = {
     ("14:07", "Tina Giarrante"): ("info",
         "Risponde a Raffaele: la riunione di stasera è dopo le 21, o "
         "comunque sarà Alessandra ad avvisare quando è pronta."),
+    ("16:14", "Emilio Caniglia"): ("info",
+        "Introduce la foto del promemoria appena inviata: promemoria per la "
+        "riunione di stasera con i punti sintetici emersi dalle discussioni "
+        "dei giorni scorsi; porterà il computer per iniziare a verbalizzare "
+        "la riunione."),
+    ("16:16", "Emilio Caniglia"): ("info",
+        "Comunica di essere già in contatto con il direttore artistico di "
+        "Francesco De Gregori, anche membro dei Dire Straits: un contatto "
+        "utile per scegliere un artista importante evitando le agenzie "
+        "locali."),
 }
 
 MEDIA_OVERRIDES = {
@@ -59,12 +90,23 @@ MEDIA_OVERRIDES = {
         "disegnata a mano che indica l'ingresso esatto (una porta con tenda) "
         "tra due edifici rustici, per indicare dove trovare il punto di "
         "ritrovo.",
+    (DATE, "16:13", "Emilio Caniglia", "IMG-20260911-WA0045.jpg"):
+        "Foto del promemoria per la riunione dell'11/9/2026 (intestazione "
+        "\"Classe 1987\"), ordine del giorno in 8 punti: 1) Introduzione di "
+        "Emidio; 2) Visita Corinaldo (valutazione preventivi ed altro); 3) "
+        "\"Incontro sponsorizzato\" - azienda materassi; 4) Sede Comitato; "
+        "5) Applicazioni a supporto del Comitato: app di Giovanni e app di "
+        "Dante; 6) Halloween & San Martino (valutazione collaborazione con "
+        "la Proloco); 7) Report entrate Comitati precedenti; 8) Varie ed "
+        "eventuali.",
 }
 
-# VID-20260911-WA0042.mp4: nessuna traccia audio (ispezionati i box MP4 —
-# 'vide'/'avc1' presenti, 'soun'/'mp4a' assenti — ffprobe non disponibile in
-# questa sessione, stessa verifica manuale già usata per il digest del 10/9).
-# È quindi una GIF di reazione travestita da video, va scartata come tale.
+# VID-20260911-WA0042.mp4 (giorno precedente, già gestito): nessuna traccia
+# audio (ispezionati i box MP4 — 'vide'/'avc1' presenti, 'soun'/'mp4a'
+# assenti). VID-20260911-WA0048.mp4 (17:44, Dante) invece ha ENTRAMBE le
+# tracce ('vide'/'avc1' e 'soun'/'mp4a' tutte presenti, verificato via grep
+# sui box binari — ffprobe non disponibile in questa sessione): è un video
+# vero, non va scartato.
 _REACTION_GIF_MP4 = {
     "VID-20260911-WA0042.mp4",
 }

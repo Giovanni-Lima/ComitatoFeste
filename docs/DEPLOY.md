@@ -205,12 +205,30 @@ $t = New-ScheduledTaskTrigger -Daily -At 2am
 Register-ScheduledTask -TaskName "ComitatoFeste-DB-Backup" -Action $a -Trigger $t
 ```
 
-Restore:
+Restore (in un DB Postgres >= 18, es. un altro Aiven):
 
 ```powershell
 docker run --rm -v "C:\ComitatoFeste\Backups:/backups" postgres:18-alpine `
   pg_restore --no-owner --clean --if-exists -d "<uri>" /backups/cf-YYYY-MM-DD.dump
 ```
+
+**Riallineare il locale (Postgres 16) da Aiven** (workflow corrente dopo
+import/trascrizione su Aiven, vedi CLAUDE.md): `pg_restore` da un client 18
+contro un server 16 fallisce — il dump va convertito in SQL testuale e
+filtrato di due righe che il 16 non riconosce (`SET transaction_timeout` e
+le direttive psql `\restrict`/`\unrestrict`, tutte introdotte in pg_dump 18):
+
+```bash
+docker run --rm postgres:18-alpine sh -c \
+  'pg_dump --no-owner --no-privileges --no-comments -Fc -d "$AIVEN_URI" \
+   | pg_restore --no-owner --no-privileges --clean --if-exists -f -' \
+  | grep -v -F 'SET transaction_timeout' | grep -v -F '\restrict' | grep -v -F '\unrestrict' \
+  > dump.sql
+docker exec -i local-postgres psql -U postgres -d postgres -v ON_ERROR_STOP=1 < dump.sql
+```
+
+(`--clean --if-exists` include i `DROP` necessari: il locale viene svuotato
+e ricreato da zero, non serve droppare a mano.)
 
 Upgrade opzionale (offsite, gira anche a PC spento): workflow GitHub Actions
 schedulato → `pg_dump` → Cloudflare R2 (10 GB free) con lifecycle a 30 giorni.
