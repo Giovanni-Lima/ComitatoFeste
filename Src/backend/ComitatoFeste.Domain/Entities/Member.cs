@@ -17,6 +17,14 @@ public class Member
     /// <summary>Ruolo di accesso al login. Default <see cref="MemberRole.Lettore"/>.</summary>
     public MemberRole Role { get; set; } = MemberRole.Lettore;
 
+    /// <summary>
+    /// Ultima richiesta autenticata servita per questo membro (non solo il login: aggiornato da
+    /// <see cref="ComitatoFeste.Api.Filters.TokenAuthAttribute"/> a ogni chiamata con token valido,
+    /// throttlato per non scrivere a ogni richiesta). Solo consultabile via query diretta al DB,
+    /// nessun endpoint/UI la espone di proposito.
+    /// </summary>
+    public DateTimeOffset? LastSeenAt { get; set; }
+
     /// <summary>Foto profilo (relazione 1:1). Null finché non ne viene importata una.</summary>
     public MemberProfilePhoto? ProfilePhoto { get; set; }
 
