@@ -163,6 +163,13 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
   qualsiasi, testo integrale in `CURATED`, tipo `info` (o `decisione` se è
   la posizione definitiva di un appuntamento già deciso). In tempo reale
   (`live location`) → sempre rumore, scartata in curatela.
+- **Chiusura giorni passati (regola aggiunta il 12/9/2026)**: a ogni export
+  lancia prima `python close_past_days.py` (o `--dry-run` per vedere cosa
+  farebbe senza cancellare). Cancella da `Export/` i giorni con data <
+  `digest_data` del checkpoint (json + cartella media + `_rimossi_<data>/`)
+  — evita che l'Importer "resusciti" un punto cancellato dall'app (dedup
+  media confrontato col DB attuale, non con uno storico). Vedi CLAUDE.md
+  per il dettaglio del bug e perché è sicuro farlo senza verifica su Aiven.
 
 ## Percorsi
 

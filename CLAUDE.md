@@ -41,8 +41,10 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `COMITATOFESTE_CONNECTION`.
 - **Dati importati** (gruppo `Comitato feste 87`, stato all'8/9/2026):
   **10 `IngestionRun`** dai `digest_2026-09-01.json` … `digest_2026-09-08.json`
-  (i file già importati e verificati vengono rimossi da `Export/` —
-  all'11/9/2026 restano solo `digest_2026-09-0[9-11].json`; alcuni
+  (i giorni "chiusi" — data < `digest_data` del checkpoint — vengono rimossi
+  da `Export/` automaticamente a ogni export da
+  `scripts/whatsapp-digest/close_past_days.py`, vedi sotto; al 12/9/2026
+  resta solo `digest_2026-09-12.json`; alcuni
   giorni hanno più di un run per reimport). **DB Aiven e locale allineati**
   via `pg_dump`/`pg_restore` (workflow corrente: import + trascrizione si
   fanno **direttamente su Aiven** con `scripts/import-transcribe-aiven.ps1`
@@ -487,6 +489,25 @@ sopra):
   Una posizione **in tempo reale** (`live location`) va invece sempre
   scartata come rumore in fase di curatela — l'eventuale visualizzazione
   lato frontend è da definire.
+- **Chiusura giorni passati (regola aggiunta il 12/9/2026)**: l'Importer fa
+  dedup media confrontando `(Autore, NomeFile)` col DB **attuale**
+  (`DigestImporter.cs`, set `existingMedia`), non con uno storico di "già
+  visto in passato". Se un punto con media viene cancellato dall'app
+  (`DELETE /api/digestpoints/{id}`) ma la sua entry è ancora nel
+  `digest_<data>.json` sorgente, il giro successivo dell'Importer non trova
+  più quel file tra i "già esistenti" e lo **re-inserisce** — un punto
+  cancellato "resuscita". Per questo, a ogni export,
+  `scripts/whatsapp-digest/close_past_days.py` cancella da `Export/` (json
+  + cartella media + eventuale `_rimossi_<data>/`) tutti i giorni con data
+  **strettamente minore** di `digest_data` nel checkpoint — assumendo che il
+  giorno precedente sia già stato importato/trascritto prima di passare al
+  successivo (workflow seguito in ogni sessione finora, nessuna verifica
+  incrociata su Aiven per non consumare token a ogni giro). Rischio residuo
+  accettato: se l'import di un giorno "chiuso" non fosse mai andato a buon
+  fine, cancellarlo non perde nulla per davvero —
+  `build_digest_<MMGG>.py` resta per sempre in git (è la "ricetta") e il
+  `.txt` di WhatsApp è sempre cumulativo dall'inizio, quindi il giorno si
+  rigenera comunque da un nuovo export.
 
 ## Convenzioni già in uso — seguile per coerenza
 
