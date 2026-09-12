@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-09-11 — solo dati di curatela, logica comune in digest_lib.py.
 
-Giornata COMPLETA (fino alle 17:45, ultimo messaggio del giorno all'atto di
-questo export). Mattina/primo pomeriggio dominati dai saluti mattutini e da
+Giornata COMPLETA (fino alle 23:30, ultimo messaggio del giorno — a
+mezzanotte la chat passa al 12/9, curato separatamente). Mattina/primo
+pomeriggio dominati dai saluti mattutini e da
 un lungo siparietto scherzoso in dialetto tra Elvis/Luca/Raffaele/Maria su
 vecchi ricordi (incidente in bicicletta, mongolfiera, "panda verde") — rumore,
 niente di attinente al comitato; la stessa vena nostalgica riprende con
@@ -37,10 +38,32 @@ un video reale di Dante (17:44, VID-20260911-WA0048.mp4 — verificato con
 grep sui box MP4 che ha sia traccia video che audio, "vide"/"avc1" e
 "soun"/"mp4a" tutti presenti: non è una GIF di reazione, niente skip),
 didascalia in dialetto ("t so truvat la Spa") lasciata al meccanismo
-automatico di digest_lib (Didascalia: ...). Chiusura in rumore/battute
-sugli orari di arrivo (Alessandra Toracchio, Alessandra Simonetti, Martina,
-Tina) — nessun contenuto nuovo rispetto a quanto già stabilito da Tina
-alle 14:07.
+automatico di digest_lib (Didascalia: ...). Chiusura pomeridiana in
+rumore/battute sugli orari di arrivo (Alessandra Toracchio, Alessandra
+Simonetti, Martina, Tina) — nessun contenuto nuovo rispetto a quanto già
+stabilito da Tina alle 14:07.
+
+Coda serale (18:01-21:28): due vocali (Dante 18:05, Emanuele 18:06); Gilda
+Di Iulio avvisa che non riesce a venire alla riunione; poi solo rumore
+d'arrivo in dialetto (Elvis/Emidio/Barbara/Antonio/Cesare/Costantino, chi
+è arrivato, dove si trova il ritrovo — già stabilito, chi sono i presenti)
+e un messaggio di Raffaele Di Cesare eliminato da WhatsApp (nessun
+contenuto recuperabile, non genera entry). "Quant sa fa….famm sape i
+numer" di Emanuele (18:01) resta ambiguo senza poter ascoltare i vocali
+adiacenti — trattato come rumore, il Transcriber classificherà i vocali
+stessi. Nessuna menzione di Giovanni Lima in questa coda.
+
+Coda notturna (22:04-23:30, durante/dopo la riunione): Alessandra Toracchio
+manda la foto di una pagina di quaderno con una lista numerata "Coppia"
+(gioco/attività della serata, non decifrabile con certezza nome per nome —
+descritta senza indovinare le grafie incerte); Valentina D'Arcadia manda
+una foto di gruppo della riunione al rustico (festoni "Happy Birthday" —
+lega con gli auguri di Tina a MariaLuisa Cianfaglione il mattino dopo, non
+curato qui perché già 12/9); Emidio Cerasani riferisce che Costantino
+Mariani offre il primo sponsor (unica notizia sostanziale della serata,
+sotto forma di resoconto di un terzo, non conferma diretta — tenuta come
+`info`, non `decisione`); 4 vocali (Valentina x2 alle 23:19, Emidio 23:29,
+Valentina 23:30). Resto rumore (arrivi, "Dajeee", "Guardate mike").
 """
 import os
 import sys
@@ -78,6 +101,10 @@ CURATED = {
         "Francesco De Gregori, anche membro dei Dire Straits: un contatto "
         "utile per scegliere un artista importante evitando le agenzie "
         "locali."),
+    ("20:42", "Gilda Di Iulio"): ("info",
+        "Avvisa che non riesce a venire alla riunione di stasera."),
+    ("22:58", "Emidio Cerasani"): ("info",
+        "Riferisce che Costantino Mariani offre il primo sponsor."),
 }
 
 MEDIA_OVERRIDES = {
@@ -99,6 +126,15 @@ MEDIA_OVERRIDES = {
         "Dante; 6) Halloween & San Martino (valutazione collaborazione con "
         "la Proloco); 7) Report entrate Comitati precedenti; 8) Varie ed "
         "eventuali.",
+    (DATE, "22:39", "Alessandra Toracchio", "IMG-20260911-WA0051.jpg"):
+        "Foto di una pagina di quaderno scritta a mano, titolo \"Coppia\" e "
+        "una lista numerata da 1 a 12 di nomi (gioco/attività della serata) "
+        "— grafia poco leggibile in alcuni punti, nomi non trascritti con "
+        "certezza.",
+    (DATE, "22:53", "Valentina D'Arcadia", "IMG-20260911-WA0053.jpg"):
+        "Foto di gruppo della riunione al rustico: i presenti seduti "
+        "attorno a un lungo tavolo con snack e bevande, festoni dorati "
+        "\"Happy Birthday\" appesi al soffitto.",
 }
 
 # VID-20260911-WA0042.mp4 (giorno precedente, già gestito): nessuna traccia
