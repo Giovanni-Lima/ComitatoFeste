@@ -54,4 +54,13 @@ Write-Host "`n== Trascrizione verso Aiven ==" -ForegroundColor Cyan
 dotnet run --project (Join-Path $repoRoot "Src/backend/ComitatoFeste.Transcriber") -- $TranscriberArgs.Split(" ", [StringSplitOptions]::RemoveEmptyEntries)
 if ($LASTEXITCODE -ne 0) { throw "Transcriber terminato con errore (exit $LASTEXITCODE)." }
 
+# Chiusura giorni passati (vedi CLAUDE.md, regola 12/9/2026): a questo punto Aiven ha
+# appena ricevuto import+trascrizione, quindi qualunque giorno precedente a quello
+# corrente e' sicuro da rimuovere da Export/ (l'Importer non potra' piu' "resuscitare"
+# un punto cancellato dall'app per quei giorni). Non fatale: un fallimento qui non deve
+# far sembrare fallito l'aggiornamento Aiven appena riuscito.
+Write-Host "`n== Chiusura giorni passati ==" -ForegroundColor Cyan
+python (Join-Path $PSScriptRoot "whatsapp-digest/close_past_days.py")
+if ($LASTEXITCODE -ne 0) { Write-Host "close_past_days.py non riuscito (exit $LASTEXITCODE) - non bloccante." -ForegroundColor Yellow }
+
 Write-Host "`nOK." -ForegroundColor Green

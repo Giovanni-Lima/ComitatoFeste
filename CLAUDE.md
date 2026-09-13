@@ -489,6 +489,20 @@ sopra):
   Una posizione **in tempo reale** (`live location`) va invece sempre
   scartata come rumore in fase di curatela — l'eventuale visualizzazione
   lato frontend è da definire.
+- **Compleanni (regola aggiunta il 13/9/2026)**: quando in una giornata
+  compare un gruppo di messaggi "buongiorno"/"auguri" rivolti a un membro
+  taggato (tipico pattern: decine di messaggi social sparsi nella mattina,
+  finora sempre trattati come puro rumore), va sintetizzato **un solo
+  punto** `("<primo orario del giorno>", "<primo autore degli auguri>")`,
+  tipo `info`, testo tipo "Oggi è il compleanno di `<Nome>`, il gruppo si
+  scambia auguri in chat" — va per primo nella giornata (usa l'orario del
+  primo messaggio di auguri, così l'ordine cronologico lo mette in cima da
+  solo). Deciso di dedurlo dalla chat (nessun `Members.BirthDate` a DB):
+  funziona quando il gruppo festeggia quel giorno stesso, non è un
+  calendario compleanni affidabile a prescindere — se in futuro serve
+  quest'ultimo, richiede una colonna dedicata + raccolta dati, non ancora
+  fatto. I singoli messaggi di auguri restano comunque rumore individuale,
+  non generano più entry a parte.
 - **Chiusura giorni passati (regola aggiunta il 12/9/2026)**: l'Importer fa
   dedup media confrontando `(Autore, NomeFile)` col DB **attuale**
   (`DigestImporter.cs`, set `existingMedia`), non con uno storico di "già
@@ -496,13 +510,18 @@ sopra):
   (`DELETE /api/digestpoints/{id}`) ma la sua entry è ancora nel
   `digest_<data>.json` sorgente, il giro successivo dell'Importer non trova
   più quel file tra i "già esistenti" e lo **re-inserisce** — un punto
-  cancellato "resuscita". Per questo, a ogni export,
-  `scripts/whatsapp-digest/close_past_days.py` cancella da `Export/` (json
-  + cartella media + eventuale `_rimossi_<data>/`) tutti i giorni con data
-  **strettamente minore** di `digest_data` nel checkpoint — assumendo che il
-  giorno precedente sia già stato importato/trascritto prima di passare al
-  successivo (workflow seguito in ogni sessione finora, nessuna verifica
-  incrociata su Aiven per non consumare token a ogni giro). Rischio residuo
+  cancellato "resuscita". Per questo `scripts/whatsapp-digest/close_past_days.py`
+  cancella da `Export/` (json + cartella media + eventuale `_rimossi_<data>/`)
+  tutti i giorni con data **strettamente minore** di `digest_data` nel
+  checkpoint. Gira in **automatico** a fine di `import-transcribe-aiven.ps1`
+  (dopo Importer+Transcriber, non bloccante se fallisce — vedi il commento nello
+  script, aggiunto il 13/9/2026 dopo che un giorno era rimasto "orfano" perché
+  il check girava solo a inizio export, prima che il checkpoint avanzasse):
+  a quel punto Aiven ha appena ricevuto l'aggiornamento, quindi qualunque
+  giorno precedente a quello corrente è sicuro da rimuovere. Nessuna verifica
+  incrociata su Aiven per non consumare token a ogni giro — si assume che il
+  giorno appena chiuso sia stato importato/trascritto con successo nello
+  stesso run. Rischio residuo
   accettato: se l'import di un giorno "chiuso" non fosse mai andato a buon
   fine, cancellarlo non perde nulla per davvero —
   `build_digest_<MMGG>.py` resta per sempre in git (è la "ricetta") e il
