@@ -354,7 +354,11 @@ del 6/9/2026, prima duplicata in ognuno dei 6 script), un
 `build_digest_MMGG.py` per ogni giorno già fatto (ora solo dati: `DATE`,
 `CURATED`, `MEDIA_OVERRIDES`, ed eventuali eccezioni del giorno come la
 finestra oraria del logo del 5/9, passate a `digest_lib.build_digest(...)`),
-e `README.md` con la procedura passo-passo. I `build_digest_MMGG.py` restano
+e `README.md` con la procedura passo-passo, più `export-prompt.md`
+(aggiunto il 14/9/2026) — prompt autosufficiente da dare a una sessione
+Claude Code **diversa** per far eseguire solo l'export/curatela di un
+giorno, **senza** import/Transcriber/notifica push (quelli restano un
+passo separato, deciso a parte). I `build_digest_MMGG.py` restano
 comunque lo storico affidabile di come è stato costruito ogni digest —
 copiali/adattali per un nuovo giorno invece di ripartire da zero, ma per
 qualsiasi bug fix o miglioramento alla logica comune tocca **solo**
