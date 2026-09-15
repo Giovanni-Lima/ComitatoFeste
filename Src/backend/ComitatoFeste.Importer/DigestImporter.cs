@@ -323,6 +323,20 @@ public sealed class DigestImporter
                     result.MediaFilesMissing++;
                     result.Warnings.Add($"file media mancante su disco: {relPath}");
                 }
+
+                // Vocale già trascritto/classificato in curatela (vedi
+                // scripts/whatsapp-digest/transcribe_new.py + DigestEntry.Transcript):
+                // valorizziamo qui TranscriptionText/TranscribedAt così il Transcriber
+                // (Program.cs: WHERE TranscriptionText == null || TranscribedAt == null)
+                // lo esclude da solo, senza bisogno di toccarne la query. "media" resta
+                // il placeholder di sempre (non ancora classificato): in quel caso non
+                // tocchiamo questi campi, il Transcriber lo elabora come oggi.
+                if (!string.IsNullOrWhiteSpace(entry.Transcript)
+                    && !string.Equals(entry.Type, "media", StringComparison.OrdinalIgnoreCase))
+                {
+                    asset.TranscriptionText = entry.Transcript;
+                    asset.TranscribedAt = DateTimeOffset.UtcNow;
+                }
             }
         }
 

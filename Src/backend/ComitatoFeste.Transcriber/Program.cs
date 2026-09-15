@@ -16,6 +16,14 @@ var groupName = DefaultGroup;
 var delayMs = 6000;
 var limit = 0;          // 0 = nessun limite
 var dryRun = false;
+// Notifica push anche se qui non c'è nulla da classificare (vedi sotto, blocco
+// notifica): la pipeline con trascrizione anticipata (transcribe_new.py, vedi
+// CLAUDE.md) può pre-classificare in curatela TUTTI i vocali di una giornata,
+// lasciando 0 vocali "grezzi" a questo Transcriber — che altrimenti non
+// noterebbe mai i nuovi punti appena importati. Passato da
+// import-transcribe-aiven.ps1 solo se l'Importer ha appena inserito punti
+// nuovi in questo stesso giro.
+string? forceNotifyDate = null;
 
 for (var i = 0; i < args.Length; i++)
 {
@@ -33,12 +41,20 @@ for (var i = 0; i < args.Length; i++)
         case "--dry-run":
             dryRun = true;
             break;
+        case "--force-notify" when i + 1 < args.Length:
+            forceNotifyDate = args[++i];
+            break;
         case "--help" or "-h":
             Console.WriteLine("uso: ComitatoFeste.Transcriber [opzioni]");
-            Console.WriteLine("  --group <nome>   gruppo WhatsApp (default: \"Comitato feste 87\")");
-            Console.WriteLine("  --delay-ms <n>   pausa tra un vocale e il successivo (default: 6000)");
-            Console.WriteLine("  --limit <n>      elabora al massimo n vocali (default: tutti)");
-            Console.WriteLine("  --dry-run        trascrive/classifica ma non scrive su DB");
+            Console.WriteLine("  --group <nome>        gruppo WhatsApp (default: \"Comitato feste 87\")");
+            Console.WriteLine("  --delay-ms <n>        pausa tra un vocale e il successivo (default: 6000)");
+            Console.WriteLine("  --limit <n>           elabora al massimo n vocali (default: tutti)");
+            Console.WriteLine("  --dry-run             trascrive/classifica ma non scrive su DB");
+            Console.WriteLine("  --force-notify <data> invia comunque la notifica push (data in formato");
+            Console.WriteLine("                        yyyy-MM-dd) anche con 0 vocali da classificare —");
+            Console.WriteLine("                        usato da import-transcribe-aiven.ps1 quando");
+            Console.WriteLine("                        l'Importer ha inserito punti nuovi ma sono già");
+            Console.WriteLine("                        tutti pre-classificati in curatela");
             return 0;
         default:
             Console.Error.WriteLine($"argomento non riconosciuto: {args[i]} (usa --help)");
@@ -218,9 +234,16 @@ foreach (var (t, n) in byType.OrderByDescending(kv => kv.Value))
 // Notifica push (best-effort, vedi PushHook). Solo su scritture reali, e solo qui:
 // nella pipeline normale è l'ultimo passo (dopo l'Importer), un'unica notifica a
 // processo completato invece di una per l'import e una per la trascrizione.
-if (!dryRun && ok > 0)
+// `ok > 0` copre il caso classico (almeno un vocale classificato qui);
+// `forceNotifyDate` copre il caso — introdotto con la trascrizione anticipata,
+// vedi CLAUDE.md — in cui l'Importer ha appena inserito punti nuovi ma erano
+// già tutti pre-classificati in curatela, quindi questo Transcriber non ha
+// nulla da fare (altrimenti la notifica non partirebbe mai per quei giorni).
+if (!dryRun && (ok > 0 || forceNotifyDate is not null))
 {
-    var single = doneDays.Count == 1 ? doneDays.First() : null;
+    var single = doneDays.Count == 1 ? doneDays.First()
+        : doneDays.Count == 0 ? forceNotifyDate
+        : null;
     await PushHook.NotifyAsync(
         "Comitato feste 87", "Nuovi messaggi in arrivo!",
         url: single is not null ? $"/?date={single}" : "/",

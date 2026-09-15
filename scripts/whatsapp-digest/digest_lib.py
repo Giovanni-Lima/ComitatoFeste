@@ -106,10 +106,21 @@ def media_text(sender, ext, caption, override, n=1):
     return t
 
 
+TRANSCRIPT_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".transcript_cache.json")
+
+
+def _load_transcript_cache(path):
+    if path and os.path.isfile(path):
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
 def build_digest(date, curated, media_overrides, curated_system=None,
                   extra_skip_media=None, extra_skip_label="esclusioni specifiche del giorno",
                   src=None, export=None, parsed_full_path=None,
-                  checkpoint_path=None):
+                  checkpoint_path=None, audio_curated=None, audio_merges=None,
+                  transcript_cache_path=None):
     """Genera Export/digest_<date>.json + Export/<date>/ a partire dai messaggi
     già parsati, applicando curatela testo (`curated`/`curated_system`) e
     didascalie media (`media_overrides`).
@@ -118,6 +129,22 @@ def build_digest(date, curated, media_overrides, curated_system=None,
     specifiche del giorno oltre a sticker/GIF/GIF-mp4 (es. la finestra oraria
     delle bozze del logo del 5/9). Se True, il media viene escluso e contato
     sotto `extra_skip_label`.
+
+    audio_curated: dict (date, time, sender, filename) -> (type, text) per un
+    vocale ATOMICO già classificato in curatela (usando la trascrizione
+    prodotta da transcribe_new.py) — il file resta comunque tenuto/copiato,
+    ma l'entry esce con type/text reali invece del placeholder "non
+    trascritto", e porta anche `transcript` (dalla cache) così l'Importer può
+    valorizzare MediaAsset.TranscriptionText/TranscribedAt e il Transcriber lo
+    salta in automatico (vedi CLAUDE.md, "Trascrizione anticipata dei vocali").
+
+    audio_merges: lista di gruppi di vocali "cloni" da accorpare in
+    un'unica entry di sintesi, scartandone i file:
+        {"anchor_time": "HH:MM", "anchor_sender": "Nome", "type": ...,
+         "text": ..., "members": ["file1.opus", "file2.opus", ...]}
+    Un vocale non coperto né da `audio_curated` né da `audio_merges` mantiene
+    il comportamento di sempre (placeholder, file tenuto, type "media") — è
+    la rete di sicurezza in caso la curatela non arrivi a classificare tutto.
     """
     src = src or SRC
     export = export or EXPORT
@@ -125,6 +152,11 @@ def build_digest(date, curated, media_overrides, curated_system=None,
     checkpoint_path = checkpoint_path or os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "checkpoint.json")
     curated_system = curated_system or {}
+    audio_curated = audio_curated or {}
+    audio_merges = audio_merges or []
+    transcript_cache = _load_transcript_cache(transcript_cache_path or TRANSCRIPT_CACHE_PATH)
+
+    merged_filenames = {fn for group in audio_merges for fn in group["members"]}
 
     with open(parsed_full_path, encoding="utf-8") as f:
         all_msgs = json.load(f)
@@ -143,6 +175,7 @@ def build_digest(date, curated, media_overrides, curated_system=None,
     skipped_stickers = []
     skipped_reaction_gifs = []
     skipped_extra = []
+    skipped_audio_merged = []
     used_curated_keys = set()
 
     for m in msgs:
@@ -189,6 +222,13 @@ def build_digest(date, curated, media_overrides, curated_system=None,
             if extra_skip_media and extra_skip_media(time_, fname):
                 skipped_extra.append((time_, sender, fname))
                 continue
+            if fname in merged_filenames:
+                # Vocale "clone" accorpato con altri in un'unica entry di
+                # sintesi (regola aggiunta il 15/9/2026): il file si scarta,
+                # non genera una entry propria. La entry di sintesi viene
+                # emessa una sola volta, dopo il loop principale.
+                skipped_audio_merged.append((time_, sender, fname))
+                continue
             src_path = os.path.join(src, fname)
             if not os.path.isfile(src_path):
                 missing_source_files.append((time_, sender, fname))
@@ -203,11 +243,26 @@ def build_digest(date, curated, media_overrides, curated_system=None,
             dest_name = f"{time_.replace(':', '')}_{slug(author)}{suffix}{ext.lower()}"
             shutil.copy2(src_path, os.path.join(dest_dir, dest_name))
             kept_filenames.add(dest_name)
-            override = media_overrides.get((date, time_, sender, fname))
-            text = media_text(author, ext, m.get("text"), override, n=n)
-            entries.append({"date": date, "time": time_, "author": author, "type": "media",
-                             "text": text, "file": dest_name})
+
+            audio_hit = audio_curated.get((date, time_, sender, fname))
+            entry = {"date": date, "time": time_, "author": author, "file": dest_name}
+            if audio_hit:
+                typ, text = audio_hit
+                entry["type"] = typ
+                entry["text"] = text
+            else:
+                override = media_overrides.get((date, time_, sender, fname))
+                entry["type"] = "media"
+                entry["text"] = media_text(author, ext, m.get("text"), override, n=n)
+            transcript = transcript_cache.get(fname)
+            if transcript:
+                entry["transcript"] = transcript
+            entries.append(entry)
             continue
+
+    for group in audio_merges:
+        entries.append({"date": date, "time": group["anchor_time"], "author": group["anchor_sender"],
+                         "type": group["type"], "text": group["text"], "file": None})
 
     stale = existing_before - kept_filenames
     if stale:
@@ -231,6 +286,10 @@ def build_digest(date, curated, media_overrides, curated_system=None,
     print(f"messaggi di testo NON curati/scartati come rumore: {len(skipped_text)}")
     print(f"sticker/gif ignorati: {len(skipped_stickers)}")
     print(f"gif di reazione travestite da mp4, ignorate: {skipped_reaction_gifs}")
+    if audio_merges:
+        print(f"vocali accorpati in {len(audio_merges)} entry di sintesi (file scartati): {len(skipped_audio_merged)}")
+    if audio_curated:
+        print(f"vocali atomici pre-classificati in curatela: {len(audio_curated)}")
     if extra_skip_media:
         print(f"{extra_skip_label}: {len(skipped_extra)}")
 
@@ -262,4 +321,5 @@ def build_digest(date, curated, media_overrides, curated_system=None,
         "skipped_stickers": skipped_stickers,
         "skipped_reaction_gifs": skipped_reaction_gifs,
         "skipped_extra": skipped_extra,
+        "skipped_audio_merged": skipped_audio_merged,
     }

@@ -20,6 +20,12 @@ Thumbs.db
 __pycache__/
 *.pyc
 
+## Trascrizione anticipata dei vocali (transcribe_new.py, 15/9/2026): cache
+## di resume tra un run e l'altro + file di curatela intermedio, usa-e-getta
+## come whatsapp_parsed_*.json — non vanno nel repo.
+scripts/whatsapp-digest/.transcript_cache.json
+scripts/whatsapp-digest/nuovi_messaggi_*.json
+
 ## Locale (dati sorgente pipeline, segreti e volumi Postgres)
 data/postgres/
 key.txt

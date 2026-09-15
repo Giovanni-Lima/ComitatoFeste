@@ -25,4 +25,17 @@ public sealed class DigestEntry
 
     [JsonPropertyName("file")]
     public string? File { get; set; }
+
+    /// <summary>
+    /// Trascrizione Whisper già prodotta in fase di export (vedi
+    /// <c>scripts/whatsapp-digest/transcribe_new.py</c>), presente solo per i
+    /// vocali. <c>null</c> per le entry generate come oggi (nessuna
+    /// pre-trascrizione). Quando è valorizzato e <see cref="Type"/> non è
+    /// "media" (cioè il vocale è già stato classificato in curatela, non
+    /// lasciato come placeholder), <see cref="DigestImporter"/> lo scrive su
+    /// <c>MediaAsset.TranscriptionText</c>/<c>TranscribedAt</c> così il
+    /// Transcriber lo salta in automatico.
+    /// </summary>
+    [JsonPropertyName("transcript")]
+    public string? Transcript { get; set; }
 }

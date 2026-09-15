@@ -19,7 +19,7 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
 
 ## Prerequisiti sulla VM del device (già presenti)
 
-- Python 3
+- Python 3 (pacchetto `requests`, usato da `transcribe_new.py`)
 - `ffmpeg`/`ffprobe` (per distinguere i video veri dalle GIF di reazione)
 
 ## Come si genera un nuovo giorno
@@ -55,9 +55,28 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
    `Chat WhatsApp con Il branco dei pazzi 87.txt`, scrive
    `whatsapp_parsed_full.json` (tutti i messaggi, tutte le date). Stampa
    anche qualche statistica di controllo (messaggi/mittenti/tipi per le
-   date recenti — modifica lo script se serve un'altra data).
+   date recenti — modifica lo script se serve un'altra data). La funzione
+   di parsing (`parse_messages`) è riusabile da altri script — vedi punto
+   2-bis.
 
-3. **Leggi i messaggi di testo del giorno** e scrivi/aggiorna un
+2-bis. **Trascrivi in anticipo i vocali nuovi** (regola aggiunta il
+   15/9/2026 — vedi CLAUDE.md, "Trascrizione anticipata dei vocali"):
+   ```
+   python3 transcribe_new.py
+   ```
+   Recupera da solo i messaggi dopo `checkpoint.json` e chiama Groq Whisper
+   (solo trascrizione, niente classificazione) su ogni vocale nuovo, con
+   cache di resume in `.transcript_cache.json` (gitignored — se lo script
+   si interrompe/va in rate-limit, rilancialo: riparte solo dai file non
+   ancora in cache, senza ripagare quelli già trascritti). Scrive
+   `nuovi_messaggi_<data>.json`: **leggi questo file per la curatela**
+   (testo dei messaggi + trascrizioni dei vocali già inline), non più il
+   `.txt` grezzo con `grep`/`sed` per i vocali — risparmia tool-call/token
+   in sessione. Serve `requests` (`pip install requests` se manca) e la
+   stessa chiave Groq del Transcriber (env `GROQ_API_KEY` o `key.txt` alla
+   radice del repo).
+
+3. **Leggi i messaggi (testo + trascrizioni)** e scrivi/aggiorna un
    `build_digest_<MMGG>.py` dedicato (copia uno degli esistenti come base,
    cambia `DATE` — la logica di costruzione vera e propria vive in
    `digest_lib.py`, il file del giorno resta solo dati). Per ogni giorno
@@ -77,10 +96,20 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
      azione/contesto — es. "un uomo sorride mostrando una bottiglia di
      birra", non "un uomo con testa rasata e barba folta sorride..."
      (regola aggiunta il 6/9/2026).
-   - I **vocali (audio)** NON si curano uno per uno: restano un placeholder
-     "Vocale di X, non trascritto" (li riempie poi il Transcriber via
-     Groq). Ogni vocale resta comunque una entry a sé, mai raggruppato o
-     scartato come rumore.
+   - I **vocali (audio)**, con la trascrizione già disponibile dal punto
+     2-bis, vanno classificati in curatela come il testo:
+     - **`AUDIO_CURATED`**: dict `(date, time, sender, filename) ->
+       (type, text)` per un vocale che è di per sé un argomento atomico —
+       resta una entry propria col file tenuto, ma già classificato invece
+       che lasciato al Transcriber.
+     - **`AUDIO_MERGES`**: lista di gruppi
+       `{"anchor_time", "anchor_sender", "type", "text", "members": [file,
+       ...]}` per vocali "cloni" (anche di autori diversi) che ripetono lo
+       stesso concetto — diventano **una sola** entry di sintesi, i file
+       elencati in `members` si scartano.
+     - Un vocale non coperto da nessuno dei due resta come prima
+       (placeholder "non trascritto", lo classifica poi il Transcriber) —
+       rete di sicurezza se la curatela non arriva a coprire tutto.
    - **Checkpoint**: mentre leggi i messaggi del giorno, aggiorna via via
      `scripts/whatsapp-digest/checkpoint.json` con l'ultimo messaggio
      effettivamente esaminato (data del digest, data/ora/mittente del
@@ -105,8 +134,11 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
 
 ## Regole stabili (vedi anche `CLAUDE.md` alla radice del repo)
 
-- **Ogni vocale va tenuto**, una entry per vocale anche se simile a uno
-  precedente — l'audio non è mai "rumore" in questa fase.
+- **Vocali "cloni" si accorpano** (`AUDIO_MERGES`), un vocale atomico va
+  comunque classificato in curatela (`AUDIO_CURATED`) invece di lasciato al
+  Transcriber — regola aggiunta il 15/9/2026, vedi punto 2-bis/3 sopra e
+  CLAUDE.md. Solo un vocale non coperto da nessuno dei due resta come
+  prima (placeholder, mai comunque "rumore" in questa fase).
 - **Sticker e GIF si ignorano**: niente entry, niente copia in
   `Export/<data>/`. Riconoscimento per estensione (`.webp`, `.gif`).
 - **Le GIF di reazione mascherate da `.mp4` si ignorano anch'esse**:

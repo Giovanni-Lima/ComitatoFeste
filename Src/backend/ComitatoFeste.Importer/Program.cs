@@ -118,6 +118,7 @@ else
 if (files.Count == 0)
 {
     Console.WriteLine("nessun file digest_*.json da importare.");
+    Console.WriteLine("punti-inseriti-totale:0");
     return 0;
 }
 
@@ -160,6 +161,11 @@ Console.WriteLine($"\n== totale: {files.Count} file, {totInserted} punti, " +
 
 // Niente notifica push qui: nella pipeline normale l'Importer è sempre seguito dal
 // Transcriber, che notifica una sola volta a processo completato (vedi PushHook lì).
+// Riga machine-readable per import-transcribe-aiven.ps1 (--force-notify, vedi
+// Transcriber/Program.cs): con la trascrizione anticipata dei vocali un giorno può
+// arrivare già tutto pre-classificato, quindi il Transcriber da solo non saprebbe
+// che sono stati inseriti punti nuovi.
+Console.WriteLine($"punti-inseriti-totale:{totInserted}");
 }
 
 // --- foto profilo ------------------------------------------------------------

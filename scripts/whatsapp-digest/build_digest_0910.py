@@ -5,6 +5,14 @@
 Giornata dominata dal tema "fondo cassa" in vista della riunione di venerdì
 11/9 (non ancora deciso -> proposta) e da molti feedback sull'app comitatofeste
 lanciata la sera prima. Nessuna decisione formale presa in chat.
+
+NOTA test 15/9/2026: aggiunta `AUDIO_CURATED` con un solo vocale (10:35 Dante
+Caniglia, info fiscale IRPEF/IRES) per una prova end-to-end della
+"Trascrizione anticipata dei vocali" (vedi CLAUDE.md) su dati reali — questa
+giornata non aveva duplicati puliti per testare anche `AUDIO_MERGES` (per lo
+più chiacchiere nostalgiche non correlate, già lasciate come rumore/non
+curate). Il resto dei ~125 vocali del giorno resta come sempre (placeholder,
+classificato dal Transcriber).
 """
 import os
 import sys
@@ -88,6 +96,12 @@ CURATED = {
         "tema con cori abruzzesi."),
 }
 
+AUDIO_CURATED = {
+    (DATE, "10:35", "Dante Caniglia", "PTT-20260910-WA0040.opus"): ("info",
+        "Spiega che chi ha partita IVA da professionista, se vuole un beneficio "
+        "IRPEF/IRES, può fare una donazione al comitato usata come detrazione."),
+}
+
 MEDIA_OVERRIDES = {
     (DATE, "08:50", "Emanuele Sciarra", "IMG-20260910-WA0013.jpg"):
         "Foto di un gruppo di persone sedute su sedie di plastica sotto un porticato, "
@@ -144,4 +158,5 @@ EXTRA_SKIP_LABEL = "GIF di reazione .mp4 senza audio, escluse"
 if __name__ == "__main__":
     build_digest(DATE, CURATED, MEDIA_OVERRIDES,
                  extra_skip_media=_skip_reaction_gif_mp4,
-                 extra_skip_label="GIF di reazione .mp4 senza audio, escluse")
+                 extra_skip_label="GIF di reazione .mp4 senza audio, escluse",
+                 audio_curated=AUDIO_CURATED)

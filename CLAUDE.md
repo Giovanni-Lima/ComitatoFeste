@@ -64,7 +64,17 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   normale (Importer → Transcriber), una sola notifica a processo completato
   invece di una per l'import e una per la trascrizione. Senza quelle due env
   il Transcriber stampa `notifiche push: … non impostati — salto` e nessuno
-  riceve nulla. A DB:
+  riceve nulla. **Gap corretto il 15/9/2026**: con la trascrizione anticipata
+  dei vocali (vedi sotto) una giornata può arrivare all'Importer già
+  interamente pre-classificata, lasciando il Transcriber senza nulla da fare
+  (`ok == 0`) — la notifica, legata solo a `ok > 0`, non sarebbe mai partita
+  per quei giorni pur essendoci punti nuovi importati. Fix: l'Importer
+  stampa una riga `punti-inseriti-totale:N`; `import-transcribe-aiven.ps1` la
+  legge e, se `N > 0`, passa al Transcriber `--force-notify <digest_data
+  del checkpoint>`, che forza l'invio anche con 0 vocali classificati
+  (usando quella data per `url`/`tag` se non ne ha classificato lui stesso
+  esattamente una). Nessun cambiamento se lanciati manualmente senza quel
+  flag. A DB:
   **804 `DigestPoint`** (per giorno dal 01-09 all'08-09: 211 / 167 / 131 /
   37 / 163 / 10 / 24 / 61; **288** classificati `rumore`), **597 `MediaAsset`**
   (523 audio, 60 foto, 14 documento) con altrettanti `MediaBlob`,
@@ -374,10 +384,41 @@ poi ricopiando `digest_<data>.json` + media + script sul PC). Regole
 stabili da seguire in ogni rigenerazione (dettagliate anche nel README
 sopra):
 
-- **Ogni vocale (audio) va tenuto**, una entry per vocale, anche se simile a
-  uno precedente — l'audio non va mai trattato come "rumore" in fase di
-  generazione del digest (il filtro sul contenuto poco utile è compito del
-  Transcriber via Groq, non di questo script).
+- **Trascrizione anticipata dei vocali + dedup semantico (regola aggiunta il
+  15/9/2026, sostituisce la precedente "ogni vocale va sempre tenuto")**:
+  prima di scrivere `CURATED`/`MEDIA_OVERRIDES`, lanciare
+  `python transcribe_new.py` — recupera automaticamente i messaggi nuovi
+  dopo il checkpoint e trascrive con Groq Whisper (solo trascrizione,
+  niente classificazione) tutti i vocali nuovi, con cache di resume in
+  `.transcript_cache.json` (gitignored: un crash/rate-limit a metà non fa
+  ripagare le trascrizioni già fatte, si rilancia e riparte dai soli
+  mancanti). Scrive `nuovi_messaggi_<data>.json`: è quello il file da
+  leggere in curatela (testo + trascrizioni inline), invece di `grep`/`sed`
+  sul `.txt` grezzo per i vocali. Con il testo dei vocali disponibile, in
+  curatela si può riconoscere quando più vocali (anche di autori diversi)
+  ripetono lo stesso concetto con parole diverse — su 14 giorni curati è
+  successo in almeno 5 giornate, degradando la leggibilità del digest — e
+  **accorparli in un'unica entry di sintesi** (`AUDIO_MERGES` in
+  `build_digest_MMGG.py`, vedi `digest_lib.build_digest`): i file dei
+  vocali accorpati si scartano, l'entry di sintesi ha `type` deciso dal
+  curatore e nessun media. Un vocale che è di per sé un argomento atomico
+  invece resta come oggi (entry propria, file tenuto) ma va comunque
+  **classificato in curatela** invece di lasciato al Transcriber
+  (`AUDIO_CURATED`, stesso file): il curatore ha il contesto dell'intera
+  conversazione, il classificatore del Transcriber vede il vocale isolato.
+  Un vocale non coperto da nessuna delle due strutture mantiene il
+  comportamento di sempre (placeholder "non trascritto", il Transcriber lo
+  classifica più tardi) — è la rete di sicurezza se la curatela non fa in
+  tempo a coprire tutto. Lato Importer, l'entry porta anche `transcript`
+  (letto dalla cache): quando presente e `type != "media"`,
+  `DigestImporter` valorizza già `MediaAsset.TranscriptionText`/
+  `TranscribedAt`, così la query del Transcriber
+  (`TranscriptionText == null || TranscribedAt == null`) lo esclude da
+  sola — nessuna modifica al Transcriber stesso. Perché farlo in curatela e
+  non nel Transcriber: verificato che il freno TPM che oggi rallenta il
+  Transcriber è solo del classificatore (`gpt-oss-120b`, soglia 6.500
+  token/min) — Whisper da solo ha solo il limite 20 req/min, quindi la
+  pre-trascrizione è molto più veloce dei run visti finora.
 - **Sticker e GIF vanno ignorati**: non generano una entry nel digest e non
   vanno copiati in `Export/<data>/` (regola aggiunta il 4/9/2026 — prima
   venivano trattati come media generico).
