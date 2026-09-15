@@ -6,20 +6,20 @@ Prima giornata curata con la trascrizione anticipata dei vocali
 (transcribe_new.py, vedi CLAUDE.md): tutti i vocali di questa finestra sono
 già classificati in AUDIO_CURATED, letti col contesto della trascrizione.
 
-Finestra 22:58 del 14/9 - 14:37 del 15/9 (aggiornata con l'export delle
-17:42 del 15/9, che estende il giorno oltre le 10:07 della prima curatela).
-Mattina dominata dalla lista coppie/sponsor materassi (vedi sotto); nel
-resto della giornata: Dante Caniglia (11:16) risponde alla proposta del
-raduno auto d'epoca (10:06) suggerendo il Rotary Club o, in alternativa, un
-raduno di auto elaborate tramite un amico di Vezzano; Emanuele Sciarra
-(11:33) rilancia con l'idea di Attilio di distribuire l'evento su più zone
-del paese coinvolgendo le attività locali. Un thread sulle maglie del
-comitato rovinate da lavaggio/stiratura (Giacomo Gentile 12:42, foto di
-Elvis Ippoliti 12:55) resta un solo punto info + la foto, le risposte
-successive (consigli di lavaggio, "ottimo"/conferme) sono rumore. Tre
-vocali consecutivi di Emanuele (13:19-13:24) sviluppano un'unica proposta
-di street food di 4 giorni prima di Santa Maria Goretti, con le attività
-locali, evitando sovrapposizioni con bar/cocktail e specialità già
+Finestra 22:58 del 14/9 - 22:15 del 15/9 (aggiornata con l'export delle
+22:15 del 15/9, che estende il giorno oltre le 14:37 della curatela
+precedente). Mattina dominata dalla lista coppie/sponsor materassi (vedi
+sotto); nel resto della giornata: Dante Caniglia (11:16) risponde alla
+proposta del raduno auto d'epoca (10:06) suggerendo il Rotary Club o, in
+alternativa, un raduno di auto elaborate tramite un amico di Vezzano;
+Emanuele Sciarra (11:33) rilancia con l'idea di Attilio di distribuire
+l'evento su più zone del paese coinvolgendo le attività locali. Un thread
+sulle maglie del comitato rovinate da lavaggio/stiratura (Giacomo Gentile
+12:42, foto di Elvis Ippoliti 12:55) resta un solo punto info + la foto, le
+risposte successive (consigli di lavaggio, "ottimo"/conferme) sono rumore.
+Tre vocali consecutivi di Emanuele (13:19-13:24) sviluppano un'unica
+proposta di street food di 4 giorni prima di Santa Maria Goretti, con le
+attività locali, evitando sovrapposizioni con bar/cocktail e specialità già
 presenti. Ugo Trinchini (13:27) aggiunge due coppie alla lista (Angela e
 Vincenzo di Ortucchio) e (13:42, vocale) comunica due sponsor trovati che
 non vogliono comparire su biglietti/totem, chiedendo l'ok del gruppo.
@@ -28,7 +28,32 @@ comunica di aver reperito il numero di chi fa le fregne; Elvis (14:34)
 suggerisce un'alternativa per procurarselo. Restano rumore: le varie
 conferme brevi ("ottimo", "certo"), due vocali senza contenuto di Dante
 (14:25) e uno screenshot di un evento quiz esterno di Costantino, non
-legato al comitato. Nessuna menzione di Giovanni Lima in questa finestra.
+legato al comitato.
+
+Sera (19:15-22:15): un video di Elvis (19:17) è una GIF di reazione
+mascherata da .mp4 (nessuna traccia audio, ffprobe), scartata in automatico
+insieme alle battute testuali/vocali che lo accompagnano (rumore). Ugo
+Trinchini (20:07) e Emanuele Sciarra (21:50) aggiungono altre coppie alla
+lista del 18/9 (Pasquale e Elena; Christian e Asia), Raffaele Di Cesare
+(20:56) ne aggiunge altre due (suo fratello con la moglie; Gino e Martina).
+Emanuele (20:10-20:29) comunica altri 2 contatti per le serate materassi e
+di essere alla ricerca di aziende di depuratori per serate simili,
+stimando ~3000€ raccolti dal comitato con 6 serate totali (i commenti
+scherzosi di Dante/Ugo che seguono sono rumore). Barbara Rizio (21:23)
+chiede se sono state raggiunte le 20 coppie, Alessandra Simonetti conferma
+di sì ricordando che resta da stabilire chi porta cosa; Emanuele (21:51,
+con anche Elvis) chiede ad Alessandra Toracchio un resoconto completo, lei
+risponde di essersi persa nel conteggio e che lo invierà la mattina dopo.
+Un vocale di Emanuele (21:55) propone come ripartire l'acquisto di
+bevande/tovaglioli/bicchieri per la prossima serata; una foto di Alessandra
+Toracchio (22:01) mostra l'elenco definitivo di chi porta cosa per la
+riunione materassi del 18/9, e lei stessa (22:02) comunica cosa è avanzato
+dalla serata precedente (patatine, bibite) utile per quel buffet; Emanuele
+(22:03) aggiorna il conteggio a 21 coppie. Il lungo scambio finale
+(22:07-22:15) sul nome dialettale di un dolce fritto (nevole/ciarancell/
+ferratelle, tra Antonio Aceto, Alessandra Toracchio, Emanuele) è battuta di
+dialetto, scartato come rumore. Nessuna menzione di Giovanni Lima in questa
+finestra.
 """
 import os
 import sys
@@ -68,6 +93,40 @@ CURATED = {
     ("14:34", "Elvis Ippoliti"): ("info",
         "Suggerisce che per procurarsi quel numero si può chiedere anche a "
         "Domenica Paperone, amica della persona in questione."),
+    ("20:07", "Ugo Trinchini"): ("info",
+        "Chiede a Emilio Caniglia di aggiungere alla lista coppie per il "
+        "18/9 anche Pasquale e Elena."),
+    ("20:10", "Emanuele Sciarra"): ("info",
+        "Comunica di aver trovato altri 2 contatti per le serate materassi "
+        "(oltre a quelle già in corso) ed essere alla ricerca di aziende di "
+        "depuratori per organizzare serate simili a casa delle coppie (al "
+        "momento già 2 disponibili). Stima che con 6 serate totali tra "
+        "materassi e depuratori, anche nella peggiore delle ipotesi (500€ a "
+        "serata), il comitato potrebbe raccogliere circa 3000€ senza "
+        "sforzo, a fronte solo della seccatura di convincere le coppie a "
+        "partecipare."),
+    ("20:56", "Raffaele Di Cesare"): ("info",
+        "Comunica due nuove coppie per l'incontro del 18/9: suo fratello "
+        "con la moglie, e Gino con Martina."),
+    ("21:23", "Barbara Rizio"): ("domanda",
+        "Chiede se sono state raggiunte le 20 coppie per l'incontro del "
+        "18/9; Alessandra Simonetti risponde di sì, ricordando che resta "
+        "da stabilire chi porta cosa."),
+    ("21:50", "Emanuele Sciarra"): ("info",
+        "Comunica di aggiungere alla lista coppie per il 18/9 anche "
+        "Christian e Asia."),
+    ("21:51", "Emanuele Sciarra"): ("domanda",
+        "Chiede ad Alessandra Toracchio un resoconto completo delle "
+        "coppie; anche Elvis Ippoliti chiede l'elenco di chi porta cosa. "
+        "Alessandra risponde di essersi persa nel conteggio e che invierà "
+        "tutto la mattina dopo."),
+    ("22:02", "Alessandra Toracchio"): ("info",
+        "Comunica cosa è avanzato dalla serata precedente, utile per il "
+        "buffet del 18/9: 8 buste di patatine, 1 Coca Cola, 1 tè e un "
+        "quarto articolo che non ricorda con certezza (probabilmente "
+        "aranciata)."),
+    ("22:03", "Emanuele Sciarra"): ("info",
+        "Aggiorna il conteggio delle coppie per il 18/9 a 21."),
 }
 
 AUDIO_CURATED = {
@@ -131,6 +190,14 @@ AUDIO_CURATED = {
         "sponsor per alcune centinaia di euro a testa, ma senza voler "
         "comparire su biglietti o totem; chiede l'ok del gruppo per "
         "procedere lasciando una semplice ricevuta."),
+    (DATE, "21:55", "Emanuele Sciarra", "PTT-20260915-WA0030.opus"): ("proposta",
+        "Propone che una persona si occupi di acquistare bevande, "
+        "tovaglioli, bicchieri e patatine per la prossima serata "
+        "(stimando una spesa totale di 50-60€, circa 3€ a testa "
+        "considerando che le ragazze portano dolci fatti in casa, o circa "
+        "5€ a testa tra i soli uomini) e che il costo venga poi ridiviso "
+        "tra tutti i partecipanti; quanto avanza si riusa per le prossime "
+        "serate."),
 }
 
 MEDIA_OVERRIDES = {
@@ -147,6 +214,12 @@ MEDIA_OVERRIDES = {
         "un cabinato arcade con la scritta \"INSERT COIN\"): la texture "
         "risulta leggermente sporca/opaca dopo il lavaggio, il problema "
         "segnalato nel thread sulle maglie rovinate.",
+    (DATE, "22:01", "Alessandra Toracchio", "IMG-20260915-WA0031.jpg"):
+        "Foto di un documento a schermo con l'elenco di chi porta cosa per "
+        "la riunione materassi di venerdì 18/9 (buffet): Ugo vassoio "
+        "dolci, Ale T bicchieri, Costantino 1 cassa d'acqua, Raffaele 2 "
+        "Coca Cola, Barbara 2 torte salate, Tina vassoio per patatine, "
+        "Emanuele 1 aranciata e 1 tè, Emilio tovaglioli, Costance nevole.",
 }
 
 if __name__ == "__main__":
