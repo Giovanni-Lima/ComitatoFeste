@@ -13,8 +13,19 @@
 # Uso:  powershell -File scripts\import-transcribe-aiven.ps1
 #       (o --photos-only / altri argomenti dell'Importer: aggiungerli come
 #       parametri extra, es. -ImporterArgs "--photos-only")
+#
+# SICUREZZA (regola aggiunta il 15/9/2026, dopo un incidente reale): l'Importer,
+# senza un target esplicito, importa TUTTI i digest_*.json in Export/ — se
+# close_past_days.py non e' mai arrivato a girare (es. run precedente fallito a
+# meta'), quella cartella puo' contenere ancora giorni vecchi non chiusi. Lanciato
+# cosi' contro Aiven ha inserito su Aiven 153 punti storici (06-10/9) non
+# richiesti insieme ai punti del giorno corrente, poi rimossi a mano. Per questo
+# questo script NON lascia mai l'Importer senza target: di default lo limita
+# SEMPRE al solo giorno corrente (checkpoint.json -> digest_data). Usa -Target
+# per un giorno diverso (backfill volontario, da usare consapevolmente).
 
 param(
+    [string]$Target = "",
     [string]$ImporterArgs = "",
     [string]$TranscriberArgs = ""
 )
@@ -42,16 +53,31 @@ if (-not $hookSecret) { throw "$hookFile e' vuoto." }
 $env:COMITATOFESTE_HOOK_SECRET = $hookSecret
 $env:COMITATOFESTE_HOOK_URL = "https://comitatofeste.onrender.com"
 
-Write-Host "== Import verso Aiven ==" -ForegroundColor Cyan
+# --- Target dell'import: SEMPRE esplicito, mai "tutta Export/" di default ---
+# (vedi commento SICUREZZA in testa al file). Default: il giorno del checkpoint
+# della curatela WhatsApp corrente; -Target sovrascrive per un giorno diverso.
+$checkpointPath = Join-Path $PSScriptRoot "whatsapp-digest/checkpoint.json"
+$checkpointDate = $null
+if (Test-Path $checkpointPath) {
+    $checkpointDate = (Get-Content $checkpointPath -Raw | ConvertFrom-Json).digest_data
+}
+$importTarget = if ($Target) { $Target } else { $checkpointDate }
+$photosOnly = $ImporterArgs -match '--photos-only'
+if (-not $importTarget -and -not $photosOnly) {
+    throw "Impossibile determinare il giorno da importare: manca $checkpointPath (o il suo campo digest_data) e non hai passato -Target. Passa -Target <yyyy-MM-dd> esplicitamente."
+}
+
+Write-Host "== Import verso Aiven (target: $(if ($photosOnly) { '--photos-only, nessun digest' } else { $importTarget })) ==" -ForegroundColor Cyan
 # --export-root esplicito: il default hardcoded nel Program.cs dell'Importer
 # (C:\ComitatoFeste\Export) e' il vecchio percorso pre-trasloco, non esiste piu'.
 $exportRoot = Join-Path $repoRoot "Export"
 $importerExtra = $ImporterArgs.Split(" ", [StringSplitOptions]::RemoveEmptyEntries)
+$importerPositional = if ($importTarget) { @($importTarget) } else { @() }
 # Catturato riga per riga (oltre che stampato dal vivo) per leggere
 # "punti-inseriti-totale:N" e decidere se forzare la notifica push sotto (vedi
 # commento più giù).
 $importerOutput = @()
-dotnet run --project (Join-Path $repoRoot "Src/backend/ComitatoFeste.Importer") -- --export-root $exportRoot @importerExtra | ForEach-Object {
+dotnet run --project (Join-Path $repoRoot "Src/backend/ComitatoFeste.Importer") -- @importerPositional --export-root $exportRoot @importerExtra | ForEach-Object {
     Write-Host $_
     $importerOutput += $_
 }
@@ -69,12 +95,8 @@ $transcriberExtra = $TranscriberArgs.Split(" ", [StringSplitOptions]::RemoveEmpt
 # nulla da fare e non noterebbe da solo che l'Importer ha appena inserito punti
 # nuovi — niente notifica push altrimenti. --force-notify usa la data corrente
 # del checkpoint (digest_data), il giorno su cui si sta lavorando in questo giro.
-if ($totalInserted -gt 0) {
-    $checkpointPath = Join-Path $PSScriptRoot "whatsapp-digest/checkpoint.json"
-    if (Test-Path $checkpointPath) {
-        $checkpointDate = (Get-Content $checkpointPath -Raw | ConvertFrom-Json).digest_data
-        if ($checkpointDate) { $transcriberExtra += @("--force-notify", $checkpointDate) }
-    }
+if ($totalInserted -gt 0 -and $checkpointDate) {
+    $transcriberExtra += @("--force-notify", $checkpointDate)
 }
 dotnet run --project (Join-Path $repoRoot "Src/backend/ComitatoFeste.Transcriber") -- @transcriberExtra
 if ($LASTEXITCODE -ne 0) { throw "Transcriber terminato con errore (exit $LASTEXITCODE)." }

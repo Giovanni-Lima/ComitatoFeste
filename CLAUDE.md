@@ -49,7 +49,16 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   via `pg_dump`/`pg_restore` (workflow corrente: import + trascrizione si
   fanno **direttamente su Aiven** con `scripts/import-transcribe-aiven.ps1`
   — Importer poi Transcriber, notifica push automatica a fine run —, poi si
-  riallinea il locale con un dump — vedi `docs/DEPLOY.md`; **nota**: pg_dump
+  riallinea il locale con un dump — vedi `docs/DEPLOY.md`. **Sicurezza
+  aggiunta il 15/9/2026**: lo script limita sempre l'Importer a un target
+  esplicito (default: `checkpoint.json` → `digest_data`, cioè il giorno
+  appena curato), mai a "tutta `Export/`" — prima, se `close_past_days.py`
+  non arrivava a fine script (run precedente fallito a metà), i
+  `digest_*.json` di giorni vecchi non chiusi restavano in `Export/` e un
+  Importer senza target li re-includeva, inserendo su Aiven punti storici
+  non richiesti (successo reale il 15/9, 153 punti dei giorni 06-10/9,
+  poi rimossi a mano). Un giorno diverso da quello corrente richiede
+  `-Target <yyyy-MM-dd>` esplicito; **nota**: pg_dump
   18 emette sia `SET transaction_timeout` (GUC non riconosciuto da Postgres
   16) sia le direttive psql `\restrict`/`\unrestrict` (introdotte in pg_dump
   18, sconosciute al client psql 16) — **entrambe** vanno filtrate in fase
