@@ -49,11 +49,21 @@ bevande/tovaglioli/bicchieri per la prossima serata; una foto di Alessandra
 Toracchio (22:01) mostra l'elenco definitivo di chi porta cosa per la
 riunione materassi del 18/9, e lei stessa (22:02) comunica cosa è avanzato
 dalla serata precedente (patatine, bibite) utile per quel buffet; Emanuele
-(22:03) aggiorna il conteggio a 21 coppie. Il lungo scambio finale
-(22:07-22:15) sul nome dialettale di un dolce fritto (nevole/ciarancell/
-ferratelle, tra Antonio Aceto, Alessandra Toracchio, Emanuele) è battuta di
-dialetto, scartato come rumore. Nessuna menzione di Giovanni Lima in questa
-finestra.
+(22:03) aggiorna il conteggio a 21 coppie. Il lungo scambio (22:07-22:22,
+sette vocali) sul nome dialettale di un dolce fritto (nevole/ciarancell/
+ferratelle/jarangelle, tra Antonio Aceto, Costantino Mariani, Dante
+Caniglia) resta battuta di dialetto, scartato come rumore — coi vocali
+tenuti come "rete di sicurezza" (placeholder, classificati poi dal
+Transcriber). In coda: Emilio Caniglia (22:19) condivide la foto delle 20
+coppie ora al completo; un avviso (22:29) chiede aiuto per recuperare la
+sabbia colorata dell'infiorata il giorno dopo; Costantino Mariani (22:32)
+chiede se arriverà una sponsorizzazione da un'azienda e suggerisce altri
+potenziali sponsor (ristoranti della Marsica, banche); il resto (dolci di
+carnevale/Natale, un "ci sto" di Antonio Aceto) è rumore. Un video di
+Antonio Aceto (22:38, VID-20260916-WA0005.mp4) è una GIF di reazione
+mascherata: niente ffprobe su questa macchina, verificata a mano
+analizzando gli atom MP4 (nessun handler "soun"), scartata di conseguenza.
+Nessuna menzione di Giovanni Lima in questa finestra.
 """
 import os
 import sys
@@ -127,6 +137,15 @@ CURATED = {
         "aranciata)."),
     ("22:03", "Emanuele Sciarra"): ("info",
         "Aggiorna il conteggio delle coppie per il 18/9 a 21."),
+    ("22:29", "Emilio Caniglia"): ("info",
+        "Avviso per tutti i ragazzi: il pomeriggio del 16/9, tra le 17 e le "
+        "17:30, la classe '86 lascerà la sabbia colorata avanzata per "
+        "l'infiorata; Mike si rende disponibile col furgone per andarla a "
+        "prendere, appuntamento davanti alla sede della classe '86."),
+    ("22:32", "Costantino Mariani"): ("proposta",
+        "Chiede se arriverà una sponsorizzazione da \"Kromoss\" e "
+        "suggerisce di contattare come potenziali sponsor anche tutti i "
+        "ristoranti della Marsica e le banche."),
 }
 
 AUDIO_CURATED = {
@@ -220,7 +239,31 @@ MEDIA_OVERRIDES = {
         "dolci, Ale T bicchieri, Costantino 1 cassa d'acqua, Raffaele 2 "
         "Coca Cola, Barbara 2 torte salate, Tina vassoio per patatine, "
         "Emanuele 1 aranciata e 1 tè, Emilio tovaglioli, Costance nevole.",
+    (DATE, "22:19", "Emilio Caniglia", "IMG-20260915-WA0039.jpg"):
+        "Foto aggiornata del foglio \"COPPIE\" per l'incontro del 18/9: "
+        "tutte le 20 coppie compilate (elenco completo, rispetto alla "
+        "versione da 16/20 delle 8:55): Elvis-Federica, Raffaele-Verdiana, "
+        "Ugo-Tina, Cesare-Alessandra S., Emanuele-Liberata, Maikel-"
+        "Lucianny, Roberto-Dalila, Cesare-Costance, Antonio S.-Alessandra "
+        "T., Silvano-Barbara, Vincenzo-Lara, Emilio-Antonella, Daniele-"
+        "Jessica, Giovanni-Martina, Massimo-Eugenia, Donato-Onorina, "
+        "Vincenzo-Angela, Pasquale-Elena, Gino-Martina, Christian-Asia.",
 }
 
+# .mp4 senza ffprobe su questa macchina (16/9/2026): verificato a mano che
+# VID-20260916-WA0005.mp4 (22:38, Antonio Aceto) non ha traccia audio
+# (nessun handler "soun" negli atom MP4) -> GIF di reazione mascherata,
+# stesso trattamento di is_reaction_gif() ma deciso fuori da digest_lib
+# perché qui ffprobe manca e la funzione, in sua assenza, non esclude nulla
+# di default (fail-open).
+_SKIP_FILES = {"VID-20260916-WA0005.mp4"}
+
+
+def _extra_skip(time_, fname):
+    return fname in _SKIP_FILES
+
+
 if __name__ == "__main__":
-    build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED)
+    build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
+                 extra_skip_media=_extra_skip,
+                 extra_skip_label="GIF mp4 verificate a mano (niente ffprobe)")
