@@ -72,7 +72,21 @@ Write-Host "== Import verso Aiven (target: $(if ($photosOnly) { '--photos-only, 
 # (C:\ComitatoFeste\Export) e' il vecchio percorso pre-trasloco, non esiste piu'.
 $exportRoot = Join-Path $repoRoot "Export"
 $importerExtra = $ImporterArgs.Split(" ", [StringSplitOptions]::RemoveEmptyEntries)
-$importerPositional = if ($importTarget) { @($importTarget) } else { @() }
+# BUG (trovato il 16/9/2026): "$importerPositional = if (...) { @($importTarget) }
+# else { @() }" sembra costruire un array, ma PowerShell "spacchetta" un
+# array a un solo elemento quando attraversa il flusso di output implicito
+# di un blocco if/else usato come espressione — l'assegnazione riceve la
+# stringa scalare "2026-09-16", non un array che la contiene. Lo splat
+# @importerPositional su una stringa scalare la itera CARATTERE PER
+# CARATTERE, passando "2" come primo argomento posizionale all'Importer
+# (che quindi cerca digest_2.json e fallisce). Fix: assegnare direttamente
+# dentro ciascun branch, non tramite return implicito raccolto dall'esterno
+# — così l'array-ness si preserva anche con un solo elemento.
+if ($importTarget) {
+    $importerPositional = @($importTarget)
+} else {
+    $importerPositional = @()
+}
 # Catturato riga per riga (oltre che stampato dal vivo) per leggere
 # "punti-inseriti-totale:N" e decidere se forzare la notifica push sotto (vedi
 # commento più giù).
