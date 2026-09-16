@@ -21,8 +21,18 @@ di Dante Caniglia (05:50, VID-20260916-WA0006.mp4) è una GIF di reazione
 mascherata (nessun handler audio negli atom MP4, verificato a mano — niente
 ffprobe su questa macchina); una foto di Alessandra Toracchio (13:30) è il
 forward della stessa immagine già digest il 15/9 alle 22:19 (aggiornamento
-coppie), scartata come duplicato. Nessuna menzione di Giovanni Lima in
-questa finestra.
+coppie), scartata come duplicato.
+
+Coda pomeridiana/serale (aggiornata con l'export delle 23:05 del 16/9, che
+estende il giorno oltre le 15:15): un breve thread (16:55-17:03) su cosa
+portare per il buffet del 18/9 — Ilenia Piccozzi porta una crostata,
+Tina Giarrante i vassoi per le patatine, Antonella Profeta e Alessandra
+Simonetti la pizza rossa; Alessandra Toracchio richiama a seguire quanto
+già deciso, Tina chiede di ricondividere la lista. Un messaggio di sistema
+delle 16:54 (Emilio Caniglia fissa un messaggio, presumibilmente la sua
+foto delle coppie delle 15:15) è rumore/amministrativo, non genera entry.
+Resta rumore anche la battuta finale delle 20:56 di Martina Del Gizzi.
+Nessuna menzione di Giovanni Lima in questa finestra.
 """
 import os
 import sys
@@ -45,6 +55,14 @@ CURATED = {
     ("14:09", "Ugo Trinchini"): ("info",
         "Conclude che, se si trova una ragazza da affiancare a Elvis, si "
         "arriva comunque a 21 coppie e si è al sicuro sul numero."),
+    ("16:55", "Emanuele Sciarra"): ("info",
+        "Chiede il punto sulla roba da portare per l'evento del 18/9; "
+        "seguono nuove adesioni al buffet: Ilenia Piccozzi porta una "
+        "crostata (recapitata tramite Tina Giarrante), Tina Giarrante "
+        "porta i vassoi/teglie di alluminio per le patatine, Antonella "
+        "Profeta e Alessandra Simonetti portano la pizza rossa. Alessandra "
+        "Toracchio invita a seguire quanto già deciso per non creare "
+        "confusione, e Tina chiede che la lista venga ricondivisa."),
 }
 
 AUDIO_CURATED = {
