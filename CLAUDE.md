@@ -415,7 +415,12 @@ sopra):
   **classificato in curatela** invece di lasciato al Transcriber
   (`AUDIO_CURATED`, stesso file): il curatore ha il contesto dell'intera
   conversazione, il classificatore del Transcriber vede il vocale isolato.
-  Un vocale non coperto da nessuna delle due strutture mantiene il
+  **Un vocale di rumore (saluti, battute, chiacchiere non legate al
+  comitato) si classifica in `AUDIO_CURATED` con type `"rumore"` e viene
+  scartato del tutto** (regola 19/9/2026): `digest_lib` non genera l'entry
+  né copia il file, quindi né Importer né Transcriber lo vedono mai — così
+  il Transcriber non ripaga Whisper su vocali già trascritti e inutili.
+  Un vocale non coperto da nessuna delle strutture mantiene il
   comportamento di sempre (placeholder "non trascritto", il Transcriber lo
   classifica più tardi) — è la rete di sicurezza se la curatela non fa in
   tempo a coprire tutto. Lato Importer, l'entry porta anche `transcript`

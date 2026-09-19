@@ -68,7 +68,10 @@ deciso a parte dall'utente.
    decidere rumore/domanda/proposta/info, guardare le foto (mai descrivere
    tratti fisici delle persone), verificare menzioni di Giovanni Lima, e
    **riconoscere vocali "cloni"** che ripetono lo stesso concetto (anche
-   di autori diversi) da accorpare in curatela.
+   di autori diversi) da accorpare in curatela. Ogni vocale va coperto:
+   `AUDIO_CURATED` (atomico), `AUDIO_MERGES` (clone) oppure `AUDIO_CURATED`
+   con type `"rumore"` (senza contenuto → viene scartato del tutto, regola
+   19/9/2026), così il Transcriber non avrà nulla da fare.
 
 9. **Scrivi/estendi `build_digest_MMGG.py`** per il giorno interessato
    (nuovo file se è un giorno nuovo, altrimenti estendi `CURATED`/

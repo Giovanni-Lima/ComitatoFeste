@@ -138,6 +138,9 @@ def build_digest(date, curated, media_overrides, curated_system=None,
     valorizzare MediaAsset.TranscriptionText/TranscribedAt e il Transcriber lo
     salta in automatico (vedi CLAUDE.md, "Trascrizione anticipata dei vocali").
 
+    Un vocale con type "rumore" in audio_curated viene scartato del tutto (regola
+    19/9/2026): nessuna entry, file non copiato (il testo del secondo elemento è ignorato).
+
     audio_merges: lista di gruppi di vocali "cloni" da accorpare in
     un'unica entry di sintesi, scartandone i file:
         {"anchor_time": "HH:MM", "anchor_sender": "Nome", "type": ...,
@@ -176,6 +179,7 @@ def build_digest(date, curated, media_overrides, curated_system=None,
     skipped_reaction_gifs = []
     skipped_extra = []
     skipped_audio_merged = []
+    skipped_audio_noise = []
     used_curated_keys = set()
 
     for m in msgs:
@@ -229,6 +233,12 @@ def build_digest(date, curated, media_overrides, curated_system=None,
                 # emessa una sola volta, dopo il loop principale.
                 skipped_audio_merged.append((time_, sender, fname))
                 continue
+            audio_hit = audio_curated.get((date, time_, sender, fname))
+            if audio_hit and audio_hit[0] == "rumore":
+                # Vocale classificato "rumore" in curatela (regola 19/9/2026): si butta,
+                # niente entry, niente copia del file — né Importer né Transcriber lo vedranno.
+                skipped_audio_noise.append((time_, sender, fname))
+                continue
             src_path = os.path.join(src, fname)
             if not os.path.isfile(src_path):
                 missing_source_files.append((time_, sender, fname))
@@ -244,7 +254,6 @@ def build_digest(date, curated, media_overrides, curated_system=None,
             shutil.copy2(src_path, os.path.join(dest_dir, dest_name))
             kept_filenames.add(dest_name)
 
-            audio_hit = audio_curated.get((date, time_, sender, fname))
             entry = {"date": date, "time": time_, "author": author, "file": dest_name}
             if audio_hit:
                 typ, text = audio_hit
@@ -289,7 +298,9 @@ def build_digest(date, curated, media_overrides, curated_system=None,
     if audio_merges:
         print(f"vocali accorpati in {len(audio_merges)} entry di sintesi (file scartati): {len(skipped_audio_merged)}")
     if audio_curated:
-        print(f"vocali atomici pre-classificati in curatela: {len(audio_curated)}")
+        print(f"vocali atomici pre-classificati in curatela: {len(audio_curated) - len(skipped_audio_noise)}")
+    if skipped_audio_noise:
+        print(f"vocali classificati rumore in curatela, scartati: {len(skipped_audio_noise)}")
     if extra_skip_media:
         print(f"{extra_skip_label}: {len(skipped_extra)}")
 
@@ -322,4 +333,5 @@ def build_digest(date, curated, media_overrides, curated_system=None,
         "skipped_reaction_gifs": skipped_reaction_gifs,
         "skipped_extra": skipped_extra,
         "skipped_audio_merged": skipped_audio_merged,
+        "skipped_audio_noise": skipped_audio_noise,
     }

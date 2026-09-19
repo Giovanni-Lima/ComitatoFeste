@@ -107,9 +107,15 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
        ...]}` per vocali "cloni" (anche di autori diversi) che ripetono lo
        stesso concetto — diventano **una sola** entry di sintesi, i file
        elencati in `members` si scartano.
-     - Un vocale non coperto da nessuno dei due resta come prima
+     - **Vocale di rumore** (regola 19/9/2026): si mette in `AUDIO_CURATED`
+       con type `"rumore"` (testo ignorato, es. `("rumore", "")`) e viene
+       **buttato del tutto** — nessuna entry, file non copiato: né
+       Importer né Transcriber lo vedranno mai. Va fatto per ogni vocale
+       senza contenuto (saluti, battute, chiacchiere non legate al comitato).
+     - Un vocale non coperto da nessuna delle tre strutture resta come prima
        (placeholder "non trascritto", lo classifica poi il Transcriber) —
-       rete di sicurezza se la curatela non arriva a coprire tutto.
+       rete di sicurezza se la curatela non arriva a coprire tutto; in
+       condizioni normali non dovrebbero restarne.
    - **Checkpoint**: mentre leggi i messaggi del giorno, aggiorna via via
      `scripts/whatsapp-digest/checkpoint.json` con l'ultimo messaggio
      effettivamente esaminato (data del digest, data/ora/mittente del
@@ -138,7 +144,8 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
   comunque classificato in curatela (`AUDIO_CURATED`) invece di lasciato al
   Transcriber — regola aggiunta il 15/9/2026, vedi punto 2-bis/3 sopra e
   CLAUDE.md. Solo un vocale non coperto da nessuno dei due resta come
-  prima (placeholder, mai comunque "rumore" in questa fase).
+  prima (placeholder). **Un vocale classificato "rumore" in curatela si scarta
+  del tutto** (regola 19/9/2026, `AUDIO_CURATED` con type `"rumore"`).
 - **Sticker e GIF si ignorano**: niente entry, niente copia in
   `Export/<data>/`. Riconoscimento per estensione (`.webp`, `.gif`).
 - **Le GIF di reazione mascherate da `.mp4` si ignorano anch'esse**:
