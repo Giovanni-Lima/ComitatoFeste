@@ -3,6 +3,7 @@ using System;
 using ComitatoFeste.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using Pgvector;
 namespace ComitatoFeste.Data.Migrations
 {
     [DbContext(typeof(ComitatoFesteDbContext))]
-    partial class ComitatoFesteDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260919190811_AddDigestPointEmbeddings")]
+    partial class AddDigestPointEmbeddings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

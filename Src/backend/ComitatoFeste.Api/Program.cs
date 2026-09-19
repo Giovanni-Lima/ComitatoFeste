@@ -24,7 +24,7 @@ var connectionString = Environment.GetEnvironmentVariable("COMITATOFESTE_CONNECT
                        ?? builder.Configuration.GetConnectionString("ComitatoFeste");
 
 builder.Services.AddDbContext<ComitatoFesteDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseComitatoFesteNpgsql(connectionString));
 
 // Client Groq per il verbale giornaliero (chiave da env GROQ_API_KEY o config Groq:ApiKey).
 builder.Services.AddHttpClient<GroqRecapClient>(c => c.Timeout = TimeSpan.FromMinutes(2));

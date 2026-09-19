@@ -15,6 +15,7 @@ public class ComitatoFesteDbContext : DbContext
     public DbSet<MemberProfilePhoto> MemberProfilePhotos => Set<MemberProfilePhoto>();
     public DbSet<IngestionRun> IngestionRuns => Set<IngestionRun>();
     public DbSet<DigestPoint> DigestPoints => Set<DigestPoint>();
+    public DbSet<DigestPointEmbedding> DigestPointEmbeddings => Set<DigestPointEmbedding>();
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<MediaBlob> MediaBlobs => Set<MediaBlob>();
     public DbSet<ImageThumbnail> ImageThumbnails => Set<ImageThumbnail>();
@@ -25,6 +26,9 @@ public class ComitatoFesteDbContext : DbContext
     {
         // Necessaria per l'indice GIN pg_trgm su DigestPoints.Text (fuzzy dedup applicativo).
         modelBuilder.HasPostgresExtension("pg_trgm");
+
+        // Necessaria per la colonna vector(768) di DigestPointEmbeddings (assistente AI).
+        modelBuilder.HasPostgresExtension("vector");
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ComitatoFesteDbContext).Assembly);
     }

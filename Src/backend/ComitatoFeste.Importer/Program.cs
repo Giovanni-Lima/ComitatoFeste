@@ -64,7 +64,7 @@ if (!Directory.Exists(exportRoot))
 
 var connection = Environment.GetEnvironmentVariable("COMITATOFESTE_CONNECTION") ?? DefaultConnection;
 var options = new DbContextOptionsBuilder<ComitatoFesteDbContext>()
-    .UseNpgsql(connection)
+    .UseComitatoFesteNpgsql(connection)
     .Options;
 
 await using var db = new ComitatoFesteDbContext(options);

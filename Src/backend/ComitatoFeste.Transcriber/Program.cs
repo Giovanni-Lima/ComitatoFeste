@@ -73,7 +73,7 @@ if (string.IsNullOrWhiteSpace(groqKey))
 }
 
 var connection = Environment.GetEnvironmentVariable("COMITATOFESTE_CONNECTION") ?? DefaultConnection;
-var options = new DbContextOptionsBuilder<ComitatoFesteDbContext>().UseNpgsql(connection).Options;
+var options = new DbContextOptionsBuilder<ComitatoFesteDbContext>().UseComitatoFesteNpgsql(connection).Options;
 await using var db = new ComitatoFesteDbContext(options);
 
 if (!await db.Database.CanConnectAsync())

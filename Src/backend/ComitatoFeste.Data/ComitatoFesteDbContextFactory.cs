@@ -17,7 +17,7 @@ public class ComitatoFesteDbContextFactory : IDesignTimeDbContextFactory<Comitat
             ?? "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres";
 
         var options = new DbContextOptionsBuilder<ComitatoFesteDbContext>()
-            .UseNpgsql(connectionString)
+            .UseComitatoFesteNpgsql(connectionString)
             .Options;
 
         return new ComitatoFesteDbContext(options);
