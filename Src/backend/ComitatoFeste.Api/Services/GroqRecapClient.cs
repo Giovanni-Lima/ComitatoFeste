@@ -7,14 +7,23 @@ using ComitatoFeste.Data;
 namespace ComitatoFeste.Api.Services;
 
 /// <summary>
-/// Client minimale per la chat completion di Groq, usato solo per generare il verbale
-/// giornaliero. Ritenta su 429/5xx con backoff. Il Transcriber ha un suo <c>GroqClient</c>
-/// più ricco (Whisper + throttle TPM); non è condiviso qui di proposito — se servisse un
-/// terzo consumatore si estrae un progetto comune.
+/// Client minimale per la chat completion di Groq: genera il verbale giornaliero
+/// (<see cref="WriteRecapAsync"/>) e risponde alle domande dell'assistente
+/// (<see cref="AskAsync"/>, con fallback sul modello 20b). Ritenta su 429/5xx con backoff.
+/// Il Transcriber ha un suo <c>GroqClient</c> più ricco (Whisper + throttle TPM); non è
+/// condiviso qui di proposito — se servisse un terzo consumatore si estrae un progetto comune.
 /// </summary>
 public sealed class GroqRecapClient
 {
     private const string Model = "openai/gpt-oss-120b";
+
+    /// <summary>
+    /// Backup dell'assistente: stessa famiglia, ha un contatore di quota (RPD/TPD/TPM) separato da
+    /// quello del 120b, quindi di solito ha ancora budget quando il 120b è saturo. Stessa scelta
+    /// del Transcriber (<c>ClassifierModels</c>).
+    /// </summary>
+    public const string FallbackModel = "openai/gpt-oss-20b";
+
     private const string Url = "https://api.groq.com/openai/v1/chat/completions";
 
     private readonly HttpClient _http;
@@ -53,14 +62,49 @@ public sealed class GroqRecapClient
 
         var user = $"Giornata: {date:dd/MM/yyyy}\n\nPunti (orario · autore · tipo: testo):\n{pointsBlock}";
 
+        // gpt-oss conta i token di ragionamento nel budget; 4096 basta per una giornata
+        // densa (~95 punti) restando sotto il limite 8k token/min del tier gratuito.
+        return await ChatAsync(
+            Model, system, user, maxCompletionTokens: 4096, maxAttempts: 4,
+            truncatedMessage: "Groq ha troncato il verbale (max token raggiunto): riprova o riduci i punti del giorno.",
+            ct);
+    }
+
+    /// <summary>
+    /// Risposta dell'assistente. Prova il 120b senza attese: se è saturo (429/5xx) passa subito al
+    /// 20b, che ha un contatore di quota separato, invece di far aspettare l'utente. Restituisce
+    /// anche il modello che ha risposto, per segnalare all'utente quando è il ridotto.
+    /// </summary>
+    public async Task<(string Content, string Model)> AskAsync(
+        string system, string user, int maxCompletionTokens, CancellationToken ct)
+    {
+        const string truncated =
+            "La risposta è stata troncata (max token raggiunto): prova con una domanda più specifica.";
+
+        try
+        {
+            var content = await ChatAsync(Model, system, user, maxCompletionTokens, maxAttempts: 1, truncated, ct);
+            return (content, Model);
+        }
+        catch (GroqBusyException)
+        {
+            // 429/5xx sul 120b: tocca al 20b (qualche tentativo, ha il suo contatore).
+        }
+
+        var fallback = await ChatAsync(FallbackModel, system, user, maxCompletionTokens, maxAttempts: 3, truncated, ct);
+        return (fallback, FallbackModel);
+    }
+
+    private async Task<string> ChatAsync(
+        string model, string system, string user, int maxCompletionTokens, int maxAttempts,
+        string truncatedMessage, CancellationToken ct)
+    {
         var payload = new
         {
-            model = Model,
+            model,
             temperature = 0.2,
             reasoning_effort = "low",
-            // gpt-oss conta i token di ragionamento nel budget; 4096 basta per una giornata
-            // densa (~95 punti) restando sotto il limite 8k token/min del tier gratuito.
-            max_completion_tokens = 4096,
+            max_completion_tokens = maxCompletionTokens,
             messages = new[]
             {
                 new { role = "system", content = system },
@@ -90,19 +134,28 @@ public sealed class GroqRecapClient
                 // che salvare un verbale incompleto.
                 var finish = choice.TryGetProperty("finish_reason", out var fr) ? fr.GetString() : null;
                 if (finish == "length")
-                    throw new InvalidOperationException(
-                        "Groq ha troncato il verbale (max token raggiunto): riprova o riduci i punti del giorno.");
+                    throw new InvalidOperationException(truncatedMessage);
 
                 return (content ?? string.Empty).Trim();
             }
 
+            var message = $"Groq HTTP {(int)resp.StatusCode}: {body[..Math.Min(300, body.Length)]}";
             var retryable = resp.StatusCode == HttpStatusCode.TooManyRequests || (int)resp.StatusCode >= 500;
-            if (!retryable || attempt > 3)
-                throw new InvalidOperationException(
-                    $"Groq HTTP {(int)resp.StatusCode}: {body[..Math.Min(300, body.Length)]}");
+            if (!retryable)
+                throw new InvalidOperationException(message);
+            if (attempt >= maxAttempts)
+                throw new GroqBusyException(message);
 
             var wait = resp.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(Math.Min(20, 2 * attempt));
             await Task.Delay(wait, ct);
         }
+    }
+}
+
+/// <summary>Groq saturo (429 o 5xx) anche dopo i tentativi consentiti: chi può, ripiega sul modello di backup.</summary>
+public sealed class GroqBusyException : InvalidOperationException
+{
+    public GroqBusyException(string message) : base(message)
+    {
     }
 }

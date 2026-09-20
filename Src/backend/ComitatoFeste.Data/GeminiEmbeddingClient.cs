@@ -28,15 +28,20 @@ public sealed class GeminiEmbeddingClient
     public const int Dimensions = DigestPointEmbeddingConfiguration.Dimensions;
 
     private const string BaseUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + Model;
-    private const int MaxAttempts = 6;
-
     private readonly HttpClient _http;
     private readonly string _apiKey;
+    private readonly int _maxAttempts;
 
-    public GeminiEmbeddingClient(HttpClient http, string apiKey)
+    /// <param name="maxAttempts">
+    /// Tentativi totali su 429/5xx (con backoff 5-10-20-40-60 s). Il default, generoso, va bene per
+    /// l'Embedder (batch, nessuno aspetta); l'API lo abbassa perché una domanda interattiva non
+    /// può attendere minuti.
+    /// </param>
+    public GeminiEmbeddingClient(HttpClient http, string apiKey, int maxAttempts = 6)
     {
         _http = http;
         _apiKey = apiKey;
+        _maxAttempts = Math.Max(1, maxAttempts);
     }
 
     /// <summary>
@@ -128,7 +133,7 @@ public sealed class GeminiEmbeddingClient
                 return JsonDocument.Parse(body);
 
             var retryable = resp.StatusCode == HttpStatusCode.TooManyRequests || (int)resp.StatusCode >= 500;
-            if (!retryable || attempt >= MaxAttempts)
+            if (!retryable || attempt >= _maxAttempts)
                 throw new InvalidOperationException(
                     $"Gemini HTTP {(int)resp.StatusCode}: {body[..Math.Min(300, body.Length)]}");
 

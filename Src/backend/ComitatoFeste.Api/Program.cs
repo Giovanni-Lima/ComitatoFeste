@@ -29,6 +29,12 @@ builder.Services.AddDbContext<ComitatoFesteDbContext>(options =>
 // Client Groq per il verbale giornaliero (chiave da env GROQ_API_KEY o config Groq:ApiKey).
 builder.Services.AddHttpClient<GroqRecapClient>(c => c.Timeout = TimeSpan.FromMinutes(2));
 
+// Assistente AI (RAG): Gemini per gli embedding delle domande (chiave da env GEMINI_API_KEY o
+// gemini.key.txt), Groq per la risposta (client sopra), limitatore in memoria della quota gratuita.
+builder.Services.AddHttpClient("gemini", c => c.Timeout = TimeSpan.FromSeconds(30));
+builder.Services.AddScoped<AssistantService>();
+builder.Services.AddSingleton<AssistantLimiter>();
+
 // Anteprime dei link condivisi nei punti: cache in memoria + fetch OpenGraph. Il
 // SocketsHttpHandler valida ogni connessione (redirect inclusi) via ConnectCallback,
 // così si esce solo verso IP pubblici (guardia SSRF, vedi LinkPreviewService).
