@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-09-21 — solo dati di curatela, logica comune in digest_lib.py.
 
-Finestra 10:14-12:10, dominata dal filone delle serate dimostrative a
+Finestra 10:14-19:38, dominata dal filone delle serate dimostrative a
 pagamento. Emanuele Sciarra riferisce di aver contattato i promotori dei
 materassi (lo richiameranno i responsabili di zona) e la referente del
 Bimby (screenshot 11:05: si dice disponibile a ripetere l'evento fatto con
@@ -21,6 +21,18 @@ due vocali scherzosi di Emanuele (10:51 e 11:17, scartati come rumore). Foto
 delle 10:41 di Raffaele: immagine promozionale/scherzosa a tema
 elettrodomestici, tenuta con didascalia neutra. Nessuna menzione di Giovanni
 Lima in questa finestra.
+
+Estensione 12:34-19:38 (export delle 20:43): alle 12:34 Emanuele Sciarra
+apre un sondaggio per la data della serata promozionale materassi (29/9
+10 voti, 6/10 8, 7/10 5, 8/10 8 al momento dell'export) e alle 12:42
+sollecita a rispondere in fretta per bloccare una data; Costantino Mariani
+non c'e' prima delle 19 e dice sì a tutte le date per sé (per la coppia
+dipende), Alessandro Di Benedetto si rende disponibile per l'incontro di
+mercoledi' alle 18. In serata (19:33) Emanuele condivide un video Facebook
+in cui compare Emidio Cerasani (che risponde alle 19:38: SMG2017). Nessun
+vocale, nessun media e nessuna menzione di Giovanni Lima in questa finestra;
+il messaggio di sistema delle 12:35 (messaggio fissato) e il resto (saluti,
+battute) sono rumore.
 """
 import os
 import sys
@@ -74,6 +86,31 @@ CURATED = {
         "Propone un sondaggio flash per capire in quale delle tre date "
         "disponibili c'è più disponibilità nel gruppo; per lui ogni "
         "giorno va bene."),
+    ("12:34", "Emanuele Sciarra"): ("proposta",
+        "Apre un sondaggio: \"Incontro per serata promozionale "
+        "materassi\". Opzioni, con i voti al momento dell'export: 29 "
+        "settembre (10 voti), 6 ottobre (8 voti), 7 ottobre (5 voti), "
+        "8 ottobre (8 voti)."),
+    ("12:42", "Emanuele Sciarra"): ("info",
+        "Chiede di rispondere al sondaggio il prima possibile: il "
+        "rappresentante gli ha detto che, se le date dovessero essere "
+        "occupate, lo avviserebbe, e per garantirsi una data in cui il "
+        "comitato incassa qualcosa in più bisogna bloccarla al più "
+        "presto."),
+    ("13:43", "Costantino Mariani"): ("info",
+        "Comunica che per un orario prima delle 19 non può esserci."),
+    ("13:46", "Costantino Mariani"): ("info",
+        "Dice che per sé vota sì a tutte le date del sondaggio, mentre "
+        "per la sua coppia dipende da orari e giorni."),
+    ("14:30", "Alessandro Di Benedetto"): ("info",
+        "Si rende disponibile per l'incontro di mercoledì alle 18 con "
+        "i rappresentanti dei materassi."),
+    ("19:33", "Emanuele Sciarra"): ("info",
+        "Condivide un video Facebook: "
+        "https://www.facebook.com/share/v/1DYEYE5vbj/?mibextid=wwXIfr "
+        "e fa notare a Emidio Cerasani che compare anche lui nel video; "
+        "Emidio conferma (19:38) che è del SMG2017, il suo primo anno di "
+        "sacerdozio."),
 }
 
 AUDIO_CURATED = {
