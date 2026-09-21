@@ -59,7 +59,7 @@ con i relativi file scaricati e rinominati.
    Flash Lite → Groq**: Groq non offre embedding, Gemini ha un free tier per quelli
    e per i modelli Flash Lite; Groq resta come ultimo ripiego con quota separata. Dettagli in `CLAUDE.md` (sezione "Assistente AI").
    Decisione del 21/9/2026: **niente deploy** finché la versione non è stabile
-   (Aiven/Render restano senza pgvector).
+   (Render resta sul codice di `main`; Aiven ha già pgvector e la tabella degli embedding, applicati a mano il 21/9/2026).
 
 ## Limiti noti della fase di ingestion (non risolti, l'utente li ha accettati per ora)
 

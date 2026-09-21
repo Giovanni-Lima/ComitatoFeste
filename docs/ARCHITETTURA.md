@@ -98,7 +98,7 @@ generati online).
 
 ## Assistente AI (in lavorazione, solo locale)
 
-Sul branch `feature/assistente_ai`, **non ancora in produzione**: il DB locale (`comitatofeste-db`, `pgvector/pgvector:pg16`, `docker-compose.db.yml`) ha l'estensione `vector` e la tabella `DigestPointEmbeddings`; Aiven e Render no (la migration `AddDigestPointEmbeddings` non è applicata e non va mergiata su `main` finché la funzione non è stabile). Flusso: `Embedder` → Gemini → pgvector; `POST /api/assistant/ask` → embedding della domanda (Gemini) → 40 punti più vicini (pgvector) → risposta con citazioni dalla catena **Gemini 3.5 Flash Lite → Gemini 3.1 Flash Lite → Groq**. Dettagli in `CLAUDE.md`.
+Sul branch `feature/assistente_ai`, **non ancora in produzione**: il DB locale (`comitatofeste-db`, `pgvector/pgvector:pg16`, `docker-compose.db.yml`) ha l'estensione `vector` e la tabella `DigestPointEmbeddings`; Aiven ha già la migration `AddDigestPointEmbeddings` e pgvector (applicati a mano il 21/9/2026, con backfill parziale degli embedding), ma Render gira ancora il codice di `main`, che li ignora: il codice del branch non va mergiato su `main` finché la funzione non è stabile. Flusso: `Embedder` → Gemini → pgvector; `POST /api/assistant/ask` → embedding della domanda (Gemini) → 40 punti più vicini (pgvector) → risposta con citazioni dalla catena **Gemini 3.5 Flash Lite → Gemini 3.1 Flash Lite → Groq**. Dettagli in `CLAUDE.md`.
 
 ## Confini di fiducia / note
 

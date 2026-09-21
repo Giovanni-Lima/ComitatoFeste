@@ -47,12 +47,14 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   servite dagli endpoint blob, chiave UNIQUE `(Kind, SourceId, Width)`, niente
   FK — vedi `?w=` e `ImageThumbnailer` sotto) + `AddMemberLastSeenAt` (colonna
   `Members.LastSeenAt`) + **`AddDigestPointEmbeddings`** (tabella
-  `DigestPointEmbeddings`, `vector(768)`, estensione `vector` — **solo sul
-  branch `feature/assistente_ai` e solo in locale**, vedi "Assistente AI").
-  Tutte le migration **tranne l'ultima** sono applicate anche ad **Aiven**
-  (da `Database.Migrate()` al boot dell'API; **non** far girare l'API di questo
-  branch contro Aiven/Render: `AddDigestPointEmbeddings` richiede pgvector e
-  farebbe fallire il boot). Connessione di default in
+  `DigestPointEmbeddings`, `vector(768)`, estensione `vector` — codice
+  solo sul branch `feature/assistente_ai`, vedi "Assistente AI"). Tutte le
+  migration sono applicate anche ad **Aiven**; l'ultima (`AddDigestPointEmbeddings`,
+  con `CREATE EXTENSION vector` 0.8.6) è stata applicata **a mano il 21/9/2026** con
+  `dotnet ef database update` (env `COMITATOFESTE_CONNECTION` = Aiven), dopo un
+  backup, **prima** del deploy del codice: il codice di `main` la ignora senza
+  errori (provato in locale il 21/9: avvio, letture e cascade sui DELETE ok).
+  Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
 - **Contenuto del DB locale al 21/9/2026**: **solo i giorni 11–17/9** (233
@@ -70,7 +72,8 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   giorni hanno più di un run per reimport). **DB Aiven e locale allineati**
   via `pg_dump`/`pg_restore` (workflow corrente: import + trascrizione si
   fanno **direttamente su Aiven** con `scripts/import-transcribe-aiven.ps1`
-  — Importer poi Transcriber, notifica push automatica a fine run —, poi si
+  — Importer poi Transcriber (notifica push automatica a fine run) poi
+  **Embedder** per l'assistente AI, non bloccante (dal 21/9/2026, vedi sotto) —, poi si
   riallinea il locale con un dump — vedi `docs/DEPLOY.md`. **Sicurezza
   aggiunta il 15/9/2026**: lo script limita sempre l'Importer a un target
   esplicito (default: `checkpoint.json` → `digest_data`, cioè il giorno
@@ -301,15 +304,26 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     (prefisso autore incluso) ha cambiato `InputSha256` — quindi lo stesso
     comando fa da backfill e da aggiornamento dopo ogni import+trascrizione.
     Opzioni: `--dry-run` (conta, niente chiamate), `--limit <n>`,
-    `--batch-size <n>` (default 50), `--delay-ms <n>` (default 500), `--group
+    `--batch-size <n>` (default 50), `--delay-ms <n>` (default 500),
+    `--max-attempts <n>` (default 6, tentativi su 429/5xx), `--group
     <nome>`, `--search "<domanda>" [--top <n>]` (non scrive: stampa i punti più
     vicini, utile per giudicare il retrieval). Chiave via `GeminiKey.Resolve()`
     (env `GEMINI_API_KEY`, poi `gemini.key.txt` in radice repo, gitignorato).
     Connessione: env `COMITATOFESTE_CONNECTION`, default `localhost:5432`.
     Lancio: `DOTNET_ROLL_FORWARD=Major dotnet run --project
-    Src/backend/ComitatoFeste.Embedder`. **Va rilanciato dopo ogni
-    import/Transcriber** (i testi dei vocali vengono riscritti dopo l'import).
-    Fatto il primo backfill il 21/9/2026: 217 punti (11–17/9).
+    Src/backend/ComitatoFeste.Embedder`. **Exit code**: 0 ok, 1 errore (rete/altro),
+    **10 = quota Gemini esaurita** (`GeminiQuotaException`: run parziale, non è un
+    errore — quello già salvato resta e il resto si riprende al run successivo).
+    **Nella pipeline** (`import-transcribe-aiven.ps1`, passo dopo il Transcriber e
+    prima di `close_past_days.py`; salta con `-SkipEmbedder`, argomenti extra con
+    `-EmbedderArgs`): gira con `--batch-size 40 --delay-ms 30000 --max-attempts 2`
+    (~80 richieste/min, e con la quota finita rinuncia in ~12 s) ed è **non
+    bloccante**: exit 10 o errore stampano solo un avviso giallo. Poiché è
+    incrementale, ogni run recupera anche i punti che un run precedente non aveva
+    fatto in tempo. Serve `gemini.key.txt`/`GEMINI_API_KEY` sul PC che lancia lo
+    script (senza, il passo fallisce in modo non bloccante).
+    Fatto il primo backfill il 21/9/2026: 217 punti (11–17/9) in locale; su Aiven
+    680/860 (vedi "Assistente AI").
 - `Src/backend/ComitatoFeste.Api/wwwroot/index.html` — frontend
   self-contained (vanilla JS, nessun build), "Comitato feste 87 — Agenda",
   servito dall'API stessa. Note operative in
@@ -689,8 +703,18 @@ sopra):
 (embedding → retrieval → risposta con citazioni); **frontend fatto** (vista
 Æsir, vedi "Struttura"; da rifinire con l'uso: niente selettore di date,
 `from`/`to` dell'API non sono esposti in UI); **niente deploy** finché la versione non è stabile — le modifiche
-esistono solo in locale/nel branch, Aiven e Render restano alla versione
-`develop`/`main` senza pgvector.
+esistono solo nel branch: **Render gira ancora il codice di `main`**, ma
+**Aiven ha già la migration** (21/9/2026) e un backfill parziale degli embedding:
+**680 su 860 punti** (mancano 180, dal 14/9 al 21/9), fermo per quota Gemini
+esaurita: **verificato** che è la quota giornaliera (`embed_content_free_tier_requests,
+limit: 1000, model: gemini-embedding-2`). Si azzera a mezzanotte ora del Pacifico
+(doc Google) = 09:00 italiane finché entrambi i fusi sono in ora legale, 08:00 dopo
+il cambio all'ora solare in Italia. I 180 mancanti verranno ripresi **da soli** al
+prossimo run di `import-transcribe-aiven.ps1` (passo Embedder, vedi sopra), oppure a
+mano con `COMITATOFESTE_CONNECTION` = Aiven e `dotnet run --project
+Src/backend/ComitatoFeste.Embedder -- --batch-size 40 --delay-ms 30000`. Senza il
+ritmo ridotto si supera il limite di ~100 richieste/min; dalla console Google sembra
+che ogni testo di un batch conti come una richiesta, ma non è documentato.
 
 RAG sui digest: `AssistantService` (1) embedda la domanda con Gemini
 (`GeminiEmbeddingClient`, in `ComitatoFeste.Data` perché condiviso con
@@ -741,8 +765,8 @@ prompt injection dai messaggi del gruppo) e dà precedenza ai punti più recenti
 - **Da fare prima del deploy**: rifinire il frontend (fonti cliccabili verso
   l'Agenda, eventuale filtro per date), verificare che Aiven supporti pgvector (`CREATE EXTENSION vector`) e che i
   1 GB di storage reggano gli embedding (~3 KB/punto), aggiungere
-  `GEMINI_API_KEY` alle env Render, inserire l'Embedder nella pipeline
-  (`import-transcribe-aiven.ps1`, dopo il Transcriber), aggiornare
+  `GEMINI_API_KEY` alle env Render (l'Embedder è già nella pipeline
+  `import-transcribe-aiven.ps1`), aggiornare
   `docs/DEPLOY.md` e l'immagine dei Docker compose/CI se serve.
 
 ## Domanda aperta

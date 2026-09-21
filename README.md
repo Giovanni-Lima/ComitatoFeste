@@ -62,10 +62,12 @@ dotnet run --project Src/backend/ComitatoFeste.Transcriber
 Calcola (con Gemini) l'embedding dei punti nuovi o cambiati e lo salva in
 `DigestPointEmbeddings`. Idempotente: serve sia da backfill sia da
 aggiornamento dopo import + trascrizione. Solo sul branch `feature/assistente_ai`.
+Exit code 10 = quota Gemini esaurita (run parziale, non è un errore). Lo lancia da solo
+`scripts/import-transcribe-aiven.ps1` dopo il Transcriber, senza bloccare la pipeline.
 
 ```powershell
 dotnet run --project Src/backend/ComitatoFeste.Embedder
-# opzioni: --dry-run  --limit <n>  --batch-size <n>  --delay-ms <n>  --group <nome>
+# opzioni: --dry-run  --limit <n>  --batch-size <n>  --delay-ms <n>  --max-attempts <n>  --group <nome>
 #          --search "<domanda>" [--top <n>]   (non scrive: mostra i punti più vicini)
 ```
 

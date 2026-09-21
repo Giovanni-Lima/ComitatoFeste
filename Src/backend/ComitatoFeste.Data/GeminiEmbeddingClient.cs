@@ -134,12 +134,29 @@ public sealed class GeminiEmbeddingClient
 
             var retryable = resp.StatusCode == HttpStatusCode.TooManyRequests || (int)resp.StatusCode >= 500;
             if (!retryable || attempt >= _maxAttempts)
-                throw new InvalidOperationException(
-                    $"Gemini HTTP {(int)resp.StatusCode}: {body[..Math.Min(300, body.Length)]}");
+            {
+                // Corpo fino a 900 caratteri: il messaggio del 429 dice QUALE quota è scattata
+                // (al minuto o al giorno) solo dopo i primi ~300 caratteri.
+                var message = $"Gemini HTTP {(int)resp.StatusCode}: {body[..Math.Min(900, body.Length)]}";
+                throw resp.StatusCode == HttpStatusCode.TooManyRequests
+                    ? new GeminiQuotaException(message)
+                    : new InvalidOperationException(message);
+            }
 
             var wait = resp.Headers.RetryAfter?.Delta
                        ?? TimeSpan.FromSeconds(Math.Min(60, 5 * Math.Pow(2, attempt - 1)));
             await Task.Delay(wait, ct);
         }
+    }
+}
+
+/// <summary>
+/// Quota Gemini esaurita (HTTP 429 anche dopo i tentativi consentiti). È un errore "atteso" con il
+/// free tier: chi indicizza (Embedder) può fermarsi senza fallire e riprendere al run successivo.
+/// </summary>
+public sealed class GeminiQuotaException : InvalidOperationException
+{
+    public GeminiQuotaException(string message) : base(message)
+    {
     }
 }

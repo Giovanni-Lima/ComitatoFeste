@@ -4,6 +4,9 @@ using ComitatoFeste.Domain;
 using Microsoft.EntityFrameworkCore;
 
 const string DefaultGroup = "Comitato feste 87";
+// Exit code "quota Gemini esaurita, run parziale": non è un errore vero, i punti mancanti
+// verranno ripresi al run successivo (lo script della pipeline lo tratta come avviso).
+const int QuotaExit = 10;
 const string DefaultConnection = "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres";
 
 // --- parsing argomenti -----------------------------------------------------
@@ -13,6 +16,7 @@ var batchSize = 50;     // testi per richiesta a Gemini
 // pubblicati (li mostra solo AI Studio), il retry su 429 assorbe gli sforamenti.
 var delayMs = 500;
 var limit = 0;          // 0 = nessun limite
+var maxAttempts = 6;    // tentativi per richiesta su 429/5xx (backoff 5-10-20-40-60 s)
 var dryRun = false;
 string? search = null;  // se valorizzato: non scrive nulla, stampa i punti più vicini alla domanda
 var top = 10;
@@ -33,6 +37,9 @@ for (var i = 0; i < args.Length; i++)
         case "--limit" when i + 1 < args.Length:
             limit = int.Parse(args[++i], CultureInfo.InvariantCulture);
             break;
+        case "--max-attempts" when i + 1 < args.Length:
+            maxAttempts = int.Parse(args[++i], CultureInfo.InvariantCulture);
+            break;
         case "--dry-run":
             dryRun = true;
             break;
@@ -49,7 +56,9 @@ for (var i = 0; i < args.Length; i++)
             Console.WriteLine("  --batch-size <n>      testi per richiesta a Gemini (default: 50)");
             Console.WriteLine("  --delay-ms <n>        pausa tra un batch e il successivo (default: 500)");
             Console.WriteLine("  --limit <n>           elabora al massimo n punti (default: tutti)");
+            Console.WriteLine("  --max-attempts <n>    tentativi per richiesta su 429/5xx (default: 6; nella pipeline 2, per non attendere minuti se la quota è finita)");
             Console.WriteLine("  --dry-run             conta i punti da embeddare ma non chiama Gemini né scrive");
+            Console.WriteLine("  exit code: 0 ok · 1 errore · 10 quota Gemini esaurita (parziale, riprendere dopo)");
             Console.WriteLine("  --search \"<domanda>\"  non scrive nulla: stampa i punti semanticamente più vicini");
             Console.WriteLine("  --top <n>             quanti risultati con --search (default: 10)");
             return 0;
@@ -99,7 +108,7 @@ using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
 // --- modalità --search: prova del retrieval, non scrive nulla --------------
 if (search is not null)
 {
-    var gemini = new GeminiEmbeddingClient(http, geminiKey!);
+    var gemini = new GeminiEmbeddingClient(http, geminiKey!, maxAttempts);
     var q = new Pgvector.Vector(await gemini.EmbedQueryAsync(search, cts.Token));
 
     // Distanza coseno di pgvector (<=>): 0 = identici, 2 = opposti. Stessi criteri della vista
@@ -171,7 +180,7 @@ Console.WriteLine($"modello: {GeminiEmbeddingClient.Model}, {GeminiEmbeddingClie
 if (dryRun || pending.Count == 0)
     return 0;
 
-var client = new GeminiEmbeddingClient(http, geminiKey!);
+var client = new GeminiEmbeddingClient(http, geminiKey!, maxAttempts);
 var done = 0;
 
 try
@@ -215,6 +224,20 @@ catch (OperationCanceledException)
 {
     Console.WriteLine($"interrotto: {done}/{pending.Count} salvati (i batch già scritti restano).");
     return 130;
+}
+catch (GeminiQuotaException ex)
+{
+    // Quota finita: non è un fallimento. Quello che è già stato salvato resta; il resto si
+    // recupera al prossimo run (l'Embedder è incrementale).
+    Console.WriteLine($"quota Gemini esaurita: salvati {done}/{pending.Count}, i rimanenti verranno ripresi al prossimo run.");
+    Console.WriteLine($"  dettaglio: {ex.Message}");
+    return QuotaExit;
+}
+catch (HttpRequestException ex)
+{
+    Console.Error.WriteLine($"errore di rete verso Gemini: {ex.Message}");
+    Console.Error.WriteLine($"salvati {done}/{pending.Count}: rilancia per riprendere dai rimanenti.");
+    return 1;
 }
 catch (InvalidOperationException ex)
 {

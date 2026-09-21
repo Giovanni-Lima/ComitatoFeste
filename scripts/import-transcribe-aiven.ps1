@@ -27,7 +27,9 @@
 param(
     [string]$Target = "",
     [string]$ImporterArgs = "",
-    [string]$TranscriberArgs = ""
+    [string]$TranscriberArgs = "",
+    [string]$EmbedderArgs = "",
+    [switch]$SkipEmbedder
 )
 
 $ErrorActionPreference = "Stop"
@@ -114,6 +116,24 @@ if ($totalInserted -gt 0 -and $checkpointDate) {
 }
 dotnet run --project (Join-Path $repoRoot "Src/backend/ComitatoFeste.Transcriber") -- @transcriberExtra
 if ($LASTEXITCODE -ne 0) { throw "Transcriber terminato con errore (exit $LASTEXITCODE)." }
+
+# Embedding per l'assistente AI (Aesir, vedi CLAUDE.md "Assistente AI"): dopo il Transcriber, perche'
+# quest'ultimo riscrive il testo dei vocali. L'Embedder e' incrementale (embedda solo i punti nuovi o
+# cambiati), quindi qui recupera anche cio' che un run precedente non aveva fatto in tempo. NON e'
+# bloccante: se la quota gratuita di Gemini e' finita (exit 10) o c'e' un errore, si va avanti e i
+# punti mancanti vengono ripresi al prossimo run. Ritmo ridotto (batch da 40, 30 s tra un batch e
+# l'altro = ~80 richieste/min) e 2 soli tentativi per richiesta: con la quota finita si rinuncia in
+# pochi secondi invece di attendere i backoff da batch. -SkipEmbedder lo salta.
+if (-not $SkipEmbedder) {
+    Write-Host "`n== Embedding (assistente AI) verso Aiven ==" -ForegroundColor Cyan
+    $embedderExtra = $EmbedderArgs.Split(" ", [StringSplitOptions]::RemoveEmptyEntries)
+    dotnet run --project (Join-Path $repoRoot "Src/backend/ComitatoFeste.Embedder") -- --batch-size 40 --delay-ms 30000 --max-attempts 2 @embedderExtra
+    switch ($LASTEXITCODE) {
+        0  { }
+        10 { Write-Host "Embedding parziale: quota Gemini esaurita - i punti mancanti verranno ripresi al prossimo run." -ForegroundColor Yellow }
+        default { Write-Host "Embedder non riuscito (exit $LASTEXITCODE) - non bloccante, i punti mancanti verranno ripresi al prossimo run." -ForegroundColor Yellow }
+    }
+}
 
 # Chiusura giorni passati (vedi CLAUDE.md, regola 12/9/2026): a questo punto Aiven ha
 # appena ricevuto import+trascrizione, quindi qualunque giorno precedente a quello
