@@ -20,6 +20,20 @@ lo screenshot Facebook della festa di classe 1986 di Dante (12:38, non legato
 al comitato, scartato) e i due vocali sulla festa di classe (12:38/12:44),
 la battuta di Raffaele (14:06) e quella di Costance sulla Ferrari (18:26).
 Nessuna menzione di Giovanni Lima in questa finestra.
+
+Sera (19:16-22:21, aggiornata con l'export delle 19:45 del 20/9): Dante
+Caniglia (20:14) condivide un video e una foto di uno spettacolo per
+bambini in piazza (bolle di sapone, "Il circo di Porporino"), tenuti con
+didascalia neutra. Emanuele Sciarra (21:42) chiede a Emilio se domani ci si
+va con la maglietta (risposta nel digest del 20/9). Dante (21:43, vocale)
+racconta di una gara di braccio di ferro vista in un paesino che ha
+incassato oltre 500 euro di sole iscrizioni; Ilenia Piccozzi (21:44) dice
+che si può organizzare, Antonio Sabatini (21:54) propone di farla
+coincidere con la giornata a tema sport con la parete attrezzata, Emilio
+(22:15) risponde che farà sapere e Raffaele (22:21) scherza sui "due eventi
+da organizzare" (cani e braccio di ferro). Restano rumore: "Spilorci" di
+Emanuele (19:16) e il "Che bello" di Ilenia (20:15). Nessuna menzione di
+Giovanni Lima in questa finestra.
 """
 import os
 import sys
@@ -48,6 +62,15 @@ CURATED = {
         "Dà il via libera: Emanuele verifichi le disponibilità dei "
         "rappresentanti, poi ci si organizza di conseguenza anche sul "
         "numero di persone."),
+    ("21:42", "Emanuele Sciarra"): ("domanda",
+        "Chiede a Emilio Caniglia se domani pomeriggio (incontro su San "
+        "Francesco a San Cipriano) si va con la maglietta del comitato."),
+    ("21:54", "Antonio Sabatini"): ("proposta",
+        "Sull'idea della gara di braccio di ferro: propone di farla "
+        "coincidere con la giornata a tema sport con la parete attrezzata. "
+        "Emilio Caniglia risponde che farà sapere; Raffaele Di Cesare "
+        "scherza sul fatto che ora Emilio ha due eventi da organizzare "
+        "(cani e braccio di ferro)."),
 }
 
 AUDIO_CURATED = {
@@ -61,6 +84,12 @@ AUDIO_CURATED = {
         "Risponde che il sabato non ci aveva mai pensato ed è improbabile, "
         "perché i rappresentanti viaggiano dal lunedì al venerdì, ma si "
         "può provare a chiedere."),
+    (DATE, "21:43", "Dante Caniglia", "PTT-20260919-WA0020.opus"): ("proposta",
+        "Racconta che oggi in un paesino molto piccolo è stata organizzata "
+        "una gara di braccio di ferro che, con poche persone, ha incassato "
+        "più di 500 euro di sole iscrizioni (15 euro per il braccio destro "
+        "e 5 per il sinistro); l'idea è di replicarla. Ilenia Piccozzi "
+        "risponde che si può organizzare."),
     # Vocali di rumore (saluti, torneo di biliardino, festa di classe): scartati.
     (DATE, "06:18", "Emanuele Sciarra", "PTT-20260919-WA0000.opus"): ("rumore", ""),
     (DATE, "12:01", "Dante Caniglia", "PTT-20260919-WA0004.opus"): ("rumore", ""),
@@ -71,6 +100,14 @@ AUDIO_CURATED = {
 }
 
 MEDIA_OVERRIDES = {
+    (DATE, "20:14", "Dante Caniglia", "VID-20260919-WA0018.mp4"):
+        "Video di una serata in piazza: dei bambini giocano tra le bolle di "
+        "sapone davanti al palco rosso e giallo di uno spettacolo di "
+        "animazione.",
+    (DATE, "20:14", "Dante Caniglia", "IMG-20260919-WA0019.jpg"):
+        "Foto della locandina \"Il circo di Porporino\" (giocoliere, magia, "
+        "bolle di sapone, compleanni, feste in piazza, matrimoni) accanto "
+        "al palco dello spettacolo, con bolle di sapone in primo piano.",
     (DATE, "14:52", "Emilio Caniglia", "IMG-20260917-WA0000.jpg"):
         "Ripubblica e fissa in chat la locandina dell'incontro su San "
         "Francesco col Vescovo, domenica 20/9 alle 16:30 ai locali della "
