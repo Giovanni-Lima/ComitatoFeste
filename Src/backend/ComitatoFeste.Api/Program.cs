@@ -84,7 +84,28 @@ builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = Compre
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Swagger: pulsante "Authorize" per incollare il token di POST /api/auth/login
+// (Authorization: Bearer <token>), altrimenti gli endpoint [TokenAuth] rispondono 401.
+builder.Services.AddSwaggerGen(o =>
+{
+    o.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        Description = "Token restituito da POST /api/auth/login (solo il valore, senza \"Bearer \")."
+    });
+    o.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+            {
+                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        }] = Array.Empty<string>()
+    });
+});
 
 const string DevCors = "dev";
 builder.Services.AddCors(options => options.AddPolicy(DevCors, policy => policy

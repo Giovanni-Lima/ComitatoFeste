@@ -45,7 +45,7 @@ public sealed class AssistantController : ControllerBase
 
         if (!_assistant.IsConfigured)
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                "Assistente non configurato: servono GEMINI_API_KEY e GROQ_API_KEY sull'API.");
+                "Assistente non configurato: manca GEMINI_API_KEY sull'API.");
 
         var user = CurrentUsername();
         var ticket = _limiter.TryAcquire(user, out var denial);

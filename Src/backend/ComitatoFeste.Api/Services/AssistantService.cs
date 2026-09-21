@@ -33,9 +33,17 @@ public sealed partial class AssistantService
 
     private const int MaxCompletionTokens = 1800;
 
+    // Gemini può contare i token di ragionamento nel budget di uscita: margine più largo di Groq
+    // (che ha il limite di 8k token/min e va tenuto basso).
+    private const int GeminiMaxOutputTokens = 4096;
+
+    /// <summary>Modelli Gemini di risposta, in ordine di preferenza (poi Groq).</summary>
+    private static readonly string[] GeminiModels = { "gemini-3.5-flash-lite", "gemini-3.1-flash-lite" };
+
     private readonly ComitatoFesteDbContext _db;
     private readonly GroqRecapClient _groq;
     private readonly GeminiEmbeddingClient? _gemini;
+    private readonly GeminiChatClient? _geminiChat;
     private readonly string _groupName;
     private readonly ILogger<AssistantService> _log;
 
@@ -52,11 +60,15 @@ public sealed partial class AssistantService
         // Pochi tentativi: una domanda interattiva non può aspettare i backoff da batch.
         var key = GeminiKey.Resolve() ?? config["Gemini:ApiKey"];
         if (!string.IsNullOrWhiteSpace(key))
-            _gemini = new GeminiEmbeddingClient(httpFactory.CreateClient("gemini"), key, maxAttempts: 2);
+        {
+            var http = httpFactory.CreateClient("gemini");
+            _gemini = new GeminiEmbeddingClient(http, key, maxAttempts: 2);
+            _geminiChat = new GeminiChatClient(http, key);
+        }
     }
 
-    /// <summary>Servono sia la chiave Gemini (embedding della domanda) sia quella Groq (risposta).</summary>
-    public bool IsConfigured => _gemini is not null && _groq.IsConfigured;
+    /// <summary>Basta la chiave Gemini (embedding + risposta); quella Groq è solo l'ultimo ripiego.</summary>
+    public bool IsConfigured => _gemini is not null;
 
     public async Task<AssistantAnswerDto> AskAsync(string question, DateOnly? from, DateOnly? to, CancellationToken ct)
     {
@@ -108,24 +120,7 @@ public sealed partial class AssistantService
 
         var user = $"Oggi è {today:dd/MM/yyyy}.\n\nDomanda: {question}\n\nPunti:\n{block}";
 
-        string answer;
-        string model;
-        try
-        {
-            (answer, model) = await _groq.AskAsync(system, user, MaxCompletionTokens, ct);
-        }
-        catch (GroqBusyException ex)
-        {
-            _log.LogWarning(ex, "Assistente: Groq saturo su entrambi i modelli");
-            throw new AssistantException(503, "Il modello di risposta è momentaneamente saturo (quota gratuita). Riprova tra qualche minuto.");
-        }
-        catch (InvalidOperationException ex)
-        {
-            _log.LogWarning(ex, "Assistente: Groq non ha prodotto la risposta");
-            throw new AssistantException(502, ex.Message.StartsWith("La risposta è stata troncata", StringComparison.Ordinal)
-                ? ex.Message
-                : "Il modello di risposta ha restituito un errore. Riprova.");
-        }
+        var (answer, model) = await GenerateAnswerAsync(system, user, ct);
 
         if (string.IsNullOrWhiteSpace(answer))
             throw new AssistantException(502, "Il modello di risposta ha restituito una risposta vuota. Riprova.");
@@ -151,7 +146,48 @@ public sealed partial class AssistantService
             })
             .ToList();
 
-        return new AssistantAnswerDto(answer, sources, model, model == GroqRecapClient.FallbackModel, retrieved.Count);
+        return new AssistantAnswerDto(answer, sources, model, model != GeminiModels[0], retrieved.Count);
+    }
+
+    /// <summary>
+    /// Catena di modelli di risposta: Gemini 3.5 Flash Lite → Gemini 3.1 Flash Lite → Groq (che a sua
+    /// volta prova gpt-oss-120b e poi gpt-oss-20b). Si passa al successivo quando quello corrente è
+    /// saturo (429/5xx/timeout) o non produce una risposta utilizzabile (vuota, bloccata, troncata):
+    /// ogni provider ha una quota gratuita separata, quindi di solito uno risponde.
+    /// </summary>
+    private async Task<(string Answer, string Model)> GenerateAnswerAsync(string system, string user, CancellationToken ct)
+    {
+        foreach (var model in GeminiModels)
+        {
+            try
+            {
+                return (await _geminiChat!.GenerateAsync(model, system, user, GeminiMaxOutputTokens, ct), model);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _log.LogWarning(ex, "Assistente: {Model} non disponibile, passo al successivo", model);
+            }
+        }
+
+        if (!_groq.IsConfigured)
+            throw new AssistantException(503, "I modelli di risposta sono momentaneamente saturi (quota gratuita). Riprova tra qualche minuto.");
+
+        try
+        {
+            return await _groq.AskAsync(system, user, MaxCompletionTokens, ct);
+        }
+        catch (GroqBusyException ex)
+        {
+            _log.LogWarning(ex, "Assistente: Groq saturo su entrambi i modelli");
+            throw new AssistantException(503, "I modelli di risposta sono momentaneamente saturi (quota gratuita). Riprova tra qualche minuto.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _log.LogWarning(ex, "Assistente: Groq non ha prodotto la risposta");
+            throw new AssistantException(502, ex.Message.StartsWith("La risposta è stata troncata", StringComparison.Ordinal)
+                ? ex.Message
+                : "Il modello di risposta ha restituito un errore. Riprova.");
+        }
     }
 
     /// <summary>
