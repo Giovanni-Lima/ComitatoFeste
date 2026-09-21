@@ -419,7 +419,7 @@
        destra e sinistra), happy (occhi a "^"), sad (errore). Lo stato JS vive in `aesir`. */
     .aesir{max-width:680px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:18px;
       text-align:center;padding-top:6px}
-    .aesir-face{--s:min(300px,55vw);--eye:#5ff3ff;flex:none;width:var(--s);height:calc(var(--s)*.86);
+    .aesir-face{--s:min(150px,55vw);--eye:#5ff3ff;flex:none;width:var(--s);height:calc(var(--s)*.86);
       display:grid;place-items:center;overflow:hidden;border-radius:calc(var(--s)*.14);
       border:2px solid #2f2a3d;background:radial-gradient(130% 110% at 50% 0%,#15121f 0%,#07060b 65%);
       box-shadow:inset 0 0 calc(var(--s)*.12) rgba(0,0,0,.9),0 12px 34px -14px rgba(139,92,246,.5)}
@@ -503,6 +503,14 @@
     .src-meta{color:var(--ink-soft);font-weight:700}
     .src-text{color:var(--muted);line-height:1.45;overflow-wrap:anywhere}
     .aesir-meta{align-self:center;color:var(--muted);font-size:11px;opacity:.75}
+    /* Tastiera virtuale aperta (classe messa da setAesirKeyboard mentre la casella ha il focus):
+       si toglie il saluto, la riga del nome app e la tab bar, così volto + casella + pulsante stanno insieme nell'area
+       visibile e il browser non deve scorrere la pagina (il volto non sparisce in alto). */
+    @media (max-width:820px){
+      body.aesir-kb .aesir-hello,body.aesir-kb .aesir-sub{display:none}
+      body.aesir-kb .sidebar{display:none}   /* riga col nome dell'app + tab bar: la topbar col titolo resta */
+      body.aesir-kb .aesir{gap:12px}
+    }
     @media (max-width:820px){.aesir-btn{align-self:stretch}.aesir-btn.again{align-self:stretch}}
 
     .to-top{position:fixed;right:18px;bottom:18px;z-index:50;width:42px;height:42px;border-radius:50%;
@@ -630,7 +638,7 @@
           <div class="aesir-face" id="aesirFace" data-mood="neutral" aria-hidden="true">
             <div class="af-look"><div class="af-scan"><div class="af-eyes"><span class="af-eye"></span><span class="af-eye"></span></div></div></div>
           </div>
-          <p class="aesir-hello">Sono Æsir, chiedi quello che vuoi.</p>
+          <p class="aesir-hello">Ciao sono Æsir!</p>
           <p class="aesir-sub">Cerco tra i messaggi del comitato e ti rispondo citando le fonti.</p>
           <div class="aesir-stage" id="aesirStage" aria-live="polite"></div>
         </div>
@@ -1842,6 +1850,7 @@
     };
     function setView(v){
       if (v === "aesir" && !isAdmin()) v = "agenda";   // Æsir: solo amministratori
+      document.body.classList.remove("aesir-kb");
       view = v;
       el("viewAgenda").hidden    = v !== "agenda";
       el("viewMedia").hidden     = v !== "media";
@@ -1873,6 +1882,27 @@
     // POST /api/assistant/ask; la risposta cita i punti come [n] (vedi `sources`).
     const aesir = { state: "idle", q: "", res: null, err: "" };
     const AESIR_MOOD = { idle: "neutral", thinking: "working", done: "happy", error: "sad" };
+
+    // Tastiera virtuale (Android): all'apertura il browser scorre la pagina per mostrare la casella e
+    // il volto finisce fuori schermo. Mentre la casella ha il focus si compatta la pagina (classe
+    // `aesir-kb` sul body, solo mobile) e, se volto + casella + pulsante stanno nell'area visibile, si
+    // riporta la pagina in cima. Riprovato a più riprese e a ogni resize del visual viewport, perché
+    // l'animazione della tastiera e lo scroll automatico del browser arrivano dopo l'evento focus.
+    function keepAesirFaceVisible(){
+      if (!document.body.classList.contains("aesir-kb")) return;
+      const btn = el("aesirSend");
+      if (!btn) return;
+      const vv = window.visualViewport;
+      const visible = vv ? vv.height : innerHeight;
+      const bottom = btn.getBoundingClientRect().bottom + scrollY;   // fondo del pulsante, coordinate pagina
+      const scrolled = scrollY > 0 || (vv && vv.offsetTop > 0);
+      if (scrolled && bottom + 8 <= visible) scrollTo(0, 0);
+    }
+    function setAesirKeyboard(on){
+      document.body.classList.toggle("aesir-kb", on && matchMedia("(max-width: 820px)").matches);
+      if (on) [0, 150, 350, 700].forEach(ms => setTimeout(keepAesirFaceVisible, ms));
+    }
+    if (window.visualViewport) visualViewport.addEventListener("resize", keepAesirFaceVisible);
 
     // Testo del modello → HTML sicuro: escape, **grassetto**, elenchi "- ", [n] → badge (solo se
     // il numero corrisponde a una fonte restituita).
@@ -1919,6 +1949,7 @@
       root.dataset.state = aesir.state;
       face.dataset.mood = AESIR_MOOD[aesir.state];
       face.classList.remove("typing");
+      document.body.classList.remove("aesir-kb");
       const quote = `<div class="aesir-q">${esc(aesir.q)}</div>`;
 
       if (aesir.state === "idle") {
@@ -1929,8 +1960,16 @@
         q.value = aesir.q;
         const sync = () => { aesir.q = q.value; send.disabled = !q.value.trim(); };
         q.addEventListener("input", sync);
-        q.addEventListener("focus", () => face.classList.add("typing"));   // il volto guarda in giù
-        q.addEventListener("blur", () => face.classList.remove("typing"));
+        q.addEventListener("focus", () => { face.classList.add("typing"); setAesirKeyboard(true); });   // il volto guarda in giù
+        q.addEventListener("blur", () => {
+          face.classList.remove("typing");
+          // Se il focus passa al pulsante "Chiedi" NON si ripristina subito il layout: la tastiera si
+          // chiude, la pagina si riespande e il pulsante scapperebbe da sotto il dito (tocco perso).
+          setTimeout(() => {
+            const a = document.activeElement;
+            if (a !== q && a !== el("aesirSend")) setAesirKeyboard(false);
+          }, 150);
+        });
         q.addEventListener("keydown", (e) => {
           if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); askAesir(q.value); }
         });
