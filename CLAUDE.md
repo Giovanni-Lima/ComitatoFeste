@@ -18,9 +18,19 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   macchina non c'è l'SDK 8 (solo 9/10) quindi i reference pack .NET 8
   arrivano da NuGet — funziona, ma per coerenza totale servirebbe l'SDK 8
   + un `global.json`.
-- **Migration applicate** al container `comitatofeste-db` (compose esterno
-  dell'utente, `postgres:16-alpine`, db `postgres`, `postgres/postgres` — il
-  nome nel compose non è più `local-postgres`, corretto qui il 9/9/2026):
+- **DB locale = container `comitatofeste-db`** (dal 21/9/2026): definito da
+  `docker-compose.db.yml` **nel repo** (`docker compose -f docker-compose.db.yml
+  up -d`), immagine **`pgvector/pgvector:pg16`** (serve l'estensione `vector`
+  per l'assistente AI, vedi sotto), dati in `./data/postgres/` (gitignorato,
+  locale `C`), porta 5432, db `postgres`, `postgres/postgres`. Il vecchio
+  container esterno `local-postgres` (compose `Desktop\Local Env`, ospitava
+  anche `GatelockVanRules` di un altro progetto) è **fermato** per liberare la
+  5432 e non va riavviato mentre gira `comitatofeste-db`; il suo vecchio
+  `pgdata` alpine è conservato in
+  `Desktop\Local Env\data\postgres\pgdata.bak-alpine-20260921`. Passare tra
+  immagini alpine/Debian sullo stesso `pgdata` cambia la collation: si migra
+  sempre con `pg_dump`/restore, mai riusando la cartella dati.
+- **Migration applicate** a `comitatofeste-db`:
   `InitialCreate` + `AddMediaBlobs` + `AddMemberProfilePhotos` +
   `AddRumoreDigestPointType` (`'rumore'` nel CHECK di `DigestPoints.Type`) +
   `AddVerbali` (tabella `Verbali`: verbale giornaliero in cache, UNIQUE
@@ -35,10 +45,22 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   `PUT /api/digestpoints/{id}/important` sotto) + `AddImageThumbnails`
   (tabella `ImageThumbnails`: WebP ridimensionati e persistiti delle immagini
   servite dagli endpoint blob, chiave UNIQUE `(Kind, SourceId, Width)`, niente
-  FK — vedi `?w=` e `ImageThumbnailer` sotto). Le stesse migration sono applicate ad **Aiven**
-  (da `Database.Migrate()` al boot dell'API). Connessione di default in
+  FK — vedi `?w=` e `ImageThumbnailer` sotto) + `AddMemberLastSeenAt` (colonna
+  `Members.LastSeenAt`) + **`AddDigestPointEmbeddings`** (tabella
+  `DigestPointEmbeddings`, `vector(768)`, estensione `vector` — **solo sul
+  branch `feature/assistente_ai` e solo in locale**, vedi "Assistente AI").
+  Tutte le migration **tranne l'ultima** sono applicate anche ad **Aiven**
+  (da `Database.Migrate()` al boot dell'API; **non** far girare l'API di questo
+  branch contro Aiven/Render: `AddDigestPointEmbeddings` richiede pgvector e
+  farebbe fallire il boot). Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
+- **Contenuto del DB locale al 21/9/2026**: **solo i giorni 11–17/9** (233
+  punti, 140 media, 22 run, 2 verbali, 33 membri), copiati da Aiven con un
+  `pg_dump --data-only` ritagliato per data (escluse `PushSubscriptions` e
+  `ImageThumbnails`, cache rigenerabile) dopo aver svuotato il locale; più 217
+  embedding. Aiven ha invece lo storico completo. Il paragrafo qui sotto
+  descrive lo stato storico di Aiven all'8/9.
 - **Dati importati** (gruppo `Comitato feste 87`, stato all'8/9/2026):
   **10 `IngestionRun`** dai `digest_2026-09-01.json` … `digest_2026-09-08.json`
   (i giorni "chiusi" — data < `digest_data` del checkpoint — vengono rimossi
@@ -100,7 +122,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   **non** rilanciarlo intero dopo il Transcriber.
 - **Deploy**: **in produzione** su `https://comitatofeste.onrender.com` (Render Web
   Service Docker, autoDeploy da `main`) contro **DB Aiven** (`pg_dump`/`pg_restore`
-  dal locale — Aiven gira **Postgres 18**, il `local-postgres` di dev è alla **16**).
+  dal locale — Aiven gira **Postgres 18**, il `comitatofeste-db` di dev è alla **16**).
   Env impostate nel dashboard Render: `COMITATOFESTE_CONNECTION`, `_AUTH_PASSWORD`,
   `_AUTH_PASSWORD_ADMIN` (passphrase separata per il ruolo amministratore,
   vedi login sotto — impostata e testata in prod il 9/9/2026), `_AUTH_SECRET`,
@@ -194,6 +216,14 @@ Il backend .NET compila pulito e gira contro Postgres locale.
       redirect, timeout 6 s, corpo troncato a 512 KB, solo `Content-Type` HTML.
       Il frontend mostra la card sotto il testo (immagine `og:image` in
       hotlink dal sito originale).
+    - **Assistente AI** (`feature/assistente_ai`, **solo locale finché la
+      versione non è stabile**, vedi sezione dedicata sotto):
+      `POST /api/assistant/ask {question, from?, to?}` → `{answer, sources[],
+      model, reducedModel, retrieved}`. `[TokenAuth]`. Domanda max 500
+      caratteri; `from`/`to` (yyyy-MM-dd, inclusivi, fuso Roma) restringono la
+      ricerca. 400 su input non valido, 429 + `Retry-After` oltre i limiti, 503
+      se manca `GEMINI_API_KEY` (`GROQ_API_KEY` è solo l'ultimo ripiego) o tutti i
+      modelli sono saturi.
     DTO in `Contracts/`, Swagger in Development, CORS dev `localhost:5173/3000`.
     La chiave Groq (solo per `recap`) è risolta da `GroqKey.Resolve()`: env
     `GROQ_API_KEY`, poi file `key.txt` (in `.gitignore`, cercato risalendo
@@ -263,6 +293,23 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     `--dry-run`, `--limit <n>`, `--delay-ms <n>`,
     `--group <nome>`. Ritenta su HTTP 429/5xx, Ctrl+C esce pulito dopo il
     vocale in corso.
+  - `ComitatoFeste.Embedder` — console (solo branch `feature/assistente_ai`):
+    calcola con Gemini (`gemini-embedding-2`, 768 dim, free tier) l'embedding
+    dei punti della **vista pulita** (niente `rumore`, niente vocali non ancora
+    digeriti) e lo salva in `DigestPointEmbeddings`. **Idempotente e
+    incrementale**: ricalcola solo i punti senza embedding o il cui testo
+    (prefisso autore incluso) ha cambiato `InputSha256` — quindi lo stesso
+    comando fa da backfill e da aggiornamento dopo ogni import+trascrizione.
+    Opzioni: `--dry-run` (conta, niente chiamate), `--limit <n>`,
+    `--batch-size <n>` (default 50), `--delay-ms <n>` (default 500), `--group
+    <nome>`, `--search "<domanda>" [--top <n>]` (non scrive: stampa i punti più
+    vicini, utile per giudicare il retrieval). Chiave via `GeminiKey.Resolve()`
+    (env `GEMINI_API_KEY`, poi `gemini.key.txt` in radice repo, gitignorato).
+    Connessione: env `COMITATOFESTE_CONNECTION`, default `localhost:5432`.
+    Lancio: `DOTNET_ROLL_FORWARD=Major dotnet run --project
+    Src/backend/ComitatoFeste.Embedder`. **Va rilanciato dopo ogni
+    import/Transcriber** (i testi dei vocali vengono riscritti dopo l'import).
+    Fatto il primo backfill il 21/9/2026: 217 punti (11–17/9).
 - `Src/backend/ComitatoFeste.Api/wwwroot/index.html` — frontend
   self-contained (vanilla JS, nessun build), "Comitato feste 87 — Agenda",
   servito dall'API stessa. Note operative in
@@ -621,6 +668,64 @@ sopra):
   ±2 min); i testi placeholder "non trascritto" sono esclusi dal fuzzy
   (template → trigram inaffidabile, collasserebbe vocali diversi).
 
+## Assistente AI (branch `feature/assistente_ai`, in lavorazione)
+
+**Stato (21/9/2026)**: backend fatto e provato end-to-end in locale
+(embedding → retrieval → risposta con citazioni); **frontend non ancora
+fatto**; **niente deploy** finché la versione non è stabile — le modifiche
+esistono solo in locale/nel branch, Aiven e Render restano alla versione
+`develop`/`main` senza pgvector.
+
+RAG sui digest: `AssistantService` (1) embedda la domanda con Gemini
+(`GeminiEmbeddingClient`, in `ComitatoFeste.Data` perché condiviso con
+l'Embedder: **stesso modello, stessa dimensione, stessi prefissi asimmetrici
+di input**, altrimenti i vettori non sono confrontabili), (2) recupera con
+pgvector i **40 punti** più vicini per distanza coseno (`<=>`, scansione esatta
+senza indice vettoriale — con qualche migliaio di righe è più precisa e regge il
+filtro data) sulla vista pulita, (3) li passa in ordine cronologico e numerati a
+una **catena di modelli** (`AssistantService.GenerateAnswerAsync`): **Gemini 3.5
+Flash Lite** (`gemini-3.5-flash-lite`) → **Gemini 3.1 Flash Lite**
+(`gemini-3.1-flash-lite`) → **Groq** (`GroqRecapClient.AskAsync`: `openai/gpt-oss-120b`,
+poi `openai/gpt-oss-20b`). Si passa al successivo su 429/5xx/timeout o risposta
+inutilizzabile (vuota, bloccata, troncata), senza retry (domanda interattiva);
+ogni provider ha quota gratuita separata. Il campo `model` della risposta dice
+chi ha risposto; `reducedModel=true` se non è il primo della catena. Client
+Gemini in `GeminiChatClient` (`generateContent`, max 4096 token di uscita, Groq
+resta a 1800 per il limite 8k token/min). Rispondono in italiano citando `[n]`.
+Le citazioni `【n】` di gpt-oss sono normalizzate a `[n]`; `sources` contiene solo
+i punti effettivamente citati. Verificata dal vivo solo la risposta del primo
+modello (21/9/2026): il ripiego sui successivi non è ancora stato provato. Il prompt tratta i punti come materiale, non istruzioni (difesa da
+prompt injection dai messaggi del gruppo) e dà precedenza ai punti più recenti.
+
+- **`AssistantLimiter`** (in memoria, si azzera al riavvio/cold start): default
+  10 domande/ora per utente, 80/giorno totali, 2 chiamate contemporanee;
+  config `Assistant:PerUserPerHour` / `GlobalPerDay` / `MaxConcurrent`. Se la
+  domanda fallisce per colpa dei servizi esterni il "biglietto" viene
+  restituito. La quota Groq è condivisa con Transcriber e verbali.
+- **Schema**: `DigestPointEmbeddings` (1:1 con `DigestPoints`, PK=FK
+  `DigestPointId`, `Embedding vector(768)`, `Model`, `InputSha256`,
+  `EmbeddedAt`, cascade). Tabella separata come i blob. Se cambia modello o
+  dimensione va ricalcolato tutto.
+- **`UseComitatoFesteNpgsql()`** (`ComitatoFesteDbOptionsExtensions`) è l'unico
+  punto in cui si configura Npgsql: il modello contiene una colonna `vector`,
+  quindi **ogni** consumatore del contesto (anche Importer/Transcriber) deve
+  chiamare `UseVector()` — mai `UseNpgsql` diretto.
+- **Privacy**: i testi dei punti vanno a Google (Gemini) per gli embedding; il
+  gruppo ha dato l'ok. Free tier, limiti di quota non pubblicati (li mostra
+  AI Studio).
+- **Prova rapida in locale**: `comitatofeste-db` su, `gemini.key.txt` +
+  `key.txt` presenti, `dotnet run --project Src/backend/ComitatoFeste.Api
+  --launch-profile http`, poi Swagger su `http://localhost:5065/swagger`. In
+  locale il login è attivo (passphrase negli user-secrets `Auth:Password`):
+  fai `POST /api/auth/login` e usa il token in "Authorize". Attenzione
+  all'encoding: `curl` da Git Bash con caratteri accentati nel JSON dà 400.
+- **Da fare prima del deploy**: frontend (vista/chat con fonti cliccabili),
+  verificare che Aiven supporti pgvector (`CREATE EXTENSION vector`) e che i
+  1 GB di storage reggano gli embedding (~3 KB/punto), aggiungere
+  `GEMINI_API_KEY` alle env Render, inserire l'Embedder nella pipeline
+  (`import-transcribe-aiven.ps1`, dopo il Transcriber), aggiornare
+  `docs/DEPLOY.md` e l'immagine dei Docker compose/CI se serve.
+
 ## Domanda aperta
 
 `Members` non ha tabella alias: match sull'autore per `DisplayName`
@@ -631,6 +736,8 @@ implementarlo.
 
 ## Prossimi passi noti
 
+0. **Assistente AI** (`feature/assistente_ai`): frontend + hardening + deploy
+   — vedi sezione "Assistente AI" sopra.
 1. Rifinire il frontend (`ComitatoFeste.Api/wwwroot/index.html`): filtro autore, thumbnail ridotte
    lato server, e — con giorni molto densi (~100 punti) — virtualizzazione
    o paginazione delle righe (la sezione espansa è pesante da renderizzare).

@@ -18,7 +18,7 @@ applicate ad Aiven da `Database.Migrate()` al boot. Postgres locale idem.
 ### Fatto — step 1-3 di 7 (commit "feat: notifiche push — backend")
 
 **Step 1 · Data model** — migration `20260907154355_AddPushSubscriptions`
-(applicata al `local-postgres`; su Aiven la applica `Database.Migrate()` al boot):
+(applicata a `comitatofeste-db`; su Aiven la applica `Database.Migrate()` al boot):
 - `ComitatoFeste.Domain/Entities/PushSubscription.cs` — `Id`, `Endpoint`, `P256dh`,
   `Auth`, `MemberId?`, `UserAgent?`, `CreatedAt`, `LastNotifiedAt?`.
 - `ComitatoFeste.Data/Configurations/PushSubscriptionConfiguration.cs` — `Endpoint`
@@ -135,7 +135,7 @@ casuale a scelta, diversa da `COMITATOFESTE_AUTH_PASSWORD`.
 ### Riprendere / testare in locale
 
 ```bash
-# il local-postgres ha già la tabella PushSubscriptions. Avvia l'API con le env:
+# comitatofeste-db ha già la tabella PushSubscriptions. Avvia l'API con le env:
 COMITATOFESTE_VAPID_PUBLIC=<pub> COMITATOFESTE_VAPID_PRIVATE=<priv> \
 COMITATOFESTE_VAPID_SUBJECT=mailto:giovannilima800@gmail.com \
 COMITATOFESTE_HOOK_SECRET=una-stringa-a-caso \

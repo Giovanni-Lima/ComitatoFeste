@@ -1,5 +1,5 @@
 # Sviluppo locale: Postgres + API buildata dal Dockerfile, stessa forma della produzione.
-# In alternativa puoi continuare a usare il container 'local-postgres' esterno e lanciare
+# In alternativa puoi usare il container 'comitatofeste-db' (docker-compose.db.yml) e lanciare
 # l'API con 'dotnet run' (vedi Src/frontend/README.md).
 #
 #   docker compose up --build      # -> http://localhost:8080/

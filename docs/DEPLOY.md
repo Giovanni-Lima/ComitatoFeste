@@ -192,7 +192,7 @@ generati online). Backup giornaliero con `scripts/backup-db.ps1`:
 - legge l'URI Aiven da `scripts/aiven.uri` (gitignorato, una riga:
   `postgres://avnadmin:...@...:11068/defaultdb?sslmode=require`);
 - `pg_dump -Fc` via un client `postgres:18` usa-e-getta (Aiven gira Postgres
-  18, il container `local-postgres` è alla 16 e non può esportare da un
+  18, il container `comitatofeste-db` è alla 16 e non può esportare da un
   server più recente);
 - scrive `Backups/cf-YYYY-MM-DD.dump` (gitignorato) e ruota a 30 giorni.
 
@@ -224,7 +224,7 @@ docker run --rm postgres:18-alpine sh -c \
    | pg_restore --no-owner --no-privileges --clean --if-exists -f -' \
   | grep -v -F 'SET transaction_timeout' | grep -v -F '\restrict' | grep -v -F '\unrestrict' \
   > dump.sql
-docker exec -i local-postgres psql -U postgres -d postgres -v ON_ERROR_STOP=1 < dump.sql
+docker exec -i comitatofeste-db psql -U postgres -d postgres -v ON_ERROR_STOP=1 < dump.sql
 ```
 
 (`--clean --if-exists` include i `DROP` necessari: il locale viene svuotato
@@ -288,5 +288,14 @@ dotnet run --project Src/backend/ComitatoFeste.Api   # (vedi Src/backend/Comitat
 
 `docker-compose.db.yml` monta i dati su file system (`./data/postgres/`, gitignorato)
 invece di un named volume, così la cartella è ispezionabile e cancellabile a mano;
-il `container_name` è `comitatofeste-db` per non collidere con un eventuale
-`local-postgres` esterno già sulla 5432.
+il `container_name` è `comitatofeste-db`. Dal 21/9/2026 usa l'immagine
+`pgvector/pgvector:pg16` (serve all'assistente AI) e **è il DB locale ufficiale**:
+il vecchio `local-postgres` esterno (compose `Desktop\Local Env`) va lasciato
+fermo, perché occupa la stessa porta 5432.
+
+> ⚠️ **Assistente AI e deploy**: la migration `AddDigestPointEmbeddings`
+> (branch `feature/assistente_ai`) richiede l'estensione `vector`. Aiven e
+> Render **non** la hanno ancora: finché la funzione non è stabile non va mergiata
+> su `main` (l'autoDeploy di Render farebbe fallire `Database.Migrate()` al boot).
+> Prima del deploy: verificare pgvector su Aiven (`CREATE EXTENSION vector`),
+> impostare `GEMINI_API_KEY` su Render, lanciare l'Embedder contro Aiven.

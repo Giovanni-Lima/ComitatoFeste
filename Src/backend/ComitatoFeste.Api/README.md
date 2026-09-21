@@ -20,7 +20,9 @@ $env:ASPNETCORE_ENVIRONMENT="Development"
 dotnet run --project Src/backend/ComitatoFeste.Api --launch-profile http
 ```
 
-Apri `http://localhost:5065/`. Le modifiche a `wwwroot/index.html` si vedono
+Apri `http://localhost:5065/` (Swagger su `/swagger`). Serve Postgres con
+pgvector (`docker compose -f docker-compose.db.yml up -d`, vedi README radice).
+Le modifiche a `wwwroot/index.html` si vedono
 con un semplice refresh (in Development `dotnet watch` ricarica, altrimenti
 riavvia).
 
@@ -48,6 +50,18 @@ login: **utente** = `iniziale.cognome` di un membro (es. `g.lima`,
 `d.caniglia`), **password** = la passphrase condivisa. Il token dura 30
 giorni in `localStorage`; "esci" in alto a destra lo cancella. Senza quella
 variabile d'ambiente il login è disattivato e il sito è aperto.
+
+## Assistente AI
+
+`POST /api/assistant/ask {question, from?, to?}` (`[TokenAuth]`) risponde a
+domande in linguaggio naturale sui punti del digest: embedding della domanda con
+Gemini → 40 punti più vicini con pgvector → risposta con citazioni `[n]` dalla
+catena Gemini 3.5 Flash Lite → Gemini 3.1 Flash Lite → Groq (vedi `CLAUDE.md`,
+sezione "Assistente AI"). Richiede `GEMINI_API_KEY` (o `gemini.key.txt`) e gli
+embedding già calcolati (`ComitatoFeste.Embedder`); `GROQ_API_KEY` (o `key.txt`)
+serve solo come ultimo ripiego. Senza chiave Gemini risponde 503. Limiti per utente/giorno
+in memoria (`Assistant:PerUserPerHour|GlobalPerDay|MaxConcurrent`). In locale il
+login è attivo: `POST /api/auth/login` e poi "Authorize" in Swagger.
 
 ## Note
 

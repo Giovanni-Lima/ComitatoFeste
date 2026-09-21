@@ -5,7 +5,7 @@
 #   postgres://avnadmin:PASSWORD@pg-....aivencloud.com:11068/defaultdb?sslmode=require
 #
 # Aiven gira Postgres 18; usa un client postgres:18 usa-e-getta via Docker (il container
-# 'local-postgres' e' fermo alla 16 e non puo' esportare da un server piu' recente).
+# 'comitatofeste-db' e' fermo alla 16 e non puo' esportare da un server piu' recente).
 #
 # Registrazione come task giornaliero (una volta, in PowerShell):
 #   $a = New-ScheduledTaskAction -Execute "powershell.exe" `

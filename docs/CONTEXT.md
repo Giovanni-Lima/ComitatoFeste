@@ -42,10 +42,24 @@ con i relativi file scaricati e rinominati.
    LLM possa ragionarci sopra.
 4. **API CRUD** (questo repo, base già scritta) — Web API .NET per leggere/
    scrivere i dati.
-5. **Deploy** (da fare) — `docker-compose` con Postgres + servizio API.
+5. **Deploy** (fatto — Render + Aiven, vedi `docs/DEPLOY.md`; per lo sviluppo
+   locale `docker-compose.db.yml`).
 6. **Frontend timeline** (fatto — `Src/backend/ComitatoFeste.Api/wwwroot/index.html`) — pagina HTML
    che mostra il digest in ordine cronologico, filtrabile per tipo; consuma
    `GET /api/digestpoints`.
+7. **Assistente AI** (in lavorazione, branch `feature/assistente_ai`, solo in
+   locale) — l'utente pone una domanda in linguaggio naturale ("chi porta le
+   bevande?", "cosa si è deciso il 12?") e riceve una risposta **con citazioni**
+   ai punti del digest. È un RAG: `ComitatoFeste.Embedder` calcola gli
+   embedding (Gemini) dei punti e li salva con pgvector; `POST
+   /api/assistant/ask` embedda la domanda, recupera i punti più vicini e li
+   passa a Groq. Perché RAG e non "tutto il digest nel prompt": lo storico
+   cresce ogni giorno e la quota gratuita di Groq è di 8k token/min. Perché
+   embedding **Gemini** e risposta a catena **Gemini 3.5 Flash Lite → Gemini 3.1
+   Flash Lite → Groq**: Groq non offre embedding, Gemini ha un free tier per quelli
+   e per i modelli Flash Lite; Groq resta come ultimo ripiego con quota separata. Dettagli in `CLAUDE.md` (sezione "Assistente AI").
+   Decisione del 21/9/2026: **niente deploy** finché la versione non è stabile
+   (Aiven/Render restano senza pgvector).
 
 ## Limiti noti della fase di ingestion (non risolti, l'utente li ha accettati per ora)
 
@@ -65,13 +79,13 @@ con i relativi file scaricati e rinominati.
 
 ## Dove vivono oggi i dati sorgente (sul PC Windows dell'utente)
 
-Il repo intero (export della chat compreso) vive in `C:\ComitatoFeste`
-(spostato da `C:\Digest` il 4/9/2026).
+Il repo intero (export della chat compreso) vive in `C:\temp\ComitatoFeste`
+(spostato da `C:\Digest` il 4/9/2026, poi da `C:\ComitatoFeste`).
 
-- `C:\ComitatoFeste\Export\digest_<data>.json` — un file per giorno, entry
+- `C:\temp\ComitatoFeste\Export\digest_<data>.json` — un file per giorno, entry
   come in `docs/sample-digest_2026-09-01.json` (esempio reale allegato a
   questo repo).
-- `C:\ComitatoFeste\Export\<data>\` — media scaricati e rinominati per quel
+- `C:\temp\ComitatoFeste\Export\<data>\` — media scaricati e rinominati per quel
   giorno (`HHMM_Autore_breve-descrizione.ext`).
 
 Import di questi JSON in Postgres: fatto, `ComitatoFeste.Importer`
