@@ -33,6 +33,7 @@ services:
     environment:
       COMITATOFESTE_CONNECTION: "Host=db;Port=5432;Database=postgres;Username=postgres;Password=postgres"
       COMITATOFESTE_AUTH_PASSWORD: "${COMITATOFESTE_AUTH_PASSWORD:-}"
+      COMITATOFESTE_AUTH_PASSWORD_ADMIN: "${COMITATOFESTE_AUTH_PASSWORD_ADMIN:-}"
       COMITATOFESTE_AUTH_SECRET: "${COMITATOFESTE_AUTH_SECRET:-dev-secret-non-usare-in-produzione}"
       GROQ_API_KEY: "${GROQ_API_KEY:-}"
       PORT: "8080"

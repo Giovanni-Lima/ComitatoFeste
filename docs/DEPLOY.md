@@ -73,6 +73,7 @@ Nessun'altra configurazione: niente utenti, rete o backup da impostare a mano.
    |---|---|
    | `COMITATOFESTE_CONNECTION` | la stringa Npgsql del passo 1 |
    | `COMITATOFESTE_AUTH_PASSWORD` | la passphrase condivisa del comitato |
+   | `COMITATOFESTE_AUTH_PASSWORD_ADMIN` | *opzionale* — passphrase separata per il ruolo amministratore (eleva il token solo per i membri con `Role=Amministratore`; stellina "importante", nessun limite all'assistente AI). Assente → nessun admin |
    | `COMITATOFESTE_AUTH_SECRET` | **32+ caratteri casuali, fissi** (senza, ogni redeploy invalida tutti i login) |
    | `GROQ_API_KEY` | *opzionale* — solo per generare verbali di giorni non ancora in cache |
    | `COMITATOFESTE_VAPID_PUBLIC` / `_PRIVATE` | *opzionale* — coppia VAPID per le notifiche push (vedi sotto). Assenti → bottone 🔔 nascosto |

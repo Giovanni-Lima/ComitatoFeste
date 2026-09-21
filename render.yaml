@@ -27,6 +27,11 @@ services:
       # Passphrase condivisa del comitato. Vuota/assente => login disattivato (portale aperto).
       - key: COMITATOFESTE_AUTH_PASSWORD
         sync: false
+      # Passphrase separata per il ruolo amministratore: eleva il token a `amministratore` solo
+      # per i membri con Role=Amministratore a DB (un lettore che la indovina viene respinto).
+      # Gli amministratori sono anche esenti dai limiti dell'assistente AI. Opzionale.
+      - key: COMITATOFESTE_AUTH_PASSWORD_ADMIN
+        sync: false
       # Segreto per firmare i token. DEVE essere fisso: senza, a ogni redeploy tutti
       # i login decadono. Genera 32+ caratteri casuali.
       - key: COMITATOFESTE_AUTH_SECRET

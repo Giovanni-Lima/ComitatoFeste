@@ -1,5 +1,6 @@
 using ComitatoFeste.Api.Contracts;
 using ComitatoFeste.Api.Filters;
+using ComitatoFeste.Domain;
 using ComitatoFeste.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -47,12 +48,19 @@ public sealed class AssistantController : ControllerBase
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
                 "Assistente non configurato: manca GEMINI_API_KEY sull'API.");
 
-        var user = CurrentUsername();
-        var ticket = _limiter.TryAcquire(user, out var denial);
-        if (ticket is null)
+        // Gli amministratori non sono soggetti ai limiti per utente/giornalieri (restano il tetto di
+        // chiamate contemporanee e la quota reale dei provider, gestita dalla catena di modelli).
+        var principal = CurrentPrincipal();
+        var user = principal?.Username ?? "anonimo";
+        DateTimeOffset? ticket = null;
+        if (principal?.Role != MemberRole.Amministratore)
         {
-            Response.Headers.RetryAfter = ((int)Math.Ceiling(denial.RetryAfter.TotalSeconds)).ToString();
-            return StatusCode(StatusCodes.Status429TooManyRequests, denial.Message);
+            ticket = _limiter.TryAcquire(user, out var denial);
+            if (ticket is null)
+            {
+                Response.Headers.RetryAfter = ((int)Math.Ceiling(denial.RetryAfter.TotalSeconds)).ToString();
+                return StatusCode(StatusCodes.Status429TooManyRequests, denial.Message);
+            }
         }
 
         // Se la domanda non arriva a buon fine (servizio esterno saturo, richiesta annullata) il
@@ -78,18 +86,18 @@ public sealed class AssistantController : ControllerBase
         }
         finally
         {
-            if (!succeeded)
-                _limiter.Refund(user, ticket.Value);
+            if (!succeeded && ticket is { } t)
+                _limiter.Refund(user, t);
         }
     }
 
-    /// <summary>Username del token (per il limite per utente); con il login disattivato (locale) un bucket unico.</summary>
-    private string CurrentUsername()
+    /// <summary>Utente e ruolo del token (per il limite per utente); <c>null</c> con il login disattivato (locale).</summary>
+    private AuthService.Principal? CurrentPrincipal()
     {
         var header = Request.Headers.Authorization.ToString();
         var token = header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
             ? header["Bearer ".Length..].Trim()
             : null;
-        return _auth.ValidatePrincipal(token)?.Username ?? "anonimo";
+        return _auth.ValidatePrincipal(token);
     }
 }
