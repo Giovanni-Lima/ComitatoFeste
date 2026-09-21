@@ -47,8 +47,8 @@ con i relativi file scaricati e rinominati.
 6. **Frontend timeline** (fatto — `Src/backend/ComitatoFeste.Api/wwwroot/index.html`) — pagina HTML
    che mostra il digest in ordine cronologico, filtrabile per tipo; consuma
    `GET /api/digestpoints`.
-7. **Assistente AI** (in lavorazione, branch `feature/assistente_ai`, solo in
-   locale) — l'utente pone una domanda in linguaggio naturale ("chi porta le
+7. **Assistente AI** (in lavorazione, su `develop` ma non su `main`;
+   non in produzione) — l'utente pone una domanda in linguaggio naturale ("chi porta le
    bevande?", "cosa si è deciso il 12?") e riceve una risposta **con citazioni**
    ai punti del digest. È un RAG: `ComitatoFeste.Embedder` calcola gli
    embedding (Gemini) dei punti e li salva con pgvector; `POST

@@ -295,8 +295,9 @@ il vecchio `local-postgres` esterno (compose `Desktop\Local Env`) va lasciato
 fermo, perché occupa la stessa porta 5432.
 
 > ⚠️ **Assistente AI e deploy**: la migration `AddDigestPointEmbeddings`
-> (branch `feature/assistente_ai`) richiede l'estensione `vector`. Aiven e
-> Render **non** la hanno ancora: finché la funzione non è stabile non va mergiata
-> su `main` (l'autoDeploy di Render farebbe fallire `Database.Migrate()` al boot).
-> Prima del deploy: verificare pgvector su Aiven (`CREATE EXTENSION vector`),
-> impostare `GEMINI_API_KEY` su Render, lanciare l'Embedder contro Aiven.
+> (su `develop`, non su `main`) richiede l'estensione `vector`. **Aiven la ha già**
+> (pgvector 0.8.6 e migration applicati a mano il 21/9/2026), mentre Render gira
+> ancora il codice di `main`, che li ignora senza errori. Finché la funzione non è
+> stabile non va mergiata su `main`. Prima del deploy: impostare `GEMINI_API_KEY`
+> su Render e completare il backfill degli embedding (lo fa da solo il passo
+> Embedder di `import-transcribe-aiven.ps1`).

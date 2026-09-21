@@ -48,7 +48,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   FK — vedi `?w=` e `ImageThumbnailer` sotto) + `AddMemberLastSeenAt` (colonna
   `Members.LastSeenAt`) + **`AddDigestPointEmbeddings`** (tabella
   `DigestPointEmbeddings`, `vector(768)`, estensione `vector` — codice
-  solo sul branch `feature/assistente_ai`, vedi "Assistente AI"). Tutte le
+  su `develop` ma **non ancora su `main`**, vedi "Assistente AI"). Tutte le
   migration sono applicate anche ad **Aiven**; l'ultima (`AddDigestPointEmbeddings`,
   con `CREATE EXTENSION vector` 0.8.6) è stata applicata **a mano il 21/9/2026** con
   `dotnet ef database update` (env `COMITATOFESTE_CONNECTION` = Aiven), dopo un
@@ -219,8 +219,8 @@ Il backend .NET compila pulito e gira contro Postgres locale.
       redirect, timeout 6 s, corpo troncato a 512 KB, solo `Content-Type` HTML.
       Il frontend mostra la card sotto il testo (immagine `og:image` in
       hotlink dal sito originale).
-    - **Assistente AI** (`feature/assistente_ai`, **solo locale finché la
-      versione non è stabile**, vedi sezione dedicata sotto):
+    - **Assistente AI** (su `develop`, **non su `main` finché la versione non è
+      stabile**, vedi sezione dedicata sotto):
       `POST /api/assistant/ask {question, from?, to?}` → `{answer, sources[],
       model, reducedModel, retrieved}`. `[TokenAuth]`. Domanda max 500
       caratteri; `from`/`to` (yyyy-MM-dd, inclusivi, fuso Roma) restringono la
@@ -296,7 +296,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     `--dry-run`, `--limit <n>`, `--delay-ms <n>`,
     `--group <nome>`. Ritenta su HTTP 429/5xx, Ctrl+C esce pulito dopo il
     vocale in corso.
-  - `ComitatoFeste.Embedder` — console (solo branch `feature/assistente_ai`):
+  - `ComitatoFeste.Embedder` — console (su `develop`, non ancora su `main`):
     calcola con Gemini (`gemini-embedding-2`, 768 dim, free tier) l'embedding
     dei punti della **vista pulita** (niente `rumore`, niente vocali non ancora
     digeriti) e lo salva in `DigestPointEmbeddings`. **Idempotente e
@@ -386,7 +386,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   coerente col punto di arrivo di `goToImportantDay`), e cambiare data nel
   picker scorre al separatore corrispondente (no-op se quel giorno non ha
   punti importanti, come `goToDay` in Agenda). **Æsir** (`viewAesir`,
-  `renderAesir`/`askAesir`, solo branch `feature/assistente_ai`) — l'assistente
+  `renderAesir`/`askAesir`, su `develop`, non ancora su `main`) — l'assistente
   AI, **al posto della vecchia vista "Guida"** (le istruzioni di installazione
   PWA Android/iOS sono state rimosse dal menu il 21/9/2026: recuperabili dalla
   cronologia git, commit precedenti a quello di Æsir, se si vuole riproporle
@@ -697,13 +697,14 @@ sopra):
   ±2 min); i testi placeholder "non trascritto" sono esclusi dal fuzzy
   (template → trigram inaffidabile, collasserebbe vocali diversi).
 
-## Assistente AI (branch `feature/assistente_ai`, in lavorazione)
+## Assistente AI (su `develop`, non ancora su `main`; in lavorazione)
 
 **Stato (21/9/2026)**: backend fatto e provato end-to-end in locale
 (embedding → retrieval → risposta con citazioni); **frontend fatto** (vista
 Æsir, vedi "Struttura"; da rifinire con l'uso: niente selettore di date,
 `from`/`to` dell'API non sono esposti in UI); **niente deploy** finché la versione non è stabile — le modifiche
-esistono solo nel branch: **Render gira ancora il codice di `main`**, ma
+esistono solo su `develop` (il branch `feature/assistente_ai` è stato portato su
+`develop` e cancellato il 21/9/2026): **Render gira ancora il codice di `main`**, ma
 **Aiven ha già la migration** (21/9/2026) e un backfill parziale degli embedding:
 **680 su 860 punti** (mancano 180, dal 14/9 al 21/9), fermo per quota Gemini
 esaurita: **verificato** che è la quota giornaliera (`embed_content_free_tier_requests,
@@ -779,7 +780,7 @@ implementarlo.
 
 ## Prossimi passi noti
 
-0. **Assistente AI** (`feature/assistente_ai`): frontend + hardening + deploy
+0. **Assistente AI** (su `develop`): frontend + hardening + deploy
    — vedi sezione "Assistente AI" sopra.
 1. Rifinire il frontend (`ComitatoFeste.Api/wwwroot/index.html`): filtro autore, thumbnail ridotte
    lato server, e — con giorni molto densi (~100 punti) — virtualizzazione
