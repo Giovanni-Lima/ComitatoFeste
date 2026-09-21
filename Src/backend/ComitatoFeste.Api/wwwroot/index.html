@@ -472,7 +472,7 @@
       font-family:var(--font-display);font-size:20px;letter-spacing:.03em;cursor:pointer}
     .aesir-btn:hover{filter:brightness(1.1)}
     .aesir-btn:disabled{opacity:.45;cursor:default;filter:none}
-    .aesir-btn.again{align-self:center;margin-top:4px}
+    .aesir-btn.again{align-self:center}
     .aesir-q{align-self:center;max-width:100%;padding:8px 14px;border-radius:14px;background:var(--surface);
       border:1px solid var(--hair);color:var(--ink-soft);font-size:14px;line-height:1.45;font-style:italic;
       overflow-wrap:anywhere}
@@ -508,7 +508,14 @@
        visibile e il browser non deve scorrere la pagina (il volto non sparisce in alto). */
     @media (max-width:820px){
       body.aesir-kb .aesir-hello,body.aesir-kb .aesir-sub{display:none}
-      body.aesir-kb .sidebar{display:none}   /* riga col nome dell'app + tab bar: la topbar col titolo resta */
+      /* Il menu NON sparisce (serve per uscire dalla pagina): la tab bar diventa compatta e sale in
+         alto, nel flusso, al posto della riga col nome dell'app e della topbar (il titolo è già
+         evidenziato nella tab attiva). In basso resterebbe dietro la tastiera o coprirebbe la casella. */
+      body.aesir-kb .brand,body.aesir-kb #meSide,body.aesir-kb .topbar{display:none}
+      body.aesir-kb .sidebar{padding:6px 12px}
+      body.aesir-kb .side-nav{position:static;width:100%;padding:3px;box-shadow:none;background:var(--surface)}
+      body.aesir-kb .navitem{padding:4px 2px;gap:1px;line-height:1}
+      body.aesir-kb .navitem svg{width:18px;height:18px}
       body.aesir-kb .aesir{gap:12px}
     }
     @media (max-width:820px){.aesir-btn{align-self:stretch}.aesir-btn.again{align-self:stretch}}
@@ -1851,6 +1858,7 @@
     function setView(v){
       if (v === "aesir" && !isAdmin()) v = "agenda";   // Æsir: solo amministratori
       document.body.classList.remove("aesir-kb");
+      const prev = view;
       view = v;
       el("viewAgenda").hidden    = v !== "agenda";
       el("viewMedia").hidden     = v !== "media";
@@ -1864,7 +1872,10 @@
       if (v === "agenda") render();
       if (v === "media") renderMediaIfNeeded();
       if (v === "important") renderImportant();
-      if (v === "aesir") renderAesir();
+      if (v === "aesir") {
+        if (prev !== "aesir") resetAesir();   // arrivando da un'altra sezione: sempre da zero, mai la risposta di prima
+        renderAesir();
+      }
       el("viewTitle").innerHTML = VIEW_ICONS[v] + VIEW_TITLES[v];
       document.title = "Comitato feste 87 — " + VIEW_TITLES[v];
       for (const b of el("nav").children) b.classList.toggle("active", b.dataset.view === v);
@@ -1882,6 +1893,14 @@
     // POST /api/assistant/ask; la risposta cita i punti come [n] (vedi `sources`).
     const aesir = { state: "idle", q: "", res: null, err: "" };
     const AESIR_MOOD = { idle: "neutral", thinking: "working", done: "happy", error: "sad" };
+
+    // Ripartenza da zero: azzera domanda/risposta/errore e invalida la richiesta eventualmente in volo
+    // (la sua risposta, quando arriva, viene scartata: `aesirReq` è cambiato).
+    let aesirReq = 0;
+    function resetAesir(){
+      aesirReq++;
+      aesir.state = "idle"; aesir.q = ""; aesir.res = null; aesir.err = "";
+    }
 
     // Tastiera virtuale (Android): all'apertura il browser scorre la pagina per mostrare la casella e
     // il volto finisce fuori schermo. Mentre la casella ha il focus si compatta la pagina (classe
@@ -1963,11 +1982,12 @@
         q.addEventListener("focus", () => { face.classList.add("typing"); setAesirKeyboard(true); });   // il volto guarda in giù
         q.addEventListener("blur", () => {
           face.classList.remove("typing");
-          // Se il focus passa al pulsante "Chiedi" NON si ripristina subito il layout: la tastiera si
-          // chiude, la pagina si riespande e il pulsante scapperebbe da sotto il dito (tocco perso).
+          // Se il focus passa al pulsante "Chiedi" o a una voce del menu NON si ripristina subito il
+          // layout: la tastiera si chiude, la pagina si riespande e il bersaglio scapperebbe da sotto
+          // il dito (tocco perso). Il clic sul menu chiama setView, che azzera comunque la modalità.
           setTimeout(() => {
             const a = document.activeElement;
-            if (a !== q && a !== el("aesirSend")) setAesirKeyboard(false);
+            if (a !== q && a !== el("aesirSend") && !(a && a.closest && a.closest("#nav"))) setAesirKeyboard(false);
           }, 150);
         });
         q.addEventListener("keydown", (e) => {
@@ -1981,11 +2001,12 @@
         stage.innerHTML = quote + `<div class="aesir-status">Sto cercando tra i messaggi<span class="dots"><i></i><i></i><i></i></span></div>`;
       } else if (aesir.state === "done") {
         const r = aesir.res, sources = r.sources || [];
-        stage.innerHTML = quote +
+        // Il pulsante sta SOPRA la risposta: con risposte lunghe è raggiungibile senza scorrere.
+        stage.innerHTML =
+          `<button type="button" class="aesir-btn again" id="aesirAgain">Fai un'altra domanda</button>` + quote +
           `<div class="aesir-answer">${aesirFormat(r.answer, sources)}</div>` + aesirSources(sources) +
-          (r.model ? `<div class="aesir-meta">${esc(r.model)}${r.reducedModel ? " · modello di riserva" : ""}</div>` : "") +
-          `<button type="button" class="aesir-btn again" id="aesirAgain">Fai un'altra domanda</button>`;
-        el("aesirAgain").onclick = () => { aesir.state = "idle"; aesir.q = ""; aesir.res = null; renderAesir(); };
+          (r.model ? `<div class="aesir-meta">${esc(r.model)}${r.reducedModel ? " · modello di riserva" : ""}</div>` : "");
+        el("aesirAgain").onclick = () => { resetAesir(); renderAesir(); };
       } else {
         stage.innerHTML = quote + `<div class="aesir-err">${esc(aesir.err)}</div>` +
           `<button type="button" class="aesir-btn again" id="aesirRetry">Riprova</button>`;
@@ -1996,28 +2017,32 @@
     async function askAesir(question){
       const q = (question || "").trim();
       if (!q || aesir.state === "thinking") return;
+      const my = ++aesirReq;
       aesir.q = q; aesir.state = "thinking";
       renderAesir();
+      let next = null, unauthorized = false;
       try {
         const r = await fetch(`${API}/api/assistant/ask`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeaders() },
           body: JSON.stringify({ question: q }),
         });
-        if (r.status === 401) { setToken(null); showLogin(); aesir.state = "idle"; renderAesir(); return; }
-        if (!r.ok) {
+        if (r.status === 401) {
+          unauthorized = true;
+        } else if (!r.ok) {
           const body = (await r.text()).trim();
-          aesir.err = body && !body.startsWith("{") && body.length < 300
-            ? body : `Qualcosa è andato storto (HTTP ${r.status}). Riprova tra poco.`;
-          aesir.state = "error";
+          next = { state: "error", err: body && !body.startsWith("{") && body.length < 300
+            ? body : `Qualcosa è andato storto (HTTP ${r.status}). Riprova tra poco.` };
         } else {
-          aesir.res = await r.json();
-          aesir.state = "done";
+          next = { state: "done", res: await r.json() };
         }
       } catch (e) {
-        aesir.err = "Non riesco a contattare il server. Controlla la connessione e riprova.";
-        aesir.state = "error";
+        next = { state: "error", err: "Non riesco a contattare il server. Controlla la connessione e riprova." };
       }
+      if (unauthorized) { setToken(null); showLogin(); }
+      if (my !== aesirReq) return;   // l'utente ha lasciato la vista / ripartito da zero: risposta vecchia, si scarta
+      if (unauthorized) aesir.state = "idle";
+      else { aesir.state = next.state; if (next.res) aesir.res = next.res; if (next.err) aesir.err = next.err; }
       renderAesir();
     }
 

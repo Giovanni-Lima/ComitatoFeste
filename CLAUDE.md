@@ -415,21 +415,30 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   sistema, come le lettere accentate. Rispetta `prefers-reduced-motion`. **Volto da 150 px** (`--s:min(150px,55vw)` su
   `.aesir-face`, 22/9/2026). **Tastiera virtuale (Android)**: aprendola il browser scorre la
   pagina per mostrare la casella e il volto finiva fuori schermo; ora, con la casella a fuoco
-  su mobile (`max-width:820px`), `setAesirKeyboard(true)` mette `body.aesir-kb` che nasconde
-  saluto, riga del nome app e tab bar, così volto (129 px) + casella + pulsante stanno in
-  ~360 px, e `keepAesirFaceVisible()` riporta la pagina in cima (riprovata a 0/150/350/700 ms
-  e a ogni resize di `visualViewport`) se il fondo del pulsante sta nell'area visibile. Al blur
-  il layout torna normale **con 150 ms di ritardo e solo se il focus non è passato al pulsante
-  "Chiedi"** (altrimenti la pagina si riespande e il tocco sul pulsante va perso);
-  `renderAesir` e `setView` azzerano la classe. Verificato solo con un iframe da 390 px
-  ridimensionato (area visibile 456 e 376 px), **non su un telefono vero**.
+  su mobile (`max-width:820px`), `setAesirKeyboard(true)` mette `body.aesir-kb`, che nasconde
+  saluto, riga del nome app e topbar ma **lascia il menu visibile**: la tab bar diventa
+  compatta (~53 px) e sale in alto nel flusso (`position:static`; in basso resterebbe dietro
+  la tastiera), così si può sempre uscire dalla vista. Volto (129 px) + casella + pulsante
+  stanno entro ~365 px, e `keepAesirFaceVisible()` riporta la pagina in cima (riprovata a
+  0/150/350/700 ms e a ogni resize di `visualViewport`) se il fondo del pulsante sta
+  nell'area visibile. Al blur il layout torna normale **con 150 ms di ritardo e solo se il
+  focus non è passato al pulsante "Chiedi" o a una voce del menu** (altrimenti la pagina si
+  riespande e il tocco va perso); `renderAesir` e `setView` azzerano la classe. Nel browser di
+  test desktop (`hover: hover`) la casella prende il focus da sola e attiva questa modalità:
+  su telefono (`hover: none`) no. **Risposta pronta**: il pulsante "Fai un'altra domanda"
+  sta **sopra** la risposta (primo elemento dello stage), poi la domanda, la risposta, le
+  fonti. **Ripartenza da zero**: `setView` chiama `resetAesir()` ogni volta che si *arriva* in
+  Æsir da un'altra vista (mai la risposta di prima); `resetAesir` incrementa `aesirReq`,
+  quindi la risposta di una domanda ancora in volo, abbandonata uscendo dalla vista, viene
+  scartata quando arriva. Verificato solo con un iframe da 390 px ridimensionato (area
+  visibile 372–456 px) e con `fetch` simulato, **non su un telefono vero**.
   **Info** = la vecchia Guida (`viewGuide`, ripristinata a destra del menu il
   21/9/2026 dopo un giorno in cui era stata sostituita da Æsir; icona "i") — contenuto statico, nessuna
   chiamata API: due card fianco a fianco (una colonna su mobile), **Android prima**
   (Chrome → menu ⋮ → "Installa app") poi **iPhone/iPad** (Safari → icona di
   condivisione → "Aggiungi alla schermata Home", con nota che le notifiche push su
   iOS servono l'installazione).
-  `sw.js` `CACHE_VERSION` alzato (ora v14).
+  `sw.js` `CACHE_VERSION` alzato (ora v15).
 - `Export/` — dati sorgente della pipeline sul PC dell'utente:
   `digest_<data>.json`, sottocartella `<data>/` con i media rinominati
   (le sottocartelle `_da-attribuire` / `_conflitto-autore` /
