@@ -48,7 +48,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   FK — vedi `?w=` e `ImageThumbnailer` sotto) + `AddMemberLastSeenAt` (colonna
   `Members.LastSeenAt`) + **`AddDigestPointEmbeddings`** (tabella
   `DigestPointEmbeddings`, `vector(768)`, estensione `vector` — codice
-  su `develop` ma **non ancora su `main`**, vedi "Assistente AI"). Tutte le
+  su `develop` e `main`, in produzione dal 21/9/2026, vedi "Assistente AI"). Tutte le
   migration sono applicate anche ad **Aiven**; l'ultima (`AddDigestPointEmbeddings`,
   con `CREATE EXTENSION vector` 0.8.6) è stata applicata **a mano il 21/9/2026** con
   `dotnet ef database update` (env `COMITATOFESTE_CONNECTION` = Aiven), dopo un
@@ -129,7 +129,8 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   Env impostate nel dashboard Render: `COMITATOFESTE_CONNECTION`, `_AUTH_PASSWORD`,
   `_AUTH_PASSWORD_ADMIN` (passphrase separata per il ruolo amministratore,
   vedi login sotto — impostata e testata in prod il 9/9/2026), `_AUTH_SECRET`,
-  `GROQ_API_KEY`, e per le notifiche push `COMITATOFESTE_VAPID_PUBLIC`
+  `GROQ_API_KEY`, `GEMINI_API_KEY` (assistente AI Æsir, da aggiungere: senza risponde
+  503), e per le notifiche push `COMITATOFESTE_VAPID_PUBLIC`
   / `_PRIVATE` / `_SUBJECT` + `_HOOK_SECRET` (vedi `docs/PUSH-NOTIFICHE.md`).
   Backup: `scripts/backup-db.ps1`. Tutto in `docs/DEPLOY.md`.
 
@@ -219,8 +220,8 @@ Il backend .NET compila pulito e gira contro Postgres locale.
       redirect, timeout 6 s, corpo troncato a 512 KB, solo `Content-Type` HTML.
       Il frontend mostra la card sotto il testo (immagine `og:image` in
       hotlink dal sito originale).
-    - **Assistente AI** (su `develop`, **non su `main` finché la versione non è
-      stabile**, vedi sezione dedicata sotto):
+    - **Assistente AI** (**in produzione dal 21/9/2026**, nel frontend visibile solo
+      agli amministratori, vedi sezione dedicata sotto):
       `POST /api/assistant/ask {question, from?, to?}` → `{answer, sources[],
       model, reducedModel, retrieved}`. `[TokenAuth]`. Domanda max 500
       caratteri; `from`/`to` (yyyy-MM-dd, inclusivi, fuso Roma) restringono la
@@ -296,7 +297,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     `--dry-run`, `--limit <n>`, `--delay-ms <n>`,
     `--group <nome>`. Ritenta su HTTP 429/5xx, Ctrl+C esce pulito dopo il
     vocale in corso.
-  - `ComitatoFeste.Embedder` — console (su `develop`, non ancora su `main`):
+  - `ComitatoFeste.Embedder` — console (gira sul PC, come Importer e Transcriber):
     calcola con Gemini (`gemini-embedding-2`, 768 dim, free tier) l'embedding
     dei punti della **vista pulita** (niente `rumore`, niente vocali non ancora
     digeriti) e lo salva in `DigestPointEmbeddings`. **Idempotente e
@@ -366,8 +367,14 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   file). In locale: `dotnet run` dell'API e apri `http://localhost:5065/`,
   oppure servi il file a parte con `?api=`; vedi
   `Src/backend/ComitatoFeste.Api/README.md`.
-  **Quattro viste** nella sidebar (`setView`, ordine Agenda → Importanti →
-  Media → Æsir), titolo in topbar con l'icona della vista (`VIEW_ICONS`): Agenda
+  **Cinque viste** nella sidebar (`setView`, ordine Agenda → **Top** → Æsir →
+  Media → **Info**; "Top" è la vista Importanti (`viewImportant`, chiave `important`)
+  e "Info" la Guida (`viewGuide`, chiave `guide`), rinominate il 21/9/2026 per avere
+  etichette corte: su mobile la tab bar in fondo ha le 5 voci **della stessa larghezza**
+  (`flex:1 1 0`) e reggono su una riga fino a ~390 px), titolo in topbar con l'icona della vista (`VIEW_ICONS`), a **larghezza
+  fissa uguale per tutte le viste** (`.topbar h1`, `--title-w` 140 px desktop /
+  `--title-w-m` 120 px mobile, il più largo è "Agenda") così il date picker
+  compare sempre nello stesso punto: Agenda
   (l'accordion sopra), Media (griglia foto/video/documenti per giorno,
   **non** l'audio — vedi `mediaKind`), e **Importanti**
   (`viewImportant`/`renderImportant`) — punti con `isImportant=true`, stessi
@@ -386,11 +393,12 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   coerente col punto di arrivo di `goToImportantDay`), e cambiare data nel
   picker scorre al separatore corrispondente (no-op se quel giorno non ha
   punti importanti, come `goToDay` in Agenda). **Æsir** (`viewAesir`,
-  `renderAesir`/`askAesir`, su `develop`, non ancora su `main`) — l'assistente
-  AI, **al posto della vecchia vista "Guida"** (le istruzioni di installazione
-  PWA Android/iOS sono state rimosse dal menu il 21/9/2026: recuperabili dalla
-  cronologia git, commit precedenti a quello di Æsir, se si vuole riproporle
-  altrove). Pagina con un **volto solo-CSS** (schermata scura + due occhi
+  `renderAesir`/`askAesir`) — l'assistente
+  AI, voce **al centro** del menu, **visibile solo agli amministratori**
+  (`applyRoleUi()` nasconde la voce se `isAdmin()` è falso e `setView` riporta
+  all'Agenda; `.navitem[hidden]{display:none}`; per i lettori la tab bar mobile ha 4
+  voci). **Non è un controllo di sicurezza**: `POST /api/assistant/ask` accetta
+  qualunque token valido (con i limiti per utente, dai quali gli admin sono esenti). Pagina con un **volto solo-CSS** (schermata scura + due occhi
   luminosi ciano, stile robottino Emo; `.aesir-face[data-mood]`), un saluto
   ("Sono Æsir, chiedi quello che vuoi.") e una casella di testo (max 500
   caratteri, Invio invia, Maiusc+Invio va a capo). Stati JS in `aesir.state`:
@@ -405,7 +413,13 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   se c'è la fonte). Chiama `POST /api/assistant/ask` con il token (401 → login).
   Il font pixel del tema non ha la "Æ" (solo Basic Latin): ricade sul font di
   sistema, come le lettere accentate. Rispetta `prefers-reduced-motion`.
-  `sw.js` `CACHE_VERSION` alzato a v10.
+  **Info** = la vecchia Guida (`viewGuide`, ripristinata a destra del menu il
+  21/9/2026 dopo un giorno in cui era stata sostituita da Æsir; icona "i") — contenuto statico, nessuna
+  chiamata API: due card fianco a fianco (una colonna su mobile), **Android prima**
+  (Chrome → menu ⋮ → "Installa app") poi **iPhone/iPad** (Safari → icona di
+  condivisione → "Aggiungi alla schermata Home", con nota che le notifiche push su
+  iOS servono l'installazione).
+  `sw.js` `CACHE_VERSION` alzato a v12.
 - `Export/` — dati sorgente della pipeline sul PC dell'utente:
   `digest_<data>.json`, sottocartella `<data>/` con i media rinominati
   (le sottocartelle `_da-attribuire` / `_conflitto-autore` /
@@ -697,15 +711,16 @@ sopra):
   ±2 min); i testi placeholder "non trascritto" sono esclusi dal fuzzy
   (template → trigram inaffidabile, collasserebbe vocali diversi).
 
-## Assistente AI (su `develop`, non ancora su `main`; in lavorazione)
+## Assistente AI (in produzione dal 21/9/2026, solo admin nel frontend)
 
-**Stato (21/9/2026)**: backend fatto e provato end-to-end in locale
-(embedding → retrieval → risposta con citazioni); **frontend fatto** (vista
-Æsir, vedi "Struttura"; da rifinire con l'uso: niente selettore di date,
-`from`/`to` dell'API non sono esposti in UI); **niente deploy** finché la versione non è stabile — le modifiche
-esistono solo su `develop` (il branch `feature/assistente_ai` è stato portato su
-`develop` e cancellato il 21/9/2026): **Render gira ancora il codice di `main`**, ma
-**Aiven ha già la migration** (21/9/2026) e un backfill parziale degli embedding:
+**Stato (21/9/2026)**: backend e frontend fatti e provati end-to-end (embedding →
+retrieval → risposta con citazioni; vista Æsir, vedi "Struttura"; da rifinire con
+l'uso: niente selettore di date, `from`/`to` dell'API non sono esposti in UI).
+**Portato su `main` e in produzione (Render) il 21/9/2026** come lancio graduale:
+Æsir si vede solo agli amministratori (il branch `feature/assistente_ai` è stato
+portato su `develop` e cancellato). Serve `GEMINI_API_KEY` tra le env Render: senza,
+l'endpoint risponde 503 e il resto del portale funziona. **Aiven ha la migration**
+(applicata a mano il 21/9/2026, prima del deploy) e un backfill parziale degli embedding:
 **680 su 860 punti** (mancano 180, dal 14/9 al 21/9), fermo per quota Gemini
 esaurita: **verificato** che è la quota giornaliera (`embed_content_free_tier_requests,
 limit: 1000, model: gemini-embedding-2`). Si azzera a mezzanotte ora del Pacifico
@@ -763,12 +778,13 @@ prompt injection dai messaggi del gruppo) e dà precedenza ai punti più recenti
   locale il login è attivo (passphrase negli user-secrets `Auth:Password`):
   fai `POST /api/auth/login` e usa il token in "Authorize". Attenzione
   all'encoding: `curl` da Git Bash con caratteri accentati nel JSON dà 400.
-- **Da fare prima del deploy**: rifinire il frontend (fonti cliccabili verso
-  l'Agenda, eventuale filtro per date), verificare che Aiven supporti pgvector (`CREATE EXTENSION vector`) e che i
-  1 GB di storage reggano gli embedding (~3 KB/punto), aggiungere
-  `GEMINI_API_KEY` alle env Render (l'Embedder è già nella pipeline
-  `import-transcribe-aiven.ps1`), aggiornare
-  `docs/DEPLOY.md` e l'immagine dei Docker compose/CI se serve.
+- **Dopo il deploy**: `GEMINI_API_KEY` sulle env Render (senza → 503), completare
+  il backfill degli embedding (lo fa da solo il passo Embedder di
+  `import-transcribe-aiven.ps1`), rifinire il frontend (fonti cliccabili verso
+  l'Agenda, eventuale filtro per date), decidere se aprire Æsir a tutti i membri e
+  se restringere anche l'endpoint agli admin (`[TokenAuth(MemberRole.Amministratore)]`,
+  oggi è nascosta solo la voce di menu). Verificato: pgvector 0.8.6 su Aiven, 1 GB di
+  storage ampiamente sufficienti (~3 KB/punto).
 
 ## Domanda aperta
 

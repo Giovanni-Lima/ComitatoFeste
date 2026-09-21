@@ -47,8 +47,8 @@ con i relativi file scaricati e rinominati.
 6. **Frontend timeline** (fatto — `Src/backend/ComitatoFeste.Api/wwwroot/index.html`) — pagina HTML
    che mostra il digest in ordine cronologico, filtrabile per tipo; consuma
    `GET /api/digestpoints`.
-7. **Assistente AI** (in lavorazione, su `develop` ma non su `main`;
-   non in produzione) — l'utente pone una domanda in linguaggio naturale ("chi porta le
+7. **Assistente AI** (in produzione dal 21/9/2026, visibile solo agli
+   amministratori) — l'utente pone una domanda in linguaggio naturale ("chi porta le
    bevande?", "cosa si è deciso il 12?") e riceve una risposta **con citazioni**
    ai punti del digest. È un RAG: `ComitatoFeste.Embedder` calcola gli
    embedding (Gemini) dei punti e li salva con pgvector; `POST
@@ -58,8 +58,9 @@ con i relativi file scaricati e rinominati.
    embedding **Gemini** e risposta a catena **Gemini 3.5 Flash Lite → Gemini 3.1
    Flash Lite → Groq**: Groq non offre embedding, Gemini ha un free tier per quelli
    e per i modelli Flash Lite; Groq resta come ultimo ripiego con quota separata. Dettagli in `CLAUDE.md` (sezione "Assistente AI").
-   Decisione del 21/9/2026: **niente deploy** finché la versione non è stabile
-   (Render resta sul codice di `main`; Aiven ha già pgvector e la tabella degli embedding, applicati a mano il 21/9/2026).
+   Decisione del 21/9/2026: **deploy in produzione** come lancio graduale (Æsir
+   visibile solo agli amministratori); Aiven ha pgvector e la tabella degli embedding,
+   applicati a mano lo stesso giorno prima del deploy.
 
 ## Limiti noti della fase di ingestion (non risolti, l'utente li ha accettati per ora)
 

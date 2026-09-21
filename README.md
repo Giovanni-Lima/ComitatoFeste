@@ -61,7 +61,7 @@ dotnet run --project Src/backend/ComitatoFeste.Transcriber
 
 Calcola (con Gemini) l'embedding dei punti nuovi o cambiati e lo salva in
 `DigestPointEmbeddings`. Idempotente: serve sia da backfill sia da
-aggiornamento dopo import + trascrizione. Su `develop`, non ancora su `main`.
+aggiornamento dopo import + trascrizione. In produzione dal 21/9/2026 (Æsir, solo admin).
 Exit code 10 = quota Gemini esaurita (run parziale, non è un errore). Lo lancia da solo
 `scripts/import-transcribe-aiven.ps1` dopo il Transcriber, senza bloccare la pipeline.
 

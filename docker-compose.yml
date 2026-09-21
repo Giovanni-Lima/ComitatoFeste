@@ -36,6 +36,7 @@ services:
       COMITATOFESTE_AUTH_PASSWORD_ADMIN: "${COMITATOFESTE_AUTH_PASSWORD_ADMIN:-}"
       COMITATOFESTE_AUTH_SECRET: "${COMITATOFESTE_AUTH_SECRET:-dev-secret-non-usare-in-produzione}"
       GROQ_API_KEY: "${GROQ_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
       PORT: "8080"
     ports:
       - "8080:8080"

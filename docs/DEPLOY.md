@@ -75,6 +75,7 @@ Nessun'altra configurazione: niente utenti, rete o backup da impostare a mano.
    | `COMITATOFESTE_AUTH_PASSWORD` | la passphrase condivisa del comitato |
    | `COMITATOFESTE_AUTH_PASSWORD_ADMIN` | *opzionale* — passphrase separata per il ruolo amministratore (eleva il token solo per i membri con `Role=Amministratore`; stellina "importante", nessun limite all'assistente AI). Assente → nessun admin |
    | `COMITATOFESTE_AUTH_SECRET` | **32+ caratteri casuali, fissi** (senza, ogni redeploy invalida tutti i login) |
+   | `GEMINI_API_KEY` | *opzionale* — assistente AI Æsir (embedding delle domande + risposta, con Groq come ripiego). Assente → `POST /api/assistant/ask` risponde 503 |
    | `GROQ_API_KEY` | *opzionale* — solo per generare verbali di giorni non ancora in cache |
    | `COMITATOFESTE_VAPID_PUBLIC` / `_PRIVATE` | *opzionale* — coppia VAPID per le notifiche push (vedi sotto). Assenti → bottone 🔔 nascosto |
    | `COMITATOFESTE_VAPID_SUBJECT` | `mailto:giovannilima800@gmail.com` (già nel blueprint) |
@@ -295,9 +296,10 @@ il vecchio `local-postgres` esterno (compose `Desktop\Local Env`) va lasciato
 fermo, perché occupa la stessa porta 5432.
 
 > ⚠️ **Assistente AI e deploy**: la migration `AddDigestPointEmbeddings`
-> (su `develop`, non su `main`) richiede l'estensione `vector`. **Aiven la ha già**
-> (pgvector 0.8.6 e migration applicati a mano il 21/9/2026), mentre Render gira
-> ancora il codice di `main`, che li ignora senza errori. Finché la funzione non è
-> stabile non va mergiata su `main`. Prima del deploy: impostare `GEMINI_API_KEY`
-> su Render e completare il backfill degli embedding (lo fa da solo il passo
-> Embedder di `import-transcribe-aiven.ps1`).
+> richiede l'estensione `vector`. **Aiven la ha già** (pgvector 0.8.6 e migration
+> applicati a mano il 21/9/2026 *prima* del deploy: backup, poi `dotnet ef database
+> update` con `COMITATOFESTE_CONNECTION` = Aiven; provato che `avnadmin`, pur non
+> superuser, può fare `CREATE EXTENSION vector`). Serve `GEMINI_API_KEY` tra le env
+> Render (senza: `POST /api/assistant/ask` risponde 503, il resto funziona); il
+> backfill degli embedding lo completa da solo il passo Embedder di
+> `import-transcribe-aiven.ps1`.
