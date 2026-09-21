@@ -353,7 +353,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   oppure servi il file a parte con `?api=`; vedi
   `Src/backend/ComitatoFeste.Api/README.md`.
   **Quattro viste** nella sidebar (`setView`, ordine Agenda → Importanti →
-  Media → Guida), titolo in topbar con l'icona della vista (`VIEW_ICONS`): Agenda
+  Media → Æsir), titolo in topbar con l'icona della vista (`VIEW_ICONS`): Agenda
   (l'accordion sopra), Media (griglia foto/video/documenti per giorno,
   **non** l'audio — vedi `mediaKind`), e **Importanti**
   (`viewImportant`/`renderImportant`) — punti con `isImportant=true`, stessi
@@ -371,12 +371,27 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   la propria `scroll-margin-top` (non un `TOPBAR_H` fisso, per restare
   coerente col punto di arrivo di `goToImportantDay`), e cambiare data nel
   picker scorre al separatore corrispondente (no-op se quel giorno non ha
-  punti importanti, come `goToDay` in Agenda). **Guida** (`viewGuide`) —
-  contenuto statico, nessuna chiamata API: due card fianco a fianco (una
-  colonna su mobile), **Android prima** (Chrome → menu ⋮ → "Installa app")
-  poi **iPhone/iPad** (Safari → icona di condivisione → "Aggiungi alla
-  schermata Home", con nota che le notifiche push su iOS servono
-  l'installazione).
+  punti importanti, come `goToDay` in Agenda). **Æsir** (`viewAesir`,
+  `renderAesir`/`askAesir`, solo branch `feature/assistente_ai`) — l'assistente
+  AI, **al posto della vecchia vista "Guida"** (le istruzioni di installazione
+  PWA Android/iOS sono state rimosse dal menu il 21/9/2026: recuperabili dalla
+  cronologia git, commit precedenti a quello di Æsir, se si vuole riproporle
+  altrove). Pagina con un **volto solo-CSS** (schermata scura + due occhi
+  luminosi ciano, stile robottino Emo; `.aesir-face[data-mood]`), un saluto
+  ("Sono Æsir, chiedi quello che vuoi.") e una casella di testo (max 500
+  caratteri, Invio invia, Maiusc+Invio va a capo). Stati JS in `aesir.state`:
+  `idle` (occhi neutri che ammiccano; guardano in giù quando la casella ha il
+  focus) → `thinking` (`working`: palpebre oblique e occhi che scansionano a
+  destra/sinistra, con la domanda mostrata al posto della casella) → `done`
+  (`happy`: occhi a "^" + risposta al posto della casella, badge `[n]` per le
+  citazioni, "Fonti (N)" espandibile, modello usato in piccolo, pulsante "Fai
+  un'altra domanda") oppure `error` (`sad`: messaggio del server, es. 429/503,
+  e "Riprova" che conserva la domanda). Il testo del modello passa da
+  `aesirFormat` (escape HTML, `**grassetto**`, elenchi `- `, `[n]` → badge solo
+  se c'è la fonte). Chiama `POST /api/assistant/ask` con il token (401 → login).
+  Il font pixel del tema non ha la "Æ" (solo Basic Latin): ricade sul font di
+  sistema, come le lettere accentate. Rispetta `prefers-reduced-motion`.
+  `sw.js` `CACHE_VERSION` alzato a v10.
 - `Export/` — dati sorgente della pipeline sul PC dell'utente:
   `digest_<data>.json`, sottocartella `<data>/` con i media rinominati
   (le sottocartelle `_da-attribuire` / `_conflitto-autore` /
@@ -671,8 +686,9 @@ sopra):
 ## Assistente AI (branch `feature/assistente_ai`, in lavorazione)
 
 **Stato (21/9/2026)**: backend fatto e provato end-to-end in locale
-(embedding → retrieval → risposta con citazioni); **frontend non ancora
-fatto**; **niente deploy** finché la versione non è stabile — le modifiche
+(embedding → retrieval → risposta con citazioni); **frontend fatto** (vista
+Æsir, vedi "Struttura"; da rifinire con l'uso: niente selettore di date,
+`from`/`to` dell'API non sono esposti in UI); **niente deploy** finché la versione non è stabile — le modifiche
 esistono solo in locale/nel branch, Aiven e Render restano alla versione
 `develop`/`main` senza pgvector.
 
@@ -701,7 +717,10 @@ prompt injection dai messaggi del gruppo) e dà precedenza ai punti più recenti
   10 domande/ora per utente, 80/giorno totali, 2 chiamate contemporanee;
   config `Assistant:PerUserPerHour` / `GlobalPerDay` / `MaxConcurrent`. Se la
   domanda fallisce per colpa dei servizi esterni il "biglietto" viene
-  restituito. La quota Groq è condivisa con Transcriber e verbali.
+  restituito. **Gli amministratori (`Role=Amministratore` nel token) sono
+  esenti** dal limite per utente e da quello giornaliero (21/9/2026): restano
+  solo il tetto di chiamate contemporanee e la quota reale dei provider, che
+  la catena di modelli aggira scalando sul successivo. La quota Groq è condivisa con Transcriber e verbali.
 - **Schema**: `DigestPointEmbeddings` (1:1 con `DigestPoints`, PK=FK
   `DigestPointId`, `Embedding vector(768)`, `Model`, `InputSha256`,
   `EmbeddedAt`, cascade). Tabella separata come i blob. Se cambia modello o
@@ -719,8 +738,8 @@ prompt injection dai messaggi del gruppo) e dà precedenza ai punti più recenti
   locale il login è attivo (passphrase negli user-secrets `Auth:Password`):
   fai `POST /api/auth/login` e usa il token in "Authorize". Attenzione
   all'encoding: `curl` da Git Bash con caratteri accentati nel JSON dà 400.
-- **Da fare prima del deploy**: frontend (vista/chat con fonti cliccabili),
-  verificare che Aiven supporti pgvector (`CREATE EXTENSION vector`) e che i
+- **Da fare prima del deploy**: rifinire il frontend (fonti cliccabili verso
+  l'Agenda, eventuale filtro per date), verificare che Aiven supporti pgvector (`CREATE EXTENSION vector`) e che i
   1 GB di storage reggano gli embedding (~3 KB/punto), aggiungere
   `GEMINI_API_KEY` alle env Render, inserire l'Embedder nella pipeline
   (`import-transcribe-aiven.ps1`, dopo il Transcriber), aggiornare

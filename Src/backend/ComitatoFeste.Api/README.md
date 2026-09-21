@@ -62,6 +62,8 @@ embedding già calcolati (`ComitatoFeste.Embedder`); `GROQ_API_KEY` (o `key.txt`
 serve solo come ultimo ripiego. Senza chiave Gemini risponde 503. Limiti per utente/giorno
 in memoria (`Assistant:PerUserPerHour|GlobalPerDay|MaxConcurrent`). In locale il
 login è attivo: `POST /api/auth/login` e poi "Authorize" in Swagger.
+Il frontend ha la vista **Æsir** (voce di menu al posto di "Guida"): un volto con
+occhi espressivi (neutro → concentrato → felice) sopra la casella della domanda.
 
 ## Note
 
