@@ -482,8 +482,17 @@
     .aesir-status .dots i:nth-child(2){animation-delay:.15s}
     .aesir-status .dots i:nth-child(3){animation-delay:.3s}
     @keyframes af-dot{0%,80%,100%{opacity:.25;transform:none}40%{opacity:1;transform:translateY(-3px)}}
-    .aesir-answer{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:16px 20px;
+    .aesir-answer-wrap{position:relative}
+    .aesir-answer{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:16px 56px 16px 20px;
       color:var(--text);line-height:1.6;overflow-wrap:anywhere}
+    /* Pulsante "ascolta" (speechSynthesis del browser, nessuna chiamata al server): stessa forma
+       di .important-btn. Icona muta di default; sul clic parte la lettura e l'icona si accende. */
+    .aesir-speak{position:absolute;top:12px;right:14px;width:32px;height:32px;border:0;background:none;padding:0;
+      border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--muted);
+      cursor:pointer;z-index:2;transition:background .12s,color .12s}
+    .aesir-speak svg{width:18px;height:18px}
+    .aesir-speak:hover{background:var(--bg)}
+    .aesir-speak.speaking{color:#fff;background:var(--accent)}
     .aesir-answer p{margin:0 0 10px}
     .aesir-answer p:last-child,.aesir-answer ul:last-child{margin-bottom:0}
     .aesir-answer ul{margin:0 0 10px;padding-left:20px;display:flex;flex-direction:column;gap:5px}
@@ -1858,6 +1867,7 @@
     function setView(v){
       if (v === "aesir" && !isAdmin()) v = "agenda";   // Æsir: solo amministratori
       document.body.classList.remove("aesir-kb");
+      stopAesirSpeech();   // si esce (o si rientra) dalla vista: qualunque lettura in corso si interrompe
       const prev = view;
       view = v;
       el("viewAgenda").hidden    = v !== "agenda";
@@ -1898,6 +1908,7 @@
     // (la sua risposta, quando arriva, viene scartata: `aesirReq` è cambiato).
     let aesirReq = 0;
     function resetAesir(){
+      stopAesirSpeech();
       aesirReq++;
       aesir.state = "idle"; aesir.q = ""; aesir.res = null; aesir.err = "";
     }
@@ -1962,6 +1973,63 @@
       return `<details class="aesir-src"><summary>Fonti (${sources.length})</summary><ol>${items}</ol></details>`;
     }
 
+    // --- Æsir: "ascolta la risposta" con la sintesi vocale del browser (speechSynthesis) -----
+    // Nessuna chiamata al server: gratis, senza quota, ma qualità/voce dipendono dal motore TTS
+    // del dispositivo (su Android di solito Google Text-to-Speech). Un solo pulsante alla volta:
+    // riavviare o lasciare la vista interrompe sempre la lettura in corso (vedi i punti di stop
+    // in resetAesir/setView/askAesir).
+    const AESIR_SPEAK_ICONS = {
+      off: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>`,
+      on: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>`,
+    };
+    let aesirUtterance = null;
+
+    // Testo pulito per la lettura: via i marcatori markdown e i numeri di citazione [n]/【n】, che
+    // altrimenti il sintetizzatore leggerebbe alla lettera ("parentesi quadra uno").
+    function aesirSpeechText(answer){
+      return String(answer)
+        .replace(/\*\*(.+?)\*\*/g, "$1")
+        .replace(/\[(\d{1,3})\]/g, "")
+        .replace(/【\d{1,3}(?:†[^】]*)?】/g, "")
+        .replace(/^[-*•]\s+/gm, "")
+        .trim();
+    }
+
+    function stopAesirSpeech(){
+      aesirUtterance = null;
+      try { speechSynthesis.cancel(); } catch (e) { /* API assente: niente da fermare */ }
+      const btn = document.getElementById("aesirSpeak");
+      if (btn) {
+        btn.classList.remove("speaking");
+        btn.setAttribute("aria-pressed", "false");
+        btn.innerHTML = AESIR_SPEAK_ICONS.off;
+      }
+    }
+
+    function toggleAesirSpeech(answer){
+      if (aesirUtterance) { stopAesirSpeech(); return; }
+      if (!("speechSynthesis" in window)) { toast("Il browser non supporta la lettura ad alta voce.", "err"); return; }
+      const u = new SpeechSynthesisUtterance(aesirSpeechText(answer));
+      u.lang = "it-IT";
+      u.rate = 1.15;   // voce sintetica/futuristica: ritmo un po' più svelto del parlato naturale
+      u.pitch = 1.5;   // e più acuta — il tetto raggiungibile con la sola speechSynthesis del
+                        // browser, senza un vero effetto vocoder (richiederebbe elaborare l'audio
+                        // vero, non esposto da questa API); sulle voci di rete (es. "Google
+                        // italiano" su Chrome desktop) Chrome a volte ignora pitch — verificato
+                        // funzionante il 22/9/2026
+      const it = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith("it"));
+      if (it) u.voice = it;
+      u.onend = u.onerror = stopAesirSpeech;
+      aesirUtterance = u;
+      const btn = document.getElementById("aesirSpeak");
+      if (btn) {
+        btn.classList.add("speaking");
+        btn.setAttribute("aria-pressed", "true");
+        btn.innerHTML = AESIR_SPEAK_ICONS.on;
+      }
+      speechSynthesis.speak(u);
+    }
+
     function renderAesir(){
       const root = el("viewAesir").firstElementChild;
       const face = el("aesirFace"), stage = el("aesirStage");
@@ -2004,9 +2072,12 @@
         // Il pulsante sta SOPRA la risposta: con risposte lunghe è raggiungibile senza scorrere.
         stage.innerHTML =
           `<button type="button" class="aesir-btn again" id="aesirAgain">Fai un'altra domanda</button>` + quote +
-          `<div class="aesir-answer">${aesirFormat(r.answer, sources)}</div>` + aesirSources(sources) +
+          `<div class="aesir-answer-wrap"><div class="aesir-answer">${aesirFormat(r.answer, sources)}</div>` +
+          `<button type="button" class="aesir-speak" id="aesirSpeak" aria-pressed="false" title="Ascolta la risposta">${AESIR_SPEAK_ICONS.off}</button></div>` +
+          aesirSources(sources) +
           (r.model ? `<div class="aesir-meta">${esc(r.model)}${r.reducedModel ? " · modello di riserva" : ""}</div>` : "");
         el("aesirAgain").onclick = () => { resetAesir(); renderAesir(); };
+        el("aesirSpeak").onclick = () => toggleAesirSpeech(r.answer);
       } else {
         stage.innerHTML = quote + `<div class="aesir-err">${esc(aesir.err)}</div>` +
           `<button type="button" class="aesir-btn again" id="aesirRetry">Riprova</button>`;
@@ -2017,6 +2088,7 @@
     async function askAesir(question){
       const q = (question || "").trim();
       if (!q || aesir.state === "thinking") return;
+      stopAesirSpeech();
       const my = ++aesirReq;
       aesir.q = q; aesir.state = "thinking";
       renderAesir();

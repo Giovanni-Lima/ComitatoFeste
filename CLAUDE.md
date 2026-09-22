@@ -432,6 +432,24 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   quindi la risposta di una domanda ancora in volo, abbandonata uscendo dalla vista, viene
   scartata quando arriva. Verificato solo con un iframe da 390 px ridimensionato (area
   visibile 372–456 px) e con `fetch` simulato, **non su un telefono vero**.
+  **"Ascolta la risposta"** (22/9/2026, pulsante circolare in alto a destra sopra
+  `.aesir-answer`, icone altoparlante muto/attivo): usa `speechSynthesis` del **browser**,
+  non un servizio esterno — gratis, senza quota, ma qualità/voce dipendono dal motore TTS
+  del dispositivo (Google TTS su Android di solito buono, voci SAPI più robotiche su
+  Windows). Provato che Gemini ha modelli TTS veri (`gemini-2.5-flash-preview-tts` e
+  affini) e Groq ha Orpheus (solo inglese/arabo), ma scartati per la quota free tier troppo
+  bassa per un pulsante che ogni admin può premere più volte a sessione. `aesirSpeechText()`
+  ripulisce il testo (via `**grassetto**`, `[n]`/`【n】`, trattini degli elenchi) prima di
+  leggerlo, lingua forzata a `it-IT` con fallback alla prima voce `it*` disponibile da
+  `speechSynthesis.getVoices()`, velocità fissa `u.rate = 1.15` (uguale per tutti, nessun
+  controllo esposto — deciso il 22/9/2026: su questo Chrome desktop c'è una sola voce
+  italiana disponibile, "Google italiano", quindi nulla su cui costruire un selettore).
+  Un solo `aesirUtterance` alla volta: il secondo clic la
+  interrompe (`speechSynthesis.cancel()`), così come cambiare vista (`setView`), fare
+  "Fai un'altra domanda"/`resetAesir()`, o inviare una nuova domanda (`askAesir`) — mai due
+  letture sovrapposte né una che continua a parlare mentre si naviga altrove. Verificato con
+  `speechSynthesis.speak`/`.cancel` intercettati (icona/classe cambiano, testo passato è
+  ripulito, i 3 punti di stop incrementano `cancel`), **non con audio reale su un telefono**.
   **Info** = la vecchia Guida (`viewGuide`, ripristinata a destra del menu il
   21/9/2026 dopo un giorno in cui era stata sostituita da Æsir; icona "i") — contenuto statico, nessuna
   chiamata API: due card fianco a fianco (una colonna su mobile), **Android prima**
