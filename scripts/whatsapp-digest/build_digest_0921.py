@@ -33,6 +33,9 @@ in cui compare Emidio Cerasani (che risponde alle 19:38: SMG2017). Nessun
 vocale, nessun media e nessuna menzione di Giovanni Lima in questa finestra;
 il messaggio di sistema delle 12:35 (messaggio fissato) e il resto (saluti,
 battute) sono rumore.
+
+Coda serale (22:01, export del 22/9): Emilio Caniglia rilancia il sondaggio
+di Emanuele sulle date, invitando a votare.
 """
 import os
 import sys
@@ -111,6 +114,9 @@ CURATED = {
         "e fa notare a Emidio Cerasani che compare anche lui nel video; "
         "Emidio conferma (19:38) che è del SMG2017, il suo primo anno di "
         "sacerdozio."),
+    ("22:01", "Emilio Caniglia"): ("info",
+        "Rilancia il sondaggio sulle date già proposto da Emanuele "
+        "Sciarra, invitando tutti a votare."),
 }
 
 AUDIO_CURATED = {
