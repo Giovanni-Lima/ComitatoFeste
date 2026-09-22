@@ -220,8 +220,8 @@ Il backend .NET compila pulito e gira contro Postgres locale.
       redirect, timeout 6 s, corpo troncato a 512 KB, solo `Content-Type` HTML.
       Il frontend mostra la card sotto il testo (immagine `og:image` in
       hotlink dal sito originale).
-    - **Assistente AI** (**in produzione dal 21/9/2026**, nel frontend visibile solo
-      agli amministratori, vedi sezione dedicata sotto):
+    - **Assistente AI** (**in produzione dal 21/9/2026**, nel frontend visibile a
+      tutti i membri dal 22/9/2026, vedi sezione dedicata sotto):
       `POST /api/assistant/ask {question, from?, to?}` → `{answer, sources[],
       model, reducedModel, retrieved}`. `[TokenAuth]`. Domanda max 500
       caratteri; `from`/`to` (yyyy-MM-dd, inclusivi, fuso Roma) restringono la
@@ -394,11 +394,13 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   picker scorre al separatore corrispondente (no-op se quel giorno non ha
   punti importanti, come `goToDay` in Agenda). **Æsir** (`viewAesir`,
   `renderAesir`/`askAesir`) — l'assistente
-  AI, voce **al centro** del menu, **visibile solo agli amministratori**
-  (`applyRoleUi()` nasconde la voce se `isAdmin()` è falso e `setView` riporta
-  all'Agenda; `.navitem[hidden]{display:none}`; per i lettori la tab bar mobile ha 4
-  voci). **Non è un controllo di sicurezza**: `POST /api/assistant/ask` accetta
-  qualunque token valido (con i limiti per utente, dai quali gli admin sono esenti). Pagina con un **volto solo-CSS** (schermata scura + due occhi
+  AI, voce **al centro** del menu, **visibile a tutti i membri** (dal
+  22/9/2026: prima era nascosta ai lettori da `applyRoleUi()`, funzione
+  rimossa perché non aveva più nulla da fare — la stellina "importante" e il
+  badge di cancellazione restano invece admin-only, controllati da `isAdmin()`
+  al momento del render). `POST /api/assistant/ask` accetta qualunque token
+  valido; i limiti per utente/giorno (`AssistantLimiter`) si applicano a
+  tutti tranne gli admin, che restano esenti. Pagina con un **volto solo-CSS** (schermata scura + due occhi
   luminosi ciano, stile robottino Emo; `.aesir-face[data-mood]`), un saluto
   ("Ciao sono Æsir", senza punto esclamativo) e una casella di testo (max 500
   caratteri, Invio invia, Maiusc+Invio va a capo). Stati JS in `aesir.state`:
@@ -768,14 +770,16 @@ sopra):
   ±2 min); i testi placeholder "non trascritto" sono esclusi dal fuzzy
   (template → trigram inaffidabile, collasserebbe vocali diversi).
 
-## Assistente AI (in produzione dal 21/9/2026, solo admin nel frontend)
+## Assistente AI (in produzione dal 21/9/2026, visibile a tutti dal 22/9/2026)
 
-**Stato (21/9/2026)**: backend e frontend fatti e provati end-to-end (embedding →
+**Stato (22/9/2026)**: backend e frontend fatti e provati end-to-end (embedding →
 retrieval → risposta con citazioni; vista Æsir, vedi "Struttura"; da rifinire con
 l'uso: niente selettore di date, `from`/`to` dell'API non sono esposti in UI).
-**Portato su `main` e in produzione (Render) il 21/9/2026** come lancio graduale:
-Æsir si vede solo agli amministratori (il branch `feature/assistente_ai` è stato
-portato su `develop` e cancellato). Serve `GEMINI_API_KEY` tra le env Render: senza,
+**Portato su `main` e in produzione (Render) il 21/9/2026** come lancio graduale
+(il branch `feature/assistente_ai` è stato portato su `develop` e cancellato):
+inizialmente Æsir si vedeva solo agli amministratori, **aperto a tutti i membri il
+22/9/2026** (rimossa `applyRoleUi()` dal frontend; l'endpoint non ha mai avuto un
+controllo di ruolo, solo il token — vedi sotto). Serve `GEMINI_API_KEY` tra le env Render: senza,
 l'endpoint risponde 503 e il resto del portale funziona. **Aiven ha la migration**
 (applicata a mano il 21/9/2026, prima del deploy) e il **backfill degli embedding è
 completo dal 22/9/2026**: **866/866 punti** della vista pulita, tutti a 768 dimensioni
@@ -841,10 +845,11 @@ prompt injection dai messaggi del gruppo) e dà precedenza ai punti più recenti
 - **Dopo il deploy**: `GEMINI_API_KEY` sulle env Render (senza → 503), completare
   il backfill degli embedding (lo fa da solo il passo Embedder di
   `import-transcribe-aiven.ps1`), rifinire il frontend (fonti cliccabili verso
-  l'Agenda, eventuale filtro per date), decidere se aprire Æsir a tutti i membri e
-  se restringere anche l'endpoint agli admin (`[TokenAuth(MemberRole.Amministratore)]`,
-  oggi è nascosta solo la voce di menu). Verificato: pgvector 0.8.6 su Aiven, 1 GB di
-  storage ampiamente sufficienti (~3 KB/punto).
+  l'Agenda, eventuale filtro per date). **Deciso il 22/9/2026: Æsir resta aperto
+  a tutti i membri**, endpoint non ristretto agli admin (nessun
+  `[TokenAuth(MemberRole.Amministratore)]`) — solo i limiti d'uso restano
+  diversi per ruolo, vedi `AssistantLimiter` sopra. Verificato: pgvector 0.8.6 su
+  Aiven, 1 GB di storage ampiamente sufficienti (~3 KB/punto).
 
 ## Domanda aperta
 
@@ -871,10 +876,10 @@ implementarlo.
    finestra di sonno notturna (00:00-06:00, nessun ping: cold start accettato,
    traffico reale trascurabile a quell'ora; un `HEAD` non scarica il body,
    quindi puntarlo a `/` non pesa sulla banda). Dettagli e perché non 24/7 in
-   `docs/DEPLOY.md` → "Limiti e cose da sapere". ⚠️ Residuo: `.github/workflows/keep-alive.yaml`
-   è ancora attivo su `main` (GitHub Actions) e pinga `GET /` ogni 14 min
-   6:00-24:00 CET/CEST — ridondante con cron-job.org e da disattivare/rimuovere.
-   Da rifinire ancora: prova notifiche push su telefono (`docs/PUSH-NOTIFICHE.md`).
+   `docs/DEPLOY.md` → "Limiti e cose da sapere". Il vecchio
+   `.github/workflows/keep-alive.yaml` (GitHub Actions, ridondante con
+   cron-job.org) è stato **rimosso il 22/9/2026**. Da rifinire ancora: prova
+   notifiche push su telefono (`docs/PUSH-NOTIFICHE.md`).
 4. **Proteggere gli endpoint binari** (`/api/digestpoints/media/{id}/content`,
    `/api/members/{id}/photo`): oggi senza `[TokenAuth]`, su URL pubblico sono
    enumerabili. Follow-up con token in querystring (tocca il rendering media
