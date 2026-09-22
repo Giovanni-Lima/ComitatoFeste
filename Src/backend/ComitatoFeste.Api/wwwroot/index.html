@@ -453,8 +453,27 @@
     @keyframes af-scan{0%,100%{transform:translateX(calc(var(--s)*-.045))}50%{transform:translateX(calc(var(--s)*.045))}}
     @keyframes af-pulse{0%,100%{opacity:.78}50%{opacity:1}}
     @keyframes af-hop{0%{transform:none}35%{transform:translateY(calc(var(--s)*-.05))}70%{transform:translateY(calc(var(--s)*.01))}100%{transform:none}}
+    /* "Bocca": onda di barrette sotto gli occhi, mostrata solo mentre parla l'audio del pulsante
+       "ascolta" (classe .speaking-audio su #aesirFace, vedi toggleAesirSpeech/stopAesirSpeech).
+       Animazione decorativa, non sincronizzata al volume vero: speechSynthesis non espone i
+       campioni audio (stesso limite per cui non è possibile un vero effetto vocoder, vedi
+       CLAUDE.md "Assistente AI"). Le durate/ritardi diversi per barretta evitano che si muovano
+       tutte all'unisono, per un effetto più organico. */
+    .af-mouth{display:none;justify-content:center;align-items:flex-end;gap:calc(var(--s)*.028);
+      height:calc(var(--s)*.11);margin-top:25px}
+    .aesir-face.speaking-audio .af-mouth{display:flex}
+    .af-mouth span{display:block;width:calc(var(--s)*.032);height:20%;border-radius:999px;
+      background:var(--eye);box-shadow:0 0 calc(var(--s)*.03) var(--eye);
+      animation:af-mouth-wave .9s ease-in-out infinite}
+    .af-mouth span:nth-child(1){animation-duration:.8s;animation-delay:0s}
+    .af-mouth span:nth-child(2){animation-duration:1.05s;animation-delay:.12s}
+    .af-mouth span:nth-child(3){animation-duration:.7s;animation-delay:.24s}
+    .af-mouth span:nth-child(4){animation-duration:.95s;animation-delay:.06s}
+    .af-mouth span:nth-child(5){animation-duration:.85s;animation-delay:.3s}
+    @keyframes af-mouth-wave{0%,100%{height:20%}50%{height:100%}}
     @media (prefers-reduced-motion:reduce){
       .af-eye,.af-scan,.af-eyes,.af-look{animation:none!important;transition-duration:.01s!important}
+      .af-mouth span{animation:none!important;height:55%!important}
     }
 
     .aesir-hello{margin:6px 0 0;font-family:var(--font-display);font-size:28px;letter-spacing:.03em;color:var(--ink)}
@@ -652,9 +671,10 @@
       <section class="view" id="viewAesir" hidden>
         <div class="aesir" data-state="idle">
           <div class="aesir-face" id="aesirFace" data-mood="neutral" aria-hidden="true">
-            <div class="af-look"><div class="af-scan"><div class="af-eyes"><span class="af-eye"></span><span class="af-eye"></span></div></div></div>
+            <div class="af-look"><div class="af-scan"><div class="af-eyes"><span class="af-eye"></span><span class="af-eye"></span></div></div>
+            <div class="af-mouth" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div></div>
           </div>
-          <p class="aesir-hello">Ciao sono Æsir!</p>
+          <p class="aesir-hello">Ciao sono Æsir</p>
           <p class="aesir-sub">Cerco tra i messaggi del comitato e ti rispondo citando le fonti.</p>
           <div class="aesir-stage" id="aesirStage" aria-live="polite"></div>
         </div>
@@ -1997,6 +2017,7 @@
 
     function stopAesirSpeech(){
       aesirUtterance = null;
+      document.getElementById("aesirFace")?.classList.remove("speaking-audio");
       try { speechSynthesis.cancel(); } catch (e) { /* API assente: niente da fermare */ }
       const btn = document.getElementById("aesirSpeak");
       if (btn) {
@@ -2021,6 +2042,7 @@
       if (it) u.voice = it;
       u.onend = u.onerror = stopAesirSpeech;
       aesirUtterance = u;
+      document.getElementById("aesirFace")?.classList.add("speaking-audio");
       const btn = document.getElementById("aesirSpeak");
       if (btn) {
         btn.classList.add("speaking");

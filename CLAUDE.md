@@ -400,7 +400,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   voci). **Non è un controllo di sicurezza**: `POST /api/assistant/ask` accetta
   qualunque token valido (con i limiti per utente, dai quali gli admin sono esenti). Pagina con un **volto solo-CSS** (schermata scura + due occhi
   luminosi ciano, stile robottino Emo; `.aesir-face[data-mood]`), un saluto
-  ("Ciao sono Æsir!") e una casella di testo (max 500
+  ("Ciao sono Æsir", senza punto esclamativo) e una casella di testo (max 500
   caratteri, Invio invia, Maiusc+Invio va a capo). Stati JS in `aesir.state`:
   `idle` (occhi neutri che ammiccano; guardano in giù quando la casella ha il
   focus) → `thinking` (`working`: palpebre oblique e occhi che scansionano a
@@ -441,10 +441,30 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   bassa per un pulsante che ogni admin può premere più volte a sessione. `aesirSpeechText()`
   ripulisce il testo (via `**grassetto**`, `[n]`/`【n】`, trattini degli elenchi) prima di
   leggerlo, lingua forzata a `it-IT` con fallback alla prima voce `it*` disponibile da
-  `speechSynthesis.getVoices()`, velocità fissa `u.rate = 1.15` (uguale per tutti, nessun
-  controllo esposto — deciso il 22/9/2026: su questo Chrome desktop c'è una sola voce
-  italiana disponibile, "Google italiano", quindi nulla su cui costruire un selettore).
-  Un solo `aesirUtterance` alla volta: il secondo clic la
+  `speechSynthesis.getVoices()`. Voce **sintetica/futuristica fissa per tutti**, nessun
+  controllo esposto (deciso il 22/9/2026, a orecchio): `u.rate = 1.15`, `u.pitch = 1.5` — il
+  tetto raggiungibile con la sola `speechSynthesis`, un vero effetto vocoder richiederebbe
+  elaborare l'audio vero (non esposto da questa API). Su questo Chrome desktop c'è una sola
+  voce italiana disponibile ("Google italiano", voce di rete: Chrome a volte ignora `pitch`
+  sulle voci di rete, ma qui risulta rispettato) — nessuna maschile finché non se ne installa
+  una a livello di sistema operativo (Windows: Impostazioni → Voce → Aggiungi voci; su
+  Android il motore Google TTS a volte ne offre più di una). **"Bocca" animata** (22/9/2026):
+  mentre l'audio è in riproduzione, sotto gli occhi compaiono 5 barrette verticali
+  (`.af-mouth`) che pulsano come un'onda, accese/spente con la classe `speaking-audio` su
+  `#aesirFace` in `toggleAesirSpeech`/`stopAesirSpeech`. **`.af-mouth` è annidata dentro
+  `.af-look`** (non un fratello separato dentro `.aesir-face`): quest'ultima è
+  `display:grid;place-items:center`, e due figli diretti sarebbero stati centrati
+  **ciascuno per conto proprio** nella propria riga implicita, aprendo ~47px di spazio vuoto
+  invece del solo `margin-top` (bug corretto lo stesso giorno, notato dall'utente
+  su uno screenshot) — annidandola dentro `.af-look` i due tornano un unico blocco centrato
+  insieme, `margin-top` risulta il gap reale 1:1 (misurare **dopo** che la transizione da 0,45s
+  sul cambio di forma degli occhi è finita: a metà transizione il gap letto è falsato, tranello
+  in cui sono caduto una volta in questa stessa sessione). **25px fissi per tutti**, nessun
+  ridimensionamento con `--s`. **Decorativa, non sincronizzata al
+  volume vero** (stesso limite di `speechSynthesis`: nessun accesso ai campioni audio),
+  durate/ritardi diversi per barretta per un effetto meno meccanico; rispetta
+  `prefers-reduced-motion` (barre ferme a altezza fissa). Un solo `aesirUtterance` alla volta:
+  il secondo clic la
   interrompe (`speechSynthesis.cancel()`), così come cambiare vista (`setView`), fare
   "Fai un'altra domanda"/`resetAesir()`, o inviare una nuova domanda (`askAesir`) — mai due
   letture sovrapposte né una che continua a parlare mentre si naviga altrove. Verificato con
