@@ -2123,6 +2123,10 @@
         });
         if (r.status === 401) {
           unauthorized = true;
+        } else if (r.status === 503) {
+          // 503 = servizi AI saturi/irraggiungibili (quota gratuita, alto traffico): messaggio
+          // fisso invece del testo del server, più chiaro per chi usa l'app.
+          next = { state: "error", err: "C'è stato un errore dovuto all'alto traffico. Riprova tra qualche secondo." };
         } else if (!r.ok) {
           const body = (await r.text()).trim();
           next = { state: "error", err: body && !body.startsWith("{") && body.length < 300

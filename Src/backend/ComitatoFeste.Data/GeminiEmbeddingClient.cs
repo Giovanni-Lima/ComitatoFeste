@@ -126,26 +126,46 @@ public sealed class GeminiEmbeddingClient
             // La chiave viaggia nell'header, mai nell'URL: così non finisce nei log/eccezioni.
             req.Headers.Add("x-goog-api-key", _apiKey);
 
-            using var resp = await _http.SendAsync(req, ct);
-            var body = await resp.Content.ReadAsStringAsync(ct);
-
-            if (resp.IsSuccessStatusCode)
-                return JsonDocument.Parse(body);
-
-            var retryable = resp.StatusCode == HttpStatusCode.TooManyRequests || (int)resp.StatusCode >= 500;
-            if (!retryable || attempt >= _maxAttempts)
+            HttpResponseMessage resp;
+            try
             {
-                // Corpo fino a 900 caratteri: il messaggio del 429 dice QUALE quota è scattata
-                // (al minuto o al giorno) solo dopo i primi ~300 caratteri.
-                var message = $"Gemini HTTP {(int)resp.StatusCode}: {body[..Math.Min(900, body.Length)]}";
-                throw resp.StatusCode == HttpStatusCode.TooManyRequests
-                    ? new GeminiQuotaException(message)
-                    : new InvalidOperationException(message);
+                resp = await _http.SendAsync(req, ct);
+            }
+            catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+            {
+                // Timeout del client (non una cancellazione a monte, es. il chiamante che rinuncia):
+                // trattato come gli altri errori transitori, stesso backoff prima di arrendersi.
+                // Senza questo catch usciva una TaskCanceledException grezza che l'API (che intercetta
+                // solo InvalidOperationException) non gestiva, risultando in un 500 invece di un 503.
+                if (attempt >= _maxAttempts)
+                    throw new InvalidOperationException(
+                        $"Gemini: nessuna risposta entro il timeout (tentativo {attempt}/{_maxAttempts}).");
+                await Task.Delay(TimeSpan.FromSeconds(Math.Min(60, 5 * Math.Pow(2, attempt - 1))), ct);
+                continue;
             }
 
-            var wait = resp.Headers.RetryAfter?.Delta
-                       ?? TimeSpan.FromSeconds(Math.Min(60, 5 * Math.Pow(2, attempt - 1)));
-            await Task.Delay(wait, ct);
+            using (resp)
+            {
+                var body = await resp.Content.ReadAsStringAsync(ct);
+
+                if (resp.IsSuccessStatusCode)
+                    return JsonDocument.Parse(body);
+
+                var retryable = resp.StatusCode == HttpStatusCode.TooManyRequests || (int)resp.StatusCode >= 500;
+                if (!retryable || attempt >= _maxAttempts)
+                {
+                    // Corpo fino a 900 caratteri: il messaggio del 429 dice QUALE quota è scattata
+                    // (al minuto o al giorno) solo dopo i primi ~300 caratteri.
+                    var message = $"Gemini HTTP {(int)resp.StatusCode}: {body[..Math.Min(900, body.Length)]}";
+                    throw resp.StatusCode == HttpStatusCode.TooManyRequests
+                        ? new GeminiQuotaException(message)
+                        : new InvalidOperationException(message);
+                }
+
+                var wait = resp.Headers.RetryAfter?.Delta
+                           ?? TimeSpan.FromSeconds(Math.Min(60, 5 * Math.Pow(2, attempt - 1)));
+                await Task.Delay(wait, ct);
+            }
         }
     }
 }

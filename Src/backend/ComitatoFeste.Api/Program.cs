@@ -29,9 +29,14 @@ builder.Services.AddDbContext<ComitatoFesteDbContext>(options =>
 // Client Groq per il verbale giornaliero (chiave da env GROQ_API_KEY o config Groq:ApiKey).
 builder.Services.AddHttpClient<GroqRecapClient>(c => c.Timeout = TimeSpan.FromMinutes(2));
 
-// Assistente AI (RAG): Gemini per gli embedding delle domande (chiave da env GEMINI_API_KEY o
-// gemini.key.txt), Groq per la risposta (client sopra), limitatore in memoria della quota gratuita.
-builder.Services.AddHttpClient("gemini", c => c.Timeout = TimeSpan.FromSeconds(30));
+// Assistente AI (RAG): Gemini per gli embedding delle domande e come modello di risposta
+// principale (GeminiChatClient/GeminiEmbeddingClient condividono questo client), Groq per la
+// risposta solo come ultimo ripiego (client sopra), limitatore in memoria della quota gratuita.
+// Timeout basso apposta: la catena prova più modelli in sequenza (Gemini 3.5/3.1 Flash Lite poi
+// Groq), quindi un singolo hop lento non deve far aspettare l'utente fino al proprio timeout
+// pieno prima di passare al successivo — meglio rinunciare presto (osservato: Gemini free tier
+// può restare in coda diversi secondi sotto carico, senza mai rispondere errore).
+builder.Services.AddHttpClient("gemini", c => c.Timeout = TimeSpan.FromSeconds(8));
 builder.Services.AddScoped<AssistantService>();
 builder.Services.AddSingleton<AssistantLimiter>();
 
