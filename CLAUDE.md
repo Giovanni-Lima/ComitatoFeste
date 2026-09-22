@@ -739,17 +739,20 @@ l'uso: niente selettore di date, `from`/`to` dell'API non sono esposti in UI).
 Æsir si vede solo agli amministratori (il branch `feature/assistente_ai` è stato
 portato su `develop` e cancellato). Serve `GEMINI_API_KEY` tra le env Render: senza,
 l'endpoint risponde 503 e il resto del portale funziona. **Aiven ha la migration**
-(applicata a mano il 21/9/2026, prima del deploy) e un backfill parziale degli embedding:
-**680 su 860 punti** (mancano 180, dal 14/9 al 21/9), fermo per quota Gemini
-esaurita: **verificato** che è la quota giornaliera (`embed_content_free_tier_requests,
-limit: 1000, model: gemini-embedding-2`). Si azzera a mezzanotte ora del Pacifico
-(doc Google) = 09:00 italiane finché entrambi i fusi sono in ora legale, 08:00 dopo
-il cambio all'ora solare in Italia. I 180 mancanti verranno ripresi **da soli** al
-prossimo run di `import-transcribe-aiven.ps1` (passo Embedder, vedi sopra), oppure a
-mano con `COMITATOFESTE_CONNECTION` = Aiven e `dotnet run --project
-Src/backend/ComitatoFeste.Embedder -- --batch-size 40 --delay-ms 30000`. Senza il
-ritmo ridotto si supera il limite di ~100 richieste/min; dalla console Google sembra
-che ogni testo di un batch conti come una richiesta, ma non è documentato.
+(applicata a mano il 21/9/2026, prima del deploy) e il **backfill degli embedding è
+completo dal 22/9/2026**: **866/866 punti** della vista pulita, tutti a 768 dimensioni
+e con un solo modello (verificato via query). Il giorno prima si era fermato a 680/860
+per quota Gemini giornaliera esaurita (`embed_content_free_tier_requests, limit: 1000,
+model: gemini-embedding-2` — **verificato**, si azzera a mezzanotte ora del Pacifico =
+09:00 italiane finché entrambi i fusi sono in ora legale, 08:00 dopo il cambio all'ora
+solare in Italia); i mancanti sono stati ripresi il giorno dopo, dopo il reset, con
+`COMITATOFESTE_CONNECTION` = Aiven e `dotnet run --project
+Src/backend/ComitatoFeste.Embedder -- --batch-size 40 --delay-ms 30000` (~35 s per
+40 punti). Da qui in poi il passo Embedder di `import-transcribe-aiven.ps1` (vedi sopra)
+tiene il backfill aggiornato da solo a ogni run, restando ben sotto la quota giornaliera
+per l'uso di regime (poche decine di punti nuovi al giorno). Senza il ritmo ridotto si
+supera il limite di ~100 richieste/min; dalla console Google sembra che ogni testo di
+un batch conti come una richiesta, ma non è documentato.
 
 RAG sui digest: `AssistantService` (1) embedda la domanda con Gemini
 (`GeminiEmbeddingClient`, in `ComitatoFeste.Data` perché condiviso con
