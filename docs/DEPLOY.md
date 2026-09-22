@@ -10,8 +10,9 @@ Portale pubblico a costo zero. Un solo servizio applicativo su **Render**
 locale e scrive sul DB Aiven via `COMITATOFESTE_CONNECTION`.
 
 ```
-   cron-job.org ──(GET /api/auth/status ogni 10')──┐  keep-alive, non tocca il DB
-                                                    ▼
+   cron-job.org ──(GET /api/auth/status ogni 14', 6-23)──┐  keep-alive, non tocca il DB
+   cron-job.org ──(HEAD / una volta al giorno, ore 6:01)──┤  sveglia dopo la notte (00-06 spento)
+                                                           ▼
                  ┌─────────────────────────────┐
    browser  ───▶ │ Render Web Service (Docker)  │ ──▶  Aiven PostgreSQL (managed)
                  │  ComitatoFeste.Api           │ ──▶  Groq API (solo /recap: verbale non in cache)
@@ -240,12 +241,33 @@ schedulato → `pg_dump` → Cloudflare R2 (10 GB free) con lifecycle a 30 giorn
 ## Limiti e cose da sapere
 
 - **Cold start**: il piano free di Render spegne il container dopo ~15 min di
-  inattività; la richiesta successiva attende ~40-60 s. Per tenerlo caldo
-  gratis: un ping schedulato (es. <https://cron-job.org>) su
-  `/api/auth/status` ogni 10 min — quell'endpoint **non** tocca il DB, quindi
-  non consuma risorse Aiven. Sta nelle 750 h/mese del free. **Punta il
-  keep-alive su `/api/auth/status`, mai su `/`**: l'HTML è ~92 KB e a 4320
-  ping/mese sarebbe ~400 MB di banda in uscita (vedi punto sotto).
+  inattività; la richiesta successiva attende ~40-60 s. **Keep-alive attivo
+  dal 22/9/2026** su <https://cron-job.org>, due job:
+  1. `*/14 6-23 * * *` → `GET /api/auth/status`, ogni 14 min nella fascia
+     6:00-24:00 — quell'endpoint **non** tocca il DB, quindi non consuma
+     risorse Aiven;
+  2. `1 6 * * *` → `HEAD /` una volta al giorno, sveglia esplicita subito
+     dopo la finestra di sonno notturna.
+
+  Tra le 00:00 e le 06:00 non c'è nessun ping: il container si spegne e chi
+  apre l'app in quella finestra paga il cold start — accettato, il traffico
+  reale a quell'ora è trascurabile. Con la fascia 6-24 coperta: ~18 h/giorno
+  × 31 = 558 h/mese, ben sotto le 750 h/mese del free; estendere a 24/7
+  costerebbe ~744 h/mese (margine ~6 h nei mesi da 31 giorni, sul filo se in
+  futuro girano altri servizi free nello stesso workspace Render) — per
+  questo si è preferita la sveglia mirata invece delle 24 ore coperte.
+  **Un keep-alive ricorrente deve restare un `GET`/`HEAD` leggero
+  (`/api/auth/status`, o un `HEAD /`), mai un `GET /` ripetuto**: l'HTML è
+  ~92 KB e a 4320 ping/mese sarebbe ~400 MB di banda in uscita (vedi punto
+  sotto) — un `HEAD` invece non scarica il body, quindi il job 2 non pesa
+  pur puntando a `/`.
+
+  ⚠️ **Residuo da ripulire**: `.github/workflows/keep-alive.yaml` è ancora
+  presente e attivo su `main` (GitHub Actions gira dal branch di default) —
+  pinga `GET /` ogni 14 min 6:00-24:00 CET/CEST, ridondante col job 1 di
+  cron-job.org e in contrasto con la regola qui sopra (`GET`, non `HEAD`, su
+  `/`). Da disattivare o rimuovere quando si conferma che cron-job.org basta
+  da solo.
 - **Banda in uscita (5 GB/mese sul piano Hobby)**: sforata il 10/9/2026 →
   *"Workspace suspended — you've used the 5 GB of free bandwidth"*; sbloccata
   aggiungendo una carta (overage $0,15/GB; Pro include 25 GB). Causa: gli

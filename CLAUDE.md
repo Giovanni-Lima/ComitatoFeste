@@ -864,9 +864,17 @@ implementarlo.
 2. Transcriber: girato sui dati 2026-09-02/03, prompt iterato. Da rifinire
    il confine `rumore`/`info`/`proposta`/`decisione` su un campione (`--limit`).
 3. Deploy: **fatto** — Render (`comitatofeste.onrender.com`) + Aiven, autoDeploy
-   da `main`, env impostate. Guida in `docs/DEPLOY.md`. Da rifinire: keep-alive
-   (cron-job.org o `.github/workflows/keep-alive.yaml`), prova notifiche push su
-   telefono (`docs/PUSH-NOTIFICHE.md`).
+   da `main`, env impostate. Guida in `docs/DEPLOY.md`. **Keep-alive: fatto**
+   (22/9/2026) su cron-job.org, due job: `*/14 6-23 * * *` → `GET
+   /api/auth/status` (ogni 14 min, 6:00-24:00) + `1 6 * * *` → `HEAD /` una
+   volta al giorno per svegliare esplicitamente il container subito dopo la
+   finestra di sonno notturna (00:00-06:00, nessun ping: cold start accettato,
+   traffico reale trascurabile a quell'ora; un `HEAD` non scarica il body,
+   quindi puntarlo a `/` non pesa sulla banda). Dettagli e perché non 24/7 in
+   `docs/DEPLOY.md` → "Limiti e cose da sapere". ⚠️ Residuo: `.github/workflows/keep-alive.yaml`
+   è ancora attivo su `main` (GitHub Actions) e pinga `GET /` ogni 14 min
+   6:00-24:00 CET/CEST — ridondante con cron-job.org e da disattivare/rimuovere.
+   Da rifinire ancora: prova notifiche push su telefono (`docs/PUSH-NOTIFICHE.md`).
 4. **Proteggere gli endpoint binari** (`/api/digestpoints/media/{id}/content`,
    `/api/members/{id}/photo`): oggi senza `[TokenAuth]`, su URL pubblico sono
    enumerabili. Follow-up con token in querystring (tocca il rendering media
@@ -882,8 +890,10 @@ implementarlo.
    b. **FATTO** (develop `88fb26b`, non ancora su main): response compression
       brotli/gzip (`Program.cs`) sulle risposte testuali — `GET /api/digestpoints`
       355 KB → ~76 KB, `index.html` 92 → 26 KB; binari non compressi.
-   b-bis. keep-alive (quando si attiva) puntato **solo** su `/api/auth/status`
-      (~200 byte), mai su `/` (92 KB);
+   b-bis. **FATTO** (22/9/2026): keep-alive su cron-job.org puntato su
+      `/api/auth/status` (~200 byte) per il ping ricorrente; l'unico `/`
+      chiamato è un `HEAD` una volta al giorno (niente body scaricato) — vedi
+      punto 3 sopra e `docs/DEPLOY.md`;
    c. **FATTO** (develop): thumbnail WebP lato server via `?w=192|480|960` su
       `/api/digestpoints/media/{id}/content` e `/api/members/{id}/photo`
       (`ImageThumbnailer` + SixLabors.ImageSharp 3.1.x). Persistiti in
