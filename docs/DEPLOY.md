@@ -262,12 +262,9 @@ schedulato → `pg_dump` → Cloudflare R2 (10 GB free) con lifecycle a 30 giorn
   sotto) — un `HEAD` invece non scarica il body, quindi il job 2 non pesa
   pur puntando a `/`.
 
-  ⚠️ **Residuo da ripulire**: `.github/workflows/keep-alive.yaml` è ancora
-  presente e attivo su `main` (GitHub Actions gira dal branch di default) —
-  pinga `GET /` ogni 14 min 6:00-24:00 CET/CEST, ridondante col job 1 di
-  cron-job.org e in contrasto con la regola qui sopra (`GET`, non `HEAD`, su
-  `/`). Da disattivare o rimuovere quando si conferma che cron-job.org basta
-  da solo.
+  Il vecchio `.github/workflows/keep-alive.yaml` (GitHub Actions, pingava
+  `GET /` ogni 14 min 6:00-24:00 CET/CEST, ridondante col job 1 di
+  cron-job.org) è stato **rimosso il 22/9/2026**: cron-job.org basta da solo.
 - **Banda in uscita (5 GB/mese sul piano Hobby)**: sforata il 10/9/2026 →
   *"Workspace suspended — you've used the 5 GB of free bandwidth"*; sbloccata
   aggiungendo una carta (overage $0,15/GB; Pro include 25 GB). Causa: gli
