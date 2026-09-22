@@ -27,7 +27,23 @@ comunica di aver rimandato a giovedì l'appuntamento con il rappresentante
 dei materassi, inizialmente previsto domani alle 18, per un contrattempo di
 quest'ultimo — Antonio Sabatini aveva notato la sovrapposizione con
 l'evento di Padre Pio. Resto rumore (conferme brevi, un messaggio di
-sistema, una battuta dialettale su una crostata). Nessuna menzione di
+sistema, una battuta dialettale su una crostata).
+
+Sera (20:06-21:01, aggiornata con l'export delle 21:14 del 22/9): Emanuele
+Sciarra (vocale 20:06) riferisce l'esito dell'incontro con il rappresentante
+materassi per la serata del 29/9: 25€ a coppia, il comitato riceve 600€ al
+raggiungimento delle 24 coppie più 100€ per ogni materasso venduto (fino a
+tre); inoltre, senza obbligo d'acquisto, ogni coppia riceverà un tagliandino
+per un'estrazione a febbraio con in palio una Fiat 500 (e forse un gadget di
+benessere) — battuta su Tina che dovrebbe ridare al comitato la 500 se la
+vince, ripresa da lei e da Antonio Aceto (rumore). Un video di Elvis Ippoliti
+(20:34) è una GIF di reazione mascherata da .mp4 (nessuna traccia audio,
+ffprobe), scartata in automatico. Alessandro Di Benedetto (20:39) chiede se
+quindi l'incontro di giovedì salta: Emanuele chiarisce che è tutta un'altra
+ditta (depuratori), che vuole parlare con almeno 3 membri del comitato per
+spiegare come si svolge la serata — scherza sul fatto che il rapporto di
+stasera abbia scritto per errore 5 membri del comitato presenti, mentre
+erano tutti al bar Adriano di Celano, dietro il castello. Nessuna menzione di
 Giovanni Lima in questa finestra.
 """
 import os
@@ -115,6 +131,14 @@ CURATED = {
     ("17:18", "Antonio Sabatini"): ("info",
         "Chiarito che l'incontro materassi è stato spostato a giovedì, "
         "conferma che parteciperà anche domani all'evento di Padre Pio."),
+    ("20:39", "Alessandro Di Benedetto"): ("domanda",
+        "Chiede se quindi l'incontro di giovedì non si fa più; Emanuele "
+        "Sciarra chiarisce che è tutta un'altra ditta (depuratori), che "
+        "vuole parlare con almeno 3 membri del comitato per spiegare come "
+        "si svolge la serata — scherza sul fatto che il rapporto di "
+        "stasera abbia scritto per errore che erano 5 membri del comitato "
+        "presenti, mentre erano tutti al bar Adriano di Celano, dietro il "
+        "castello."),
 }
 
 AUDIO_CURATED = {
@@ -122,6 +146,15 @@ AUDIO_CURATED = {
         "Comunica di aver rimandato a giovedì l'appuntamento con il "
         "rappresentante dei materassi, inizialmente previsto domani "
         "alle 18, per un contrattempo di quest'ultimo."),
+    (DATE, "20:06", "Emanuele Sciarra", "PTT-20260922-WA0007.opus"): ("info",
+        "Riferisce l'esito dell'incontro con il rappresentante materassi "
+        "per la serata del 29/9: 25€ a coppia, il comitato riceve 600€ al "
+        "raggiungimento delle 24 coppie più 100€ per ogni materasso "
+        "venduto (fino a tre); inoltre, senza obbligo d'acquisto, ogni "
+        "coppia riceverà un tagliandino per un'estrazione a febbraio con "
+        "in palio una Fiat 500 (e forse un gadget di benessere)."),
+    (DATE, "20:30", "Antonio Aceto", "PTT-20260922-WA0008.opus"): ("rumore", ""),
+    (DATE, "20:30", "Emanuele Sciarra", "PTT-20260922-WA0009.opus"): ("rumore", ""),
 }
 
 AUDIO_MERGES = [
@@ -163,6 +196,9 @@ MEDIA_OVERRIDES = {
         "al cimitero, Santa Messa alle 18:00, benedizione dei mezzi a "
         "cura del parroco Don Enzo.",
 }
+
+# VID-20260922-WA0010.mp4 (20:34, Elvis Ippoliti): GIF di reazione mascherata
+# da .mp4 (nessuna traccia audio, ffprobe), scartata come al solito.
 
 if __name__ == "__main__":
     build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
