@@ -45,6 +45,12 @@ spiegare come si svolge la serata — scherza sul fatto che il rapporto di
 stasera abbia scritto per errore 5 membri del comitato presenti, mentre
 erano tutti al bar Adriano di Celano, dietro il castello. Nessuna menzione di
 Giovanni Lima in questa finestra.
+
+Coda notturna (22:26-22:31, export del 23/9): Emanuele apre un sondaggio
+sulla partecipazione alla manifestazione della protezione civile del 23/9
+(0 corteo e messa, 3 solo messa, 11 nessuna delle due) e precisa che
+l'unico ritorno per il comitato è la visibilità. Nessuna menzione di
+Giovanni Lima.
 """
 import os
 import sys
@@ -139,6 +145,17 @@ CURATED = {
         "stasera abbia scritto per errore che erano 5 membri del comitato "
         "presenti, mentre erano tutti al bar Adriano di Celano, dietro il "
         "castello."),
+    ("22:26", "Emanuele Sciarra"): ("proposta",
+        "Apre un sondaggio: \"Chi é disponibile a venire domani alla "
+        "manifestazione della protezione civile\". Opzioni, con i voti al "
+        "momento dell'export: Sì corteo e messa (0 voti), Solo messa (3 "
+        "voti), Nessuna delle due (11 voti). Precisa di averlo creato solo "
+        "per capire chi ci sarà, così da organizzarsi."),
+    ("22:31", "Emanuele Sciarra"): ("info",
+        "Precisa che non è indispensabile esserci alla manifestazione "
+        "della protezione civile, perché l'unica cosa che il comitato ne "
+        "ricava è la visibilità presso la comunità; secondo lui è utile "
+        "comunque farsi vedere."),
 }
 
 AUDIO_CURATED = {
@@ -198,8 +215,17 @@ MEDIA_OVERRIDES = {
 }
 
 # VID-20260922-WA0010.mp4 (20:34, Elvis Ippoliti): GIF di reazione mascherata
-# da .mp4 (nessuna traccia audio, ffprobe), scartata come al solito.
+# da .mp4 (nessuna traccia audio). Su un PC con ffprobe la scarta
+# is_reaction_gif; su quello senza (fail-open) va esclusa a mano, verificata
+# analizzando gli atom MP4 (nessun handler "soun").
+_SKIP_FILES = {"VID-20260922-WA0010.mp4"}
+
+
+def _extra_skip(time_, fname):
+    return fname in _SKIP_FILES
+
 
 if __name__ == "__main__":
     build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
-                 audio_merges=AUDIO_MERGES)
+                 audio_merges=AUDIO_MERGES, extra_skip_media=_extra_skip,
+                 extra_skip_label="GIF mp4 verificata a mano")
