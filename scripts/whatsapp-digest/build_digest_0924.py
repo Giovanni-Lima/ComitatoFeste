@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-09-24 — solo dati di curatela, logica comune in digest_lib.py.
 
-Finestra 06:05-12:27 (nessun vocale). Mattina di saluti (rumore). Antonio
+Finestra 06:05-13:48 (nessun vocale). Mattina di saluti (rumore). Antonio
 Aceto (08:09) chiede di aggiungere Gino e Roberta alla serata di martedì
 29/9 e un resoconto delle coppie; Emilio Caniglia (12:05) risponde con la
 foto aggiornata della lista (22 righe, 3 posizioni ancora incomplete).
@@ -16,6 +16,15 @@ traccia audio (verificato a mano sugli atom MP4, niente ffprobe su questa
 macchina), quindi per regola è escluso, e i suoi messaggi riguardano il
 portale, non il comitato — non generano entry. Nessuna menzione di Giovanni
 Lima da parte di altri in questa finestra.
+
+Coda 13:07-13:48 (solo testo, nessun media né vocale), tutta sulla lista
+coppie del 29/9: Tina Giarrante (13:07) dice che sta con Ugo (nella lista di
+Emilio erano entrambi senza partner); Costantino Mariani (13:13) ha
+confermato per sé e deve sentire Alexa; Vincenzo Lacasasanta (13:32) chiede
+di aggiungere sé e Lara; Costantino (13:45) chiede a che ora è e Emilio
+risponde "Prima delle 9" (riferimento non esplicito, riportato testuale).
+"Esatto" di Ugo Trinchini (13:48) è una conferma breve: rumore. Nessuna
+menzione di Giovanni Lima.
 """
 import os
 import sys
@@ -39,6 +48,19 @@ CURATED = {
         "Risponde di sì a Valentina D'Arcadia: si farà un'altra serata "
         "materassi; aggiornerà a breve Alessandra Toracchio "
         "sull'incontro di oggi."),
+    ("13:07", "Tina Giarrante"): ("info",
+        "Dice che farà coppia con Ugo per la serata del 29/9 "
+        "(presumibilmente: nella lista coppie erano entrambi ancora senza "
+        "partner)."),
+    ("13:13", "Costantino Mariani"): ("info",
+        "Dice di aver già dato conferma per sé; per Alexa deve ancora "
+        "verificare."),
+    ("13:32", "Vincenzo Lacasasanta"): ("info",
+        "Chiede di aggiungere lui e Lara alla lista."),
+    ("13:45", "Costantino Mariani"): ("domanda",
+        "Chiede a che ora è la serata."),
+    ("13:45", "Emilio Caniglia"): ("info",
+        "Risponde: \"Prima delle 9\"."),
 }
 
 MEDIA_OVERRIDES = {
