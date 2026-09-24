@@ -6,6 +6,8 @@
 #   scripts\aiven.uri     già in uso da backup-db.ps1
 #                          postgres://avnadmin:PASSWORD@pg-....aivencloud.com:11068/defaultdb?sslmode=require
 #   scripts\hook.secret    lo stesso valore di COMITATOFESTE_HOOK_SECRET impostato su Render
+#   scripts\r2.env         credenziali Cloudflare R2 (4 righe CHIAVE=valore, vedi r2.env.template);
+#                          opzionale ma consigliato: senza, i byte dei file vanno in Postgres su Aiven
 #
 # GROQ_API_KEY per il Transcriber: risolto automaticamente da key.txt in radice
 # repo (GroqKey.Resolve), non serve impostarlo qui.
@@ -54,6 +56,30 @@ $hookSecret = (Get-Content $hookFile -Raw).Trim()
 if (-not $hookSecret) { throw "$hookFile e' vuoto." }
 $env:COMITATOFESTE_HOOK_SECRET = $hookSecret
 $env:COMITATOFESTE_HOOK_URL = "https://comitatofeste.onrender.com"
+
+# --- COMITATOFESTE_R2_* da scripts\r2.env (gitignorato; modello: r2.env.template) ---
+# Byte dei file su Cloudflare R2 invece che in Postgres. Non bloccante: se mancano, Importer e
+# Transcriber ripiegano su Postgres, ma occupano spazio su Aiven (il vincolo da cui nasce R2),
+# quindi l'avviso e' volutamente rumoroso. Le variabili gia' presenti nella shell restano valide.
+$r2Vars = @("COMITATOFESTE_R2_ACCOUNT_ID", "COMITATOFESTE_R2_ACCESS_KEY_ID", "COMITATOFESTE_R2_SECRET_ACCESS_KEY", "COMITATOFESTE_R2_BUCKET")
+$r2File = Join-Path $PSScriptRoot "r2.env"
+if (Test-Path $r2File) {
+    foreach ($line in Get-Content $r2File) {
+        $t = $line.Trim()
+        if (-not $t -or $t.StartsWith("#")) { continue }
+        $kv = $t -split '=', 2
+        if ($kv.Count -eq 2 -and $r2Vars -contains $kv[0].Trim() -and $kv[1].Trim()) {
+            Set-Item -Path "Env:$($kv[0].Trim())" -Value $kv[1].Trim()
+        }
+    }
+}
+$r2Missing = $r2Vars | Where-Object { -not (Get-Item "Env:$_" -ErrorAction SilentlyContinue).Value }
+if ($r2Missing) {
+    Write-Host "!! R2 NON configurato ($($r2Missing -join ', ')): i byte dei nuovi file finiscono in Postgres su Aiven." -ForegroundColor Red
+    Write-Host "!! Crea scripts\r2.env da scripts\r2.env.template se non e' voluto." -ForegroundColor Red
+} else {
+    Write-Host "R2: attivo (bucket $($env:COMITATOFESTE_R2_BUCKET))" -ForegroundColor Green
+}
 
 # --- Target dell'import: SEMPRE esplicito, mai "tutta Export/" di default ---
 # (vedi commento SICUREZZA in testa al file). Default: il giorno del checkpoint

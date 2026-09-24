@@ -287,8 +287,8 @@ schedulato → `pg_dump` → Cloudflare R2 (10 GB free) con lifecycle a 30 giorn
 - **RAM 512 MB** (free): l'API a riposo sta a ~150-200 MB, la generazione PDF
   fa un picco. Se compaiono OOM nei log, è il segnale per passare al piano
   Starter ($7/mese) o alleggerire.
-- **Storage Aiven 1 GB → byte dei file su Cloudflare R2** (codice pronto, **non ancora
-  attivo** finché le env R2 non sono impostate). Foto, audio, documenti, foto profilo e
+- **Storage Aiven 1 GB → byte dei file su Cloudflare R2** (**attivo dal 24/9/2026**; senza le
+  env R2 il codice ripiega su Postgres). Foto, audio, documenti, foto profilo e
   thumbnail WebP vanno su un bucket R2 (10 GB free) invece che in Postgres; a DB resta solo
   la riga di metadati con `Content = NULL`. Senza le env tutto resta com'è (byte in Postgres).
   - **Env** (Importer, Transcriber e API — le stesse quattro ovunque):
@@ -300,7 +300,7 @@ schedulato → `pg_dump` → Cloudflare R2 (10 GB free) con lifecycle a 30 giorn
     `thumb/{kind}/{sourceId}/{width}/{sha256 sorgente}` — immutabili (lo SHA è nella chiave).
   - **Regola: `Content == NULL` ⇒ il byte è su R2.** Se un oggetto manca, l'endpoint risponde 404
     (le thumbnail invece si rigenerano da sole).
-  - **Ordine di rilascio**: 1) applicare a mano la migration `BlobContentNullable` ad Aiven
+  - **Ordine di rilascio** (seguito il 24/9/2026, tutto completato): 1) applicare a mano la migration `BlobContentNullable` ad Aiven
     (`DROP NOT NULL`, istantanea, il codice vecchio non ne risente); 2) creare il bucket e le
     env su Render e sul PC; 3) deploy; 4) backfill dei dati storici (sotto).
   - **Backfill storico** (`COMITATOFESTE_CONNECTION` = Aiven + le 4 env R2):
@@ -308,10 +308,23 @@ schedulato → `pg_dump` → Cloudflare R2 (10 GB free) con lifecycle a 30 giorn
     (solo elenco), poi `--blobs-to-r2` (carica e verifica, **il DB non cambia**), controllare
     a campione dal sito, infine `--blobs-to-r2 --clear-db` (azzera i byte a DB solo per gli
     oggetti verificati su R2). Idempotente e riprendibile.
-  - **⚠️ Lo spazio su disco Aiven non scende da solo dopo `--clear-db`**: Postgres riusa lo
-    spazio liberato ma non lo restituisce al sistema finché non si compatta la tabella
-    (`VACUUM FULL "MediaBlobs"` — blocca la tabella per la durata — oppure `pg_repack`, se
-    l'estensione è abilitata sul piano Aiven). Da fare dopo il backfill, prima di un backup.
+  - **Spazio su disco Aiven dopo `--clear-db`**: Postgres di norma riusa lo spazio liberato
+    senza restituirlo al sistema. Il 24/9 però è sceso quasi subito (DB ~31 MB; `MediaBlobs`
+    1,3 MB) perché l'autovacuum di Aiven è passato; `ImageThumbnails` (~14 MB) è rimasta
+    indietro. Se una tabella non scende, `VACUUM FULL "<Tabella>"` (blocca la tabella per la
+    durata) o `pg_repack` se abilitato sul piano Aiven.
+  - **Credenziali sul PC**: `scripts/r2.env` (gitignorato; modello `scripts/r2.env.template`)
+    letto da `import-transcribe-aiven.ps1`, che stampa `R2: attivo` in verde o un avviso
+    rosso se mancano. Per i comandi lanciati a mano (`--blobs-to-r2`, Embedder ecc.)
+    esportare le stesse quattro variabili.
+  - **Riconciliazione bucket ↔ DB**: le chiavi attese sono derivabili dal DB (id + SHA), quindi
+    orfani (in R2 ma non a DB) e mancanti (a DB ma non in R2) si trovano confrontando
+    `ListObjectsV2` con le righe di `MediaBlobs`/`MemberProfilePhotos`/`ImageThumbnails`.
+    Fatta il 24/9: 627/627, 0 orfani. Gli orfani nascono da test con DB locali (stessi id,
+    contenuti diversi) e dalle foto profilo sostituite.
+  - **Backup**: i dump di `backup-db.ps1` contengono solo i metadati; **i byte stanno solo su
+    R2** (nessun backup né versioning del bucket, da decidere). Il dump del 24/9 mattina
+    (`Backups/cf-2026-09-24.dump`, 83,6 MB) è l'ultimo con i byte anche a DB.
   - **Pipeline**: l'Importer carica su R2 dopo il salvataggio; se l'upload fallisce il byte
     resta a DB (avviso nell'output) e verrà preso dal backfill successivo.
   - **Cancellazione punto** (`DELETE /api/digestpoints/{id}`): rimuove anche gli oggetti R2

@@ -57,6 +57,27 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   Connessione di default in
   `ComitatoFesteDbContextFactory` e in `appsettings.json`, override con env
   `COMITATOFESTE_CONNECTION`.
+- **Byte dei file su Cloudflare R2 (dal 24/9/2026, attivo in produzione)**: foto, audio,
+  documenti, foto profilo e thumbnail WebP stanno nel bucket **privato** R2
+  `comitatofeste-blobs`, non più in Postgres (motivo: lo spazio su Aiven, non la banda —
+  l'API fa da **proxy**, nessun redirect/URL firmato). Migration `BlobContentNullable`
+  (`Content` nullable su `MediaBlobs`/`MemberProfilePhotos`/`ImageThumbnails`), applicata
+  a Aiven a mano il 24/9 dopo backup. **Regola: `Content IS NULL` ⇒ il byte è su R2**, alla
+  chiave `media/{mediaAssetId}/{sha}`, `memberphoto/{memberId}/{sha}`,
+  `thumb/{kind}/{id}/{w}/{sha sorgente}` (lo SHA nella chiave → oggetti immutabili). Codice
+  in `ComitatoFeste.Data/BlobStore.cs` (`IBlobStore`/`R2BlobStore`/`BlobKeys`, AWSSDK.S3
+  con checksum `WHEN_REQUIRED` per compatibilità R2); attivo solo con le 4 env
+  `COMITATOFESTE_R2_ACCOUNT_ID`/`_ACCESS_KEY_ID`/`_SECRET_ACCESS_KEY`/`_BUCKET` (impostate
+  su Render e in `scripts/r2.env`, gitignorato, modello `r2.env.template`,
+  letto da `import-transcribe-aiven.ps1`, che stampa in rosso se mancano); senza env i byte
+  restano in Postgres come prima (ripiego, e modalità del DB locale). Backfill storico fatto
+  il 24/9 (`Importer --blobs-to-r2 [--clear-db] [--dry-run]`): 625 oggetti, 75 MB; bucket
+  riconciliato con Aiven, 627 oggetti su 627 attesi, 0 orfani. Il DB Aiven è sceso a ~31 MB
+  (l'autovacuum ha recuperato lo spazio di `MediaBlobs`; `ImageThumbnails` ~14 MB da
+  ricontrollare, `VACUUM FULL` se non scende). Ora i dump di `backup-db.ps1` contengono solo
+  i metadati: **il bucket R2 non è coperto da alcun backup** (protezione rinviata, decisione
+  dell'utente 24/9). Dettagli operativi in `docs/DEPLOY.md`. Il 24/9 i test locali sono
+  girati su `local-postgres` (5432), non su `comitatofeste-db`, che non era in esecuzione.
 - **Contenuto del DB locale al 21/9/2026**: **solo i giorni 11–17/9** (233
   punti, 140 media, 22 run, 2 verbali, 33 membri), copiati da Aiven con un
   `pg_dump --data-only` ritagliato per data (escluse `PushSubscriptions` e
@@ -131,7 +152,8 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   vedi login sotto — impostata e testata in prod il 9/9/2026), `_AUTH_SECRET`,
   `GROQ_API_KEY`, `GEMINI_API_KEY` (assistente AI Æsir, da aggiungere: senza risponde
   503), e per le notifiche push `COMITATOFESTE_VAPID_PUBLIC`
-  / `_PRIVATE` / `_SUBJECT` + `_HOOK_SECRET` (vedi `docs/PUSH-NOTIFICHE.md`).
+  / `_PRIVATE` / `_SUBJECT` + `_HOOK_SECRET` (vedi `docs/PUSH-NOTIFICHE.md`), e per i
+  byte dei file su R2 le quattro `COMITATOFESTE_R2_*` (vedi sopra).
   Backup: `scripts/backup-db.ps1`. Tutto in `docs/DEPLOY.md`.
 
 ## Struttura
@@ -257,7 +279,10 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     e l'altro verrebbe re-inserito duplicato — raro, ma se serve
     ripulire un giorno basta `DELETE FROM "IngestionRuns" WHERE ...`
     (cascade sui punti) e reimportare. Per aggiungere solo foto profilo:
-    `--photos-only` (salta l'import dei digest).
+    `--photos-only` (salta l'import dei digest). Con R2 attivo carica i byte **dopo**
+    il salvataggio (la chiave contiene l'id del `MediaAsset`) e azzera `Content`; se
+    l'upload fallisce restano a DB (avviso nell'output). `--blobs-to-r2` = backfill (vedi
+    sopra), modalità a sé che non importa digest. Il Transcriber legge i vocali da R2.
     `MediaKind`
     mappa estensione → (`MediaType`, MIME): foto (jpg/png/webp/…), audio
     (ogg/opus/m4a/mp3/…), **video** (mp4/mov/webm/mkv/3gp/avi → restano
@@ -758,7 +783,9 @@ sopra):
   mai sulla tabella di metadati: `MediaAssets`→`MediaBlobs`,
   `Members`→`MemberProfilePhotos`. Ogni blob ha `ContentType` + `Sha256`.
   Le query di lista proiettano solo le colonne servite, così il `bytea`
-  non viene mai caricato.
+  non viene mai caricato. Dal 24/9/2026 `Content` è **nullable**: `NULL` = byte su R2
+  (chiave derivata da id + `Sha256`, che deve quindi essere valorizzato). Per leggere
+  un blob usa `IBlobStore.ResolveAsync(dbContent, key)`, mai `.Content` direttamente.
 - I controller REST non espongono mai le entità EF con navigazioni
   cicliche: `DigestPoints`/`MediaAssets` passano da DTO in
   `ComitatoFeste.Api/Contracts/`.
@@ -909,8 +936,10 @@ implementarlo.
       href>` resta sull'originale. Vista Media ~12 MB → ~1 MB;
    d. Cloudflare gratis davanti al dominio (CDN edge; richiede dominio custom +
       gli header di (a));
-   e. blob su Cloudflare R2 (egress gratuito) — `MediaBlob` è già tabella 1:1
-      separata, vedi `docs/DEPLOY.md` §"Storage Aiven". N.B. i **documenti**
-      pesano ~2 MB l'uno (uno 7 MB), 26 MB su 66 MB di blob totali.
+   e. **FATTO** (24/9/2026): blob su Cloudflare R2, vedi "Byte dei file su Cloudflare
+      R2" sopra e `docs/DEPLOY.md` §"Storage Aiven". Risolveva lo spazio su Aiven, non
+      la banda Render: l'API resta proxy, quindi (a)-(c) restano le leve sulla banda.
+      Se un domani serve la banda, l'opzione naturale è il redirect a URL firmati R2
+      (risolverebbe anche il punto 4, endpoint binari enumerabili).
    Follow-up: `ETag`/`max-age` breve anche su `GET /api/digestpoints` (unica
    risposta testuale ancora rimandata intera a ogni apertura).
