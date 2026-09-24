@@ -82,9 +82,19 @@ Il backend .NET compila pulito e gira contro Postgres locale.
   punti, 140 media, 22 run, 2 verbali, 33 membri), copiati da Aiven con un
   `pg_dump --data-only` ritagliato per data (escluse `PushSubscriptions` e
   `ImageThumbnails`, cache rigenerabile) dopo aver svuotato il locale; più 217
-  embedding. Aiven ha invece lo storico completo. Il paragrafo qui sotto
-  descrive lo stato storico di Aiven all'8/9.
-- **Dati importati** (gruppo `Comitato feste 87`, stato all'8/9/2026):
+  embedding.
+- **Storico su Aiven: parte volutamente dal 3/9/2026 (compreso)** — decisione
+  dell'utente (24/9/2026): i punti dei giorni **1 e 2 settembre sono stati cancellati** da
+  Aiven, non è un dato perso per errore. Stato al 24/9/2026: **701 `DigestPoint`**
+  (3/9 → 24/9), di cui **685** nella vista pulita, tutti con embedding. Le `IngestionRun` dei
+  digest 01-09 e 02-09 esistono ancora (id 5 e 1) ma senza punti, e resta in `Verbali`
+  il verbale del 2/9 (94 punti a suo tempo) come cache orfana, innocua. **Non reimportare**
+  `digest_2026-09-01/02.json` (non sono più in `Export/`): `build_digest_0901.py` e
+  `build_digest_0902.py` restano in git solo come ricetta storica. Il paragrafo qui sotto
+  descrive lo stato di Aiven all'8/9, quando quei due giorni c'erano ancora, e i suoi
+  conteggi (804 punti, 597 media, 6 verbali…) **non sono più attuali**.
+- **Dati importati** (gruppo `Comitato feste 87`, stato all'8/9/2026 — **storico**: i giorni
+  1 e 2/9 sono stati poi rimossi volutamente da Aiven, vedi sopra):
   **10 `IngestionRun`** dai `digest_2026-09-01.json` … `digest_2026-09-08.json`
   (i giorni "chiusi" — data < `digest_data` del checkpoint — vengono rimossi
   da `Export/` automaticamente a ogni export da
@@ -349,7 +359,7 @@ Il backend .NET compila pulito e gira contro Postgres locale.
     fatto in tempo. Serve `gemini.key.txt`/`GEMINI_API_KEY` sul PC che lancia lo
     script (senza, il passo fallisce in modo non bloccante).
     Fatto il primo backfill il 21/9/2026: 217 punti (11–17/9) in locale; su Aiven
-    680/860 (vedi "Assistente AI").
+    680/860, poi completato il 22/9 (vedi "Assistente AI").
 - `Src/backend/ComitatoFeste.Api/wwwroot/index.html` — frontend
   self-contained (vanilla JS, nessun build), "Comitato feste 87 — Agenda",
   servito dall'API stessa. Note operative in
@@ -809,8 +819,9 @@ inizialmente Æsir si vedeva solo agli amministratori, **aperto a tutti i membri
 controllo di ruolo, solo il token — vedi sotto). Serve `GEMINI_API_KEY` tra le env Render: senza,
 l'endpoint risponde 503 e il resto del portale funziona. **Aiven ha la migration**
 (applicata a mano il 21/9/2026, prima del deploy) e il **backfill degli embedding è
-completo dal 22/9/2026**: **866/866 punti** della vista pulita, tutti a 768 dimensioni
-e con un solo modello (verificato via query). Il giorno prima si era fermato a 680/860
+completo dal 22/9/2026**: **866/866 punti** della vista pulita (stato di allora, quando lo
+storico partiva dall'1/9; dopo la rimozione voluta dell'1-2/9 e con i punti nuovi sono
+**685/685 al 24/9**), tutti a 768 dimensioni e con un solo modello (verificato via query). Il giorno prima si era fermato a 680/860
 per quota Gemini giornaliera esaurita (`embed_content_free_tier_requests, limit: 1000,
 model: gemini-embedding-2` — **verificato**, si azzera a mezzanotte ora del Pacifico =
 09:00 italiane finché entrambi i fusi sono in ora legale, 08:00 dopo il cambio all'ora
