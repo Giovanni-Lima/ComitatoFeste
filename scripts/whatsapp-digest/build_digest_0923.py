@@ -20,6 +20,9 @@ verdi in una strada di paese, commentata con tono nostalgico. Resto rumore:
 saluti, battute sulla 500 e su Tina (compreso un vocale di Emanuele 12:29,
 scartato), commenti dialettali. Nessuna menzione di Giovanni Lima in questa
 finestra.
+
+Coda serale (17:50-21:47, export del 24/9): solo rumore ("sto alla chiesa",
+"arrivo", una richiesta di foto), nessuna entry aggiunta.
 """
 import os
 import sys
