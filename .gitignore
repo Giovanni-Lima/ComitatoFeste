@@ -38,6 +38,7 @@ scripts/aiven.uri
 
 ## Import/Transcriber verso Aiven (vedi scripts/import-transcribe-aiven.ps1)
 scripts/hook.secret
+scripts/r2.env
 
 ## Export grezzo della chat: dal 6/9/2026 arriva sempre da Dropbox (vedi CLAUDE.md),
 ## non più scompattato dentro il repo — questa entry resta come rete di sicurezza nel caso
