@@ -17,12 +17,14 @@ public sealed class DigestPointsController : ControllerBase
     private readonly ComitatoFesteDbContext _db;
     private readonly GroqRecapClient _groq;
     private readonly ImageThumbnailer _thumbs;
+    private readonly IBlobStore? _store;
 
-    public DigestPointsController(ComitatoFesteDbContext db, GroqRecapClient groq, ImageThumbnailer thumbs)
+    public DigestPointsController(ComitatoFesteDbContext db, GroqRecapClient groq, ImageThumbnailer thumbs, BlobStoreHolder blobs)
     {
         _db = db;
         _groq = groq;
         _thumbs = thumbs;
+        _store = blobs.Store;
     }
 
     /// <summary>
@@ -253,10 +255,30 @@ public sealed class DigestPointsController : ControllerBase
         if (point is null)
             return NotFound();
 
+        // Chiavi R2 da rimuovere dopo la cancellazione a DB (il cascade non tocca l'object storage).
+        var r2Keys = new List<string>();
         if (point.MediaAssetId is int mediaAssetId)
+        {
+            if (_store is not null)
+            {
+                var sha = await _db.MediaBlobs
+                    .Where(b => b.MediaAssetId == mediaAssetId)
+                    .Select(b => b.Sha256)
+                    .FirstOrDefaultAsync(ct);
+                if (sha is not null)
+                    r2Keys.Add(BlobKeys.Media(mediaAssetId, sha));
+
+                var thumbs = await _db.ImageThumbnails
+                    .Where(t => t.Kind == "media" && t.SourceId == mediaAssetId)
+                    .Select(t => new { t.Width, t.SourceSha256 })
+                    .ToListAsync(ct);
+                r2Keys.AddRange(thumbs.Select(t => BlobKeys.Thumbnail("media", mediaAssetId, t.Width, t.SourceSha256)));
+            }
+
             await _db.ImageThumbnails
                 .Where(t => t.Kind == "media" && t.SourceId == mediaAssetId)
                 .ExecuteDeleteAsync(ct);
+        }
 
         var day = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(point.OccurredAt, RomeTime.Zone).DateTime);
         await _db.Verbali
@@ -264,6 +286,13 @@ public sealed class DigestPointsController : ControllerBase
             .ExecuteDeleteAsync(ct);
 
         await _db.DigestPoints.Where(d => d.Id == id).ExecuteDeleteAsync(ct);
+
+        // Best effort: un oggetto R2 rimasto orfano è solo spazio, non un errore per l'utente.
+        if (_store is not null && r2Keys.Count > 0)
+        {
+            try { await _store.DeleteAsync(r2Keys, ct); }
+            catch (Exception) when (!ct.IsCancellationRequested) { }
+        }
 
         return NoContent();
     }
@@ -297,7 +326,12 @@ public sealed class DigestPointsController : ControllerBase
                 && (meta.ContentType ?? "").StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             {
                 var thumb = await _thumbs.GetWebpAsync("media", mediaId, width, meta.Sha256,
-                    () => _db.MediaBlobs.Where(b => b.MediaAssetId == mediaId).Select(b => b.Content).FirstAsync(ct),
+                    async () =>
+                    {
+                        var db = await _db.MediaBlobs.Where(b => b.MediaAssetId == mediaId).Select(b => b.Content).FirstAsync(ct);
+                        return await _store.ResolveAsync(db, BlobKeys.Media(mediaId, meta.Sha256), ct)
+                               ?? throw new InvalidOperationException("blob non trovato in R2");
+                    },
                     ct);
                 if (thumb is not null)
                     return File(thumb, "image/webp", lastModified: null,
@@ -314,9 +348,14 @@ public sealed class DigestPointsController : ControllerBase
         if (blob is null)
             return NotFound();
 
+        var content = await _store.ResolveAsync(blob.Content,
+            blob.Sha256 is null ? null : BlobKeys.Media(mediaId, blob.Sha256), ct);
+        if (content is null)
+            return NotFound();
+
         var contentType = string.IsNullOrWhiteSpace(blob.ContentType) ? "application/octet-stream" : blob.ContentType;
         var etag = new EntityTagHeaderValue($"\"{blob.Sha256}\"");
-        return File(blob.Content, contentType, lastModified: null, entityTag: etag, enableRangeProcessing: true);
+        return File(content, contentType, lastModified: null, entityTag: etag, enableRangeProcessing: true);
     }
 
     /// <summary>

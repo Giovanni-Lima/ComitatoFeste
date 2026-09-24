@@ -78,6 +78,7 @@ Nessun'altra configurazione: niente utenti, rete o backup da impostare a mano.
    | `COMITATOFESTE_AUTH_SECRET` | **32+ caratteri casuali, fissi** (senza, ogni redeploy invalida tutti i login) |
    | `GEMINI_API_KEY` | *opzionale* — assistente AI Æsir (embedding delle domande + risposta, con Groq come ripiego). Assente → `POST /api/assistant/ask` risponde 503 |
    | `GROQ_API_KEY` | *opzionale* — solo per generare verbali di giorni non ancora in cache |
+   | `COMITATOFESTE_R2_ACCOUNT_ID` / `_ACCESS_KEY_ID` / `_SECRET_ACCESS_KEY` / `_BUCKET` | *opzionali, tutte e quattro insieme* — byte dei file su Cloudflare R2 invece che in Postgres (vedi "Limiti" più sotto). Assenti → byte in Postgres |
    | `COMITATOFESTE_VAPID_PUBLIC` / `_PRIVATE` | *opzionale* — coppia VAPID per le notifiche push (vedi sotto). Assenti → bottone 🔔 nascosto |
    | `COMITATOFESTE_VAPID_SUBJECT` | `mailto:giovannilima800@gmail.com` (già nel blueprint) |
    | `COMITATOFESTE_HOOK_SECRET` | *opzionale* — secret condiviso con la pipeline locale per `POST /api/push/broadcast`. Stringa casuale, **diversa** da `COMITATOFESTE_AUTH_PASSWORD` |
@@ -286,9 +287,35 @@ schedulato → `pg_dump` → Cloudflare R2 (10 GB free) con lifecycle a 30 giorn
 - **RAM 512 MB** (free): l'API a riposo sta a ~150-200 MB, la generazione PDF
   fa un picco. Se compaiono OOM nei log, è il segnale per passare al piano
   Starter ($7/mese) o alleggerire.
-- **Storage Aiven 1 GB**: oggi il DB è ~46 MB. Quando i blob (PDF/video)
-  stringono, spostali su object storage gratuito (Cloudflare R2, 10 GB) —
-  `MediaBlob` è già una tabella 1:1 separata, la modifica è contenuta.
+- **Storage Aiven 1 GB → byte dei file su Cloudflare R2** (codice pronto, **non ancora
+  attivo** finché le env R2 non sono impostate). Foto, audio, documenti, foto profilo e
+  thumbnail WebP vanno su un bucket R2 (10 GB free) invece che in Postgres; a DB resta solo
+  la riga di metadati con `Content = NULL`. Senza le env tutto resta com'è (byte in Postgres).
+  - **Env** (Importer, Transcriber e API — le stesse quattro ovunque):
+    `COMITATOFESTE_R2_ACCOUNT_ID`, `COMITATOFESTE_R2_ACCESS_KEY_ID`,
+    `COMITATOFESTE_R2_SECRET_ACCESS_KEY`, `COMITATOFESTE_R2_BUCKET`. Token R2 con permesso
+    *Object Read & Write* limitato a quel bucket; bucket **privato** (nessun accesso pubblico:
+    i file passano sempre dall'API, che fa da proxy).
+  - **Chiavi**: `media/{mediaAssetId}/{sha256}`, `memberphoto/{memberId}/{sha256}`,
+    `thumb/{kind}/{sourceId}/{width}/{sha256 sorgente}` — immutabili (lo SHA è nella chiave).
+  - **Regola: `Content == NULL` ⇒ il byte è su R2.** Se un oggetto manca, l'endpoint risponde 404
+    (le thumbnail invece si rigenerano da sole).
+  - **Ordine di rilascio**: 1) applicare a mano la migration `BlobContentNullable` ad Aiven
+    (`DROP NOT NULL`, istantanea, il codice vecchio non ne risente); 2) creare il bucket e le
+    env su Render e sul PC; 3) deploy; 4) backfill dei dati storici (sotto).
+  - **Backfill storico** (`COMITATOFESTE_CONNECTION` = Aiven + le 4 env R2):
+    `dotnet run --project Src/backend/ComitatoFeste.Importer -- --blobs-to-r2 --dry-run`
+    (solo elenco), poi `--blobs-to-r2` (carica e verifica, **il DB non cambia**), controllare
+    a campione dal sito, infine `--blobs-to-r2 --clear-db` (azzera i byte a DB solo per gli
+    oggetti verificati su R2). Idempotente e riprendibile.
+  - **⚠️ Lo spazio su disco Aiven non scende da solo dopo `--clear-db`**: Postgres riusa lo
+    spazio liberato ma non lo restituisce al sistema finché non si compatta la tabella
+    (`VACUUM FULL "MediaBlobs"` — blocca la tabella per la durata — oppure `pg_repack`, se
+    l'estensione è abilitata sul piano Aiven). Da fare dopo il backfill, prima di un backup.
+  - **Pipeline**: l'Importer carica su R2 dopo il salvataggio; se l'upload fallisce il byte
+    resta a DB (avviso nell'output) e verrà preso dal backfill successivo.
+  - **Cancellazione punto** (`DELETE /api/digestpoints/{id}`): rimuove anche gli oggetti R2
+    (best effort). Le foto profilo sostituite lasciano il vecchio oggetto orfano (pochi KB).
 
 ---
 

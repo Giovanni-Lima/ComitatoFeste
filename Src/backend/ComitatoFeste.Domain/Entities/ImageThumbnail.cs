@@ -31,8 +31,9 @@ public class ImageThumbnail
     /// </summary>
     public string SourceSha256 { get; set; } = null!;
 
-    /// <summary>Byte del WebP ridimensionato.</summary>
-    public byte[] Content { get; set; } = Array.Empty<byte>();
+    /// <summary>Byte del WebP ridimensionato. <c>null</c> = stanno in R2 alla chiave
+    /// <c>BlobKeys.Thumbnail(Kind, SourceId, Width, SourceSha256)</c> (la riga resta come indice).</summary>
+    public byte[]? Content { get; set; }
 
     public string ContentType { get; set; } = "image/webp";
 

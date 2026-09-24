@@ -74,6 +74,7 @@ if (string.IsNullOrWhiteSpace(groqKey))
 
 var connection = Environment.GetEnvironmentVariable("COMITATOFESTE_CONNECTION") ?? DefaultConnection;
 var options = new DbContextOptionsBuilder<ComitatoFesteDbContext>().UseComitatoFesteNpgsql(connection).Options;
+var blobStore = BlobStoreFactory.FromEnvironment();
 await using var db = new ComitatoFesteDbContext(options);
 
 if (!await db.Database.CanConnectAsync())
@@ -139,17 +140,23 @@ foreach (var row in pending)
         {
             var blob = await db.MediaBlobs
                 .Where(b => b.MediaAssetId == asset.Id)
-                .Select(b => new { b.Content, b.ContentType })
+                .Select(b => new { b.Content, b.ContentType, b.Sha256 })
                 .FirstOrDefaultAsync(cts.Token);
 
-            if (blob is null)
+            // Content null = byte in R2 (COMITATOFESTE_R2_*), chiave con id asset + SHA.
+            var bytes = blob is null
+                ? null
+                : await blobStore.ResolveAsync(blob.Content,
+                    blob.Sha256 is null ? null : BlobKeys.Media(asset.Id, blob.Sha256), cts.Token);
+
+            if (blob is null || bytes is null)
             {
                 skipped++;
                 Console.WriteLine("SALTATO (nessun contenuto binario).");
                 continue;
             }
 
-            transcript = await groq.TranscribeAsync(blob.Content, asset.FileName, blob.ContentType, cts.Token);
+            transcript = await groq.TranscribeAsync(bytes, asset.FileName, blob.ContentType, cts.Token);
         }
 
         var classification = await groq.ClassifyAsync(groupName, author, transcript, cts.Token);

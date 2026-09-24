@@ -11,8 +11,12 @@ public class MediaBlob
     public int MediaAssetId { get; set; }
     public MediaAsset MediaAsset { get; set; } = null!;
 
-    /// <summary>Contenuto del file scaricato dalla pipeline.</summary>
-    public byte[] Content { get; set; } = Array.Empty<byte>();
+    /// <summary>
+    /// Contenuto del file scaricato dalla pipeline. <c>null</c> = i byte stanno nell'object
+    /// storage (R2) alla chiave <c>BlobKeys.Media(MediaAssetId, Sha256)</c>: in quel caso
+    /// <see cref="Sha256"/> è sempre valorizzato.
+    /// </summary>
+    public byte[]? Content { get; set; }
 
     /// <summary>MIME type per servire il file, es. "audio/ogg", "image/jpeg", "application/pdf".</summary>
     public string ContentType { get; set; } = null!;

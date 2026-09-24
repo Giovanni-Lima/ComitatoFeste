@@ -29,12 +29,43 @@ public sealed class DigestImporter
     private readonly ComitatoFesteDbContext _db;
     private readonly string _exportRoot;
     private readonly ImportOptions _options;
+    private readonly IBlobStore? _store;
 
-    public DigestImporter(ComitatoFesteDbContext db, string exportRoot, ImportOptions? options = null)
+    /// <param name="store">Object storage R2 per i byte dei file; <c>null</c> = restano in Postgres.</param>
+    public DigestImporter(ComitatoFesteDbContext db, string exportRoot, ImportOptions? options = null, IBlobStore? store = null)
     {
         _db = db;
         _exportRoot = exportRoot;
         _options = options ?? new ImportOptions();
+        _store = store;
+    }
+
+    /// <summary>
+    /// Sposta su R2 i byte dei blob appena inseriti e azzera <c>Content</c> a DB. Eseguito
+    /// **dopo** il salvataggio perché la chiave contiene l'id del <see cref="MediaAsset"/>. Se
+    /// l'upload fallisce (o il processo muore a metà) i byte restano in Postgres, che è il
+    /// fallback: nulla si perde, e verranno spostati da un successivo run di backfill.
+    /// </summary>
+    private async Task OffloadBlobsAsync(IReadOnlyList<MediaBlob> blobs, ImportResult result, CancellationToken ct)
+    {
+        if (_store is null || blobs.Count == 0) return;
+
+        var moved = 0;
+        foreach (var blob in blobs)
+        {
+            if (blob.Content is null || blob.Sha256 is null) continue;
+            try
+            {
+                await _store.PutAsync(BlobKeys.Media(blob.MediaAssetId, blob.Sha256), blob.Content, blob.ContentType, ct);
+                blob.Content = null;
+                moved++;
+            }
+            catch (Exception ex) when (!ct.IsCancellationRequested)
+            {
+                result.Warnings.Add($"upload R2 fallito per media {blob.MediaAssetId} (resta in DB): {ex.Message}");
+            }
+        }
+        if (moved > 0) await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>Importa tutti i <c>digest_*.json</c> presenti nella cartella Export, in ordine di nome.</summary>
@@ -107,13 +138,30 @@ public sealed class DigestImporter
             }
 
             var (_, mime) = MediaKind.Resolve(path);
+
+            // Con R2 i byte vanno lì (chiave con SHA → immutabile) e a DB resta solo Content = null.
+            // Se l'upload fallisce si ripiega sui byte in Postgres.
+            byte[]? dbContent = bytes;
+            if (_store is not null)
+            {
+                try
+                {
+                    await _store.PutAsync(BlobKeys.MemberPhoto(m.Id, sha), bytes, mime, ct);
+                    dbContent = null;
+                }
+                catch (Exception ex) when (!ct.IsCancellationRequested)
+                {
+                    result.Warnings.Add($"upload R2 fallito per foto di {m.DisplayName} (resta in DB): {ex.Message}");
+                }
+            }
+
             var existing = await _db.MemberProfilePhotos.FirstOrDefaultAsync(p => p.MemberId == m.Id, ct);
             if (existing is null)
             {
                 _db.MemberProfilePhotos.Add(new MemberProfilePhoto
                 {
                     MemberId = m.Id,
-                    Content = bytes,
+                    Content = dbContent,
                     ContentType = mime,
                     Sha256 = sha,
                 });
@@ -121,7 +169,7 @@ public sealed class DigestImporter
             }
             else
             {
-                existing.Content = bytes;
+                existing.Content = dbContent;
                 existing.ContentType = mime;
                 existing.Sha256 = sha;
                 result.Updated++;
@@ -139,6 +187,7 @@ public sealed class DigestImporter
     public async Task<ImportResult> ImportFileAsync(string jsonPath, string groupName, CancellationToken ct = default)
     {
         var result = new ImportResult { SourceFile = Path.GetFileName(jsonPath) };
+        var newBlobs = new List<MediaBlob>();
 
         await using var stream = File.OpenRead(jsonPath);
         var entries = await JsonSerializer.DeserializeAsync<List<DigestEntry>>(stream, JsonOptions, ct)
@@ -309,13 +358,15 @@ public sealed class DigestImporter
                 {
                     var bytes = await File.ReadAllBytesAsync(fullPath, ct);
                     asset.SizeBytes = bytes.LongLength;
-                    asset.Blob = new MediaBlob
+                    var newBlob = new MediaBlob
                     {
                         MediaAsset = asset,
                         Content = bytes,
                         ContentType = mime,
                         Sha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant(),
                     };
+                    asset.Blob = newBlob;
+                    newBlobs.Add(newBlob);
                     result.MediaStored++;
                 }
                 else
@@ -351,6 +402,8 @@ public sealed class DigestImporter
         run.CompletedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(ct);
         result.RunId = run.Id;
+
+        await OffloadBlobsAsync(newBlobs, result, ct);
         return result;
     }
 

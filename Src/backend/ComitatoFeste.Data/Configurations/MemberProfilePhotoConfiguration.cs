@@ -12,7 +12,7 @@ public class MemberProfilePhotoConfiguration : IEntityTypeConfiguration<MemberPr
 
         builder.HasKey(p => p.Id);
 
-        builder.Property(p => p.Content).IsRequired();
+        builder.Property(p => p.Content);   // null = byte in R2
 
         builder.Property(p => p.ContentType)
             .IsRequired()

@@ -12,7 +12,7 @@ public class MediaBlobConfiguration : IEntityTypeConfiguration<MediaBlob>
 
         builder.HasKey(b => b.Id);
 
-        builder.Property(b => b.Content).IsRequired();
+        builder.Property(b => b.Content);   // null = byte in R2
 
         builder.Property(b => b.ContentType)
             .IsRequired()

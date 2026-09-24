@@ -14,6 +14,9 @@ var fuzzy = true;
 var fuzzyThreshold = 0.6;
 var fuzzyWindowMin = 2.0;
 var photosOnly = false;
+var blobsToR2 = false;
+var clearDb = false;
+var dryRun = false;
 
 for (var i = 0; i < args.Length; i++)
 {
@@ -24,6 +27,15 @@ for (var i = 0; i < args.Length; i++)
             break;
         case "--export-root" when i + 1 < args.Length:
             exportRoot = args[++i];
+            break;
+        case "--blobs-to-r2":
+            blobsToR2 = true;
+            break;
+        case "--clear-db":
+            clearDb = true;
+            break;
+        case "--dry-run":
+            dryRun = true;
             break;
         case "--no-fuzzy":
             fuzzy = false;
@@ -45,6 +57,9 @@ for (var i = 0; i < args.Length; i++)
             Console.WriteLine("  --fuzzy-threshold <0..1> soglia similarity() (default: 0.6)");
             Console.WriteLine("  --fuzzy-window-min <n>   finestra ± minuti per il confronto (default: 2)");
             Console.WriteLine("  --photos-only            salta l'import dei digest, sincronizza solo Export/profili/");
+            Console.WriteLine("  --blobs-to-r2            backfill: carica su R2 i byte ancora in Postgres (richiede env COMITATOFESTE_R2_*)");
+            Console.WriteLine("  --clear-db               con --blobs-to-r2: azzera i byte a DB solo dopo aver verificato l'oggetto su R2");
+            Console.WriteLine("  --dry-run                con --blobs-to-r2: non carica né modifica nulla, elenca soltanto");
             Console.WriteLine("  nota: un reimport della stessa giornata è idempotente (media dedup per nome");
             Console.WriteLine("        file, testo per match esatto/fuzzy). Resta a rischio solo un punto di");
             Console.WriteLine("        solo testo riformulato sotto la soglia fuzzy tra un import e l'altro.");
@@ -80,12 +95,36 @@ if ((await db.Database.GetPendingMigrationsAsync()).Any())
     return 4;
 }
 
+// Con le env COMITATOFESTE_R2_* i byte dei file vanno su Cloudflare R2 invece che in Postgres.
+var store = BlobStoreFactory.FromEnvironment();
+Console.WriteLine(store is null
+    ? "storage byte: Postgres (R2 non configurato)"
+    : "storage byte: Cloudflare R2");
+
+// --- backfill blob → R2 (modalità a sé: non importa digest) -------------------
+if (blobsToR2)
+{
+    if (store is null)
+    {
+        Console.Error.WriteLine("R2 non configurato: imposta COMITATOFESTE_R2_ACCOUNT_ID / _ACCESS_KEY_ID / _SECRET_ACCESS_KEY / _BUCKET.");
+        return 5;
+    }
+
+    using var migrCts = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, e) => { e.Cancel = true; migrCts.Cancel(); };
+
+    var migrator = new BlobMigrator(db, store, clearDb, dryRun);
+    await migrator.RunAsync(migrCts.Token);
+    Console.WriteLine($"caricati: {migrator.Uploaded} · già su R2: {migrator.AlreadyThere} · azzerati a DB: {migrator.Cleared} ({migrator.BytesCleared / 1048576.0:N1} MB) · errori: {migrator.Failed}");
+    return migrator.Failed == 0 ? 0 : 1;
+}
+
 var importer = new DigestImporter(db, exportRoot, new ImportOptions
 {
     FuzzyDedup = fuzzy,
     FuzzyThreshold = fuzzyThreshold,
     FuzzyWindow = TimeSpan.FromMinutes(fuzzyWindowMin),
-});
+}, store);
 
 // --- import digest (saltato con --photos-only) ----------------------------
 if (!photosOnly)

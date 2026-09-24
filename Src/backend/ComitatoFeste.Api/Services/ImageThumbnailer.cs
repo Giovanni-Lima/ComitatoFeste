@@ -28,8 +28,13 @@ public sealed class ImageThumbnailer
     private static readonly SemaphoreSlim Gate = new(2, 2);
 
     private readonly ComitatoFesteDbContext _db;
+    private readonly IBlobStore? _store;
 
-    public ImageThumbnailer(ComitatoFesteDbContext db) => _db = db;
+    public ImageThumbnailer(ComitatoFesteDbContext db, BlobStoreHolder blobs)
+    {
+        _db = db;
+        _store = blobs.Store;
+    }
 
     public static bool IsAllowedWidth(int w) => Array.IndexOf(AllowedWidths, w) >= 0;
 
@@ -74,13 +79,30 @@ public sealed class ImageThumbnailer
                 return null;   // formato non supportato / immagine corrotta
             }
 
+            // Con R2 configurato i byte vanno lì e la riga resta come indice (Content null):
+            // lo spazio su Aiven è il vincolo. Se l'upload fallisce si serve comunque il WebP
+            // appena generato, senza persisterlo (si riproverà alla prossima richiesta).
+            var stored = false;
+            if (_store is not null)
+            {
+                try
+                {
+                    await _store.PutAsync(BlobKeys.Thumbnail(kind, sourceId, width, sourceSha256), webp, "image/webp", ct);
+                    stored = true;
+                }
+                catch (Exception) when (!ct.IsCancellationRequested)
+                {
+                    return webp;
+                }
+            }
+
             _db.ImageThumbnails.Add(new ImageThumbnail
             {
                 Kind = kind,
                 SourceId = sourceId,
                 Width = width,
                 SourceSha256 = sourceSha256,
-                Content = webp,
+                Content = stored ? null : webp,
                 ContentType = "image/webp",
                 CreatedAt = DateTimeOffset.UtcNow,
             });
@@ -102,9 +124,15 @@ public sealed class ImageThumbnailer
         }
     }
 
-    private Task<byte[]?> FindAsync(string kind, int sourceId, int width, string sha, CancellationToken ct) =>
-        _db.ImageThumbnails.AsNoTracking()
+    private async Task<byte[]?> FindAsync(string kind, int sourceId, int width, string sha, CancellationToken ct)
+    {
+        var row = await _db.ImageThumbnails.AsNoTracking()
             .Where(t => t.Kind == kind && t.SourceId == sourceId && t.Width == width && t.SourceSha256 == sha)
-            .Select(t => (byte[]?)t.Content)
+            .Select(t => new { t.Content })
             .FirstOrDefaultAsync(ct);
+        if (row is null) return null;
+
+        // Riga senza byte → sono in R2. Se l'oggetto manca (null) è un miss: si rigenera.
+        return await _store.ResolveAsync(row.Content, BlobKeys.Thumbnail(kind, sourceId, width, sha), ct);
+    }
 }

@@ -11,8 +11,9 @@ public class MemberProfilePhoto
     public int MemberId { get; set; }
     public Member Member { get; set; } = null!;
 
-    /// <summary>Contenuto dell'immagine (da <c>Export/profili/&lt;Nome&gt;.jpg</c>).</summary>
-    public byte[] Content { get; set; } = Array.Empty<byte>();
+    /// <summary>Contenuto dell'immagine (da <c>Export/profili/&lt;Nome&gt;.jpg</c>). <c>null</c> =
+    /// i byte stanno in R2 alla chiave <c>BlobKeys.MemberPhoto(MemberId, Sha256)</c>.</summary>
+    public byte[]? Content { get; set; }
 
     /// <summary>MIME type, es. "image/jpeg".</summary>
     public string ContentType { get; set; } = null!;

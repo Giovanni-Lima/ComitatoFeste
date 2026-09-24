@@ -12,11 +12,13 @@ public sealed class MembersController : ControllerBase
 {
     private readonly ComitatoFesteDbContext _db;
     private readonly ImageThumbnailer _thumbs;
+    private readonly IBlobStore? _store;
 
-    public MembersController(ComitatoFesteDbContext db, ImageThumbnailer thumbs)
+    public MembersController(ComitatoFesteDbContext db, ImageThumbnailer thumbs, BlobStoreHolder blobs)
     {
         _db = db;
         _thumbs = thumbs;
+        _store = blobs.Store;
     }
 
     /// <summary>
@@ -45,7 +47,12 @@ public sealed class MembersController : ControllerBase
                 && (meta.ContentType ?? "").StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             {
                 var thumb = await _thumbs.GetWebpAsync("memberphoto", memberId, width, meta.Sha256,
-                    () => _db.MemberProfilePhotos.Where(p => p.MemberId == memberId).Select(p => p.Content).FirstAsync(ct),
+                    async () =>
+                    {
+                        var db = await _db.MemberProfilePhotos.Where(p => p.MemberId == memberId).Select(p => p.Content).FirstAsync(ct);
+                        return await _store.ResolveAsync(db, BlobKeys.MemberPhoto(memberId, meta.Sha256), ct)
+                               ?? throw new InvalidOperationException("foto non trovata in R2");
+                    },
                     ct);
                 if (thumb is not null)
                     return File(thumb, "image/webp", lastModified: null,
@@ -61,8 +68,13 @@ public sealed class MembersController : ControllerBase
         if (photo is null)
             return NotFound();
 
+        var content = await _store.ResolveAsync(photo.Content,
+            photo.Sha256 is null ? null : BlobKeys.MemberPhoto(memberId, photo.Sha256), ct);
+        if (content is null)
+            return NotFound();
+
         var contentType = string.IsNullOrWhiteSpace(photo.ContentType) ? "application/octet-stream" : photo.ContentType;
         var etag = new EntityTagHeaderValue($"\"{photo.Sha256}\"");
-        return File(photo.Content, contentType, lastModified: null, entityTag: etag);
+        return File(content, contentType, lastModified: null, entityTag: etag);
     }
 }

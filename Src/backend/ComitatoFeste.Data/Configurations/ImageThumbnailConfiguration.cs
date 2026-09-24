@@ -15,7 +15,7 @@ public class ImageThumbnailConfiguration : IEntityTypeConfiguration<ImageThumbna
 
         builder.Property(t => t.Kind).IsRequired().HasMaxLength(16);
         builder.Property(t => t.SourceSha256).IsRequired().HasMaxLength(64).IsFixedLength();
-        builder.Property(t => t.Content).IsRequired();
+        builder.Property(t => t.Content);   // null = byte in R2
         builder.Property(t => t.ContentType).IsRequired().HasMaxLength(64);
         builder.Property(t => t.CreatedAt).IsRequired();
 

@@ -62,6 +62,8 @@ builder.Services.AddSingleton<AuthService>();
 
 // Thumbnail WebP per gli endpoint immagine (?w=), generati una volta e persistiti in
 // ImageThumbnails. Scoped: usa il DbContext della richiesta.
+// Object storage R2 per i byte dei file (env COMITATOFESTE_R2_*); assente → byte in Postgres.
+builder.Services.AddSingleton(_ => BlobStoreHolder.FromEnvironment());
 builder.Services.AddScoped<ImageThumbnailer>();
 
 // Chiavi VAPID per il Web Push (env COMITATOFESTE_VAPID_* o config Vapid:*).
