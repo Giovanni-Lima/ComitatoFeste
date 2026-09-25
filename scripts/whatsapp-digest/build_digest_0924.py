@@ -25,6 +25,15 @@ di aggiungere sé e Lara; Costantino (13:45) chiede a che ora è e Emilio
 risponde "Prima delle 9" (riferimento non esplicito, riportato testuale).
 "Esatto" di Ugo Trinchini (13:48) è una conferma breve: rumore. Nessuna
 menzione di Giovanni Lima.
+
+Coda serale (20:15-20:58, export del 25/9): Antonio Sabatini riferisce
+dell'incontro di ieri sera con l'azienda di materassi (compenso max 500€ con
+20 coppie, altrimenti 20€ a coppia; serata concordata per venerdì 16/10) e
+dell'incontro con la Pro Loco (proposte di collaborazione per Halloween e San
+Martino, da valutare alla prossima riunione); Emanuele chiede la data della
+riunione, Emilio risponde che dipende dalla sede. Un media di Emanuele
+(20:21) è <Media omessi> nell'export, non recuperabile. Nessuna menzione di
+Giovanni Lima.
 """
 import os
 import sys
@@ -61,6 +70,23 @@ CURATED = {
         "Chiede a che ora è la serata."),
     ("13:45", "Emilio Caniglia"): ("info",
         "Risponde: \"Prima delle 9\"."),
+    ("20:15", "Antonio Sabatini"): ("decisione",
+        "Riferisce dell'incontro di questa sera con l'azienda di materassi "
+        "\"Ipoh\" (nome come scritto nel messaggio): compenso massimo di "
+        "500€ al raggiungimento di 20 coppie; se le 20 coppie non vengono "
+        "raggiunte, il compenso scende a 20€ a coppia. Serata concordata "
+        "per venerdì 16 ottobre."),
+    ("20:16", "Antonio Sabatini"): ("info",
+        "Riferisce che nella serata di ieri c'è stato un incontro, a suo "
+        "parere molto positivo, con la Pro Loco: sono arrivate proposte di "
+        "collaborazione per Halloween e San Martino, da valutare insieme "
+        "nella prossima riunione."),
+    ("20:27", "Emanuele Sciarra"): ("domanda",
+        "Chiede a Emilio Caniglia (presidente) quando sarà la prossima "
+        "riunione."),
+    ("20:58", "Emilio Caniglia"): ("info",
+        "Risponde che la riunione verrà organizzata appena sarà pronta la "
+        "sede."),
 }
 
 MEDIA_OVERRIDES = {
