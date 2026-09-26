@@ -1447,6 +1447,9 @@
     document.addEventListener("click", (e) => {
       const a = e.target.closest("a[href]");
       if (!a || !MEDIA_HREF.test(a.getAttribute("href") || "")) return;
+      // i link di download (bottone in alto nel lightbox, "scarica il PDF") devono
+      // scaricare davvero: intercettati, riaprivano il lightbox come file generico
+      if (a.hasAttribute("download")) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
       e.preventDefault();
       openLightbox(mediaInfoFromAnchor(a));
