@@ -148,9 +148,9 @@
        Se il pulsante è nascosto la regola non matcha e il badge resta allineato a destra. */
     .pushbtn:not([hidden]) + .me.sm{margin-left:8px}
 
-    /* toast: messaggio transitorio in basso al centro (es. notifiche attivate/disattivate) */
+    /* toast: messaggio transitorio in basso al centro (es. notifiche attivate/disattivate); sopra il lightbox (z 200) */
     .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));
-      transform:translate(-50%,12px);z-index:150;max-width:min(90vw,360px);
+      transform:translate(-50%,12px);z-index:250;max-width:min(90vw,360px);
       padding:10px 16px;border-radius:999px;background:var(--accent);border:1px solid transparent;
       color:#fff;font-size:13px;font-weight:500;line-height:1.35;text-align:center;
       box-shadow:var(--shadow-md);opacity:0;pointer-events:none;
@@ -1448,8 +1448,9 @@
       const a = e.target.closest("a[href]");
       if (!a || !MEDIA_HREF.test(a.getAttribute("href") || "")) return;
       // i link di download (bottone in alto nel lightbox, "scarica il PDF") devono
-      // scaricare davvero: intercettati, riaprivano il lightbox come file generico
-      if (a.hasAttribute("download")) return;
+      // scaricare davvero: intercettati, riaprivano il lightbox come file generico.
+      // Il browser non dice quando il download finisce: il toast conferma solo l'avvio.
+      if (a.hasAttribute("download")) { toast("Download avviato: lo trovi nella cartella Download"); return; }
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
       e.preventDefault();
       openLightbox(mediaInfoFromAnchor(a));
