@@ -29,7 +29,15 @@ la spesa e Emanuele (vocali 19:43 e 20:06) riferisce degli avanzi in casa sua
 e degli inviti stampati dal promotore con il regolamento dell'estrazione
 (Fiat 500 a febbraio) e dell'orologio da parete in regalo. Restano rumore: le
 battute su Costantino (19:25 e vocale 19:28), le conferme brevi e le battute
-sulle coppie (20:38-20:44, vocale di Elvis compreso). Nessuna menzione di
+sulle coppie (20:38-20:44, vocale di Elvis compreso). Nessuna menzione di Giovanni
+Lima in questa finestra.
+
+Sera (20:47-21:12, aggiornata con l'export delle 20:48 del 26/9): tre foto di
+Dante (biscotti Oreo) ed Elvis (due bottiglie di vino al ristorante, "Cantina
+Scialon") sono battute non legate al comitato, scartate. Emanuele Sciarra
+(21:11-21:12) condivide le foto degli inviti stampati dal promotore per la
+serata del 29/9 (invito a "Prevenzione e salute" + concorso a premi
+Imperial-Life), entrambe tenute con descrizione. Nessuna menzione di
 Giovanni Lima in questa finestra.
 """
 import os
@@ -68,6 +76,9 @@ CURATED = {
     ("19:53", "Antonio Sabatini"): ("info",
         "Si offre di occuparsi della spesa, se si riesce a fare una piccola "
         "lista di cosa comprare."),
+    ("21:12", "Emanuele Sciarra"): ("info",
+        "Condivide le foto degli inviti stampati dal promotore per la serata "
+        "di martedì 29/9."),
 }
 
 AUDIO_CURATED = {
@@ -120,6 +131,22 @@ MEDIA_OVERRIDES = {
         "Rossella, Donato-Santina, Donato-Marina, Emilio-Federica, Alessio-"
         "Miriam, Tonino-Giovanna, Alessio-Margherita, Geo-Alice, Gino-"
         "Roberta, Vincenzo-Lara; le righe 6, 9 e 24 sono vuote.",
+    (DATE, "21:11", "Emanuele Sciarra", "IMG-20260925-WA0023.jpg"):
+        "Foto dell'invito stampato per la serata di martedì 29/9: a destra "
+        "l'invito dell'Associazione Comitato Feste Patronali 1987 a una "
+        "manifestazione di informazione sanitaria sul tema \"Prevenzione e "
+        "salute\" (ore 20:15, Sala consiliare, Piazza Nevio Cerasani, San "
+        "Benedetto dei Marsi; si raccomanda puntualità, rinfresco finale), "
+        "con la richiesta di coppie coniugate o conviventi e senza bambini "
+        "in sala: il contributo di Imperial-Life andrà a sostenere la festa "
+        "patronale; a sinistra \"Gli altri premi\" del concorso (dal 2° al "
+        "50° premio, tra cui viaggio ai Caraibi, e-bike, crociera, scooter, "
+        "iPhone 17 Pro, TV Samsung 85\"), montepremi finale 60.378€, "
+        "concorso valido da maggio a dicembre 2026.",
+    (DATE, "21:11", "Emanuele Sciarra", "IMG-20260925-WA0024.jpg"):
+        "Copertina dell'invito Imperial-Life: \"Vieni vedi vinci! Concorso a "
+        "premi riservato ai partecipanti della manifestazione\", con in "
+        "evidenza il 1° premio, una Fiat 500 Hybrid da 20.200€.",
 }
 
 # IMG-20260917-WA0001.jpg (07:14): stessa identica locandina delle reliquie
@@ -127,7 +154,11 @@ MEDIA_OVERRIDES = {
 # come duplicato per non ripetere lo stesso contenuto in due giorni.
 # VID-20260925-WA0005.mp4 (13:25, Raffaele Di Cesare): registrazione di una
 # storia Instagram di 3 secondi non legata al comitato, scartata.
-_SKIP_FILES = {"IMG-20260917-WA0001.jpg", "VID-20260925-WA0005.mp4"}
+# IMG-20260925-WA0020/21/22.jpg (20:47, Dante ed Elvis): biscotti Oreo e due
+# bottiglie di vino al ristorante, battute non legate al comitato, scartate.
+_SKIP_FILES = {"IMG-20260917-WA0001.jpg", "VID-20260925-WA0005.mp4",
+               "IMG-20260925-WA0020.jpg", "IMG-20260925-WA0021.jpg",
+               "IMG-20260925-WA0022.jpg"}
 
 
 def _extra_skip(time_, fname):
@@ -137,4 +168,4 @@ def _extra_skip(time_, fname):
 if __name__ == "__main__":
     build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
                  extra_skip_media=_extra_skip,
-                 extra_skip_label="forward duplicato locandina + video non legato")
+                 extra_skip_label="forward duplicato + media non legati al comitato")
