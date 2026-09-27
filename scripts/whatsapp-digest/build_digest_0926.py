@@ -23,6 +23,15 @@ posta la bozza del badge. Ugo Trinchini (20:29) chiede a che punto siamo
 con le coppie di martedì. Restano rumore: le battute (Martina 14:51,
 Alessandro 15:10 sulla spilla è invece nel thread), le conferme brevi.
 Nessuna menzione di Giovanni Lima in questa finestra.
+
+Coda serale (21:24-23:37, aggiornata con l'export delle 21:06 del 27/9):
+Emilio Caniglia posta un nuovo aggiornamento della lista coppie (foto,
+24 righe). Costantino Mariani (21:33) rifà capolino dopo giorni di silenzio
+e chiede se sono ammessi figli all'incontro: Emanuele Sciarra rassicura che
+non dovrebbero esserci problemi. Ugo Trinchini (21:44) aggiunge la coppia
+Roberto-Alessandra; Costantino (21:50) comunica che Alexa non ci sarà
+martedì e che cercherà un'altra accompagnatrice. Resto rumore (battute,
+un'emoji). Nessuna menzione di Giovanni Lima in questa coda.
 """
 import os
 import sys
@@ -67,6 +76,17 @@ CURATED = {
     ("20:29", "Ugo Trinchini"): ("domanda",
         "Chiede a che punto siamo con le coppie per l'evento di martedì "
         "29/9."),
+    ("21:33", "Costantino Mariani"): ("domanda",
+        "Rifà capolino dopo giorni di silenzio e chiede se all'incontro di "
+        "martedì sono ammessi figli, dato che non tutti i rappresentanti "
+        "lo permettono; Emanuele Sciarra rassicura che non dovrebbero "
+        "esserci problemi."),
+    ("21:44", "Ugo Trinchini"): ("info",
+        "Comunica di poter aggiungere alla lista coppie Roberto e "
+        "Alessandra."),
+    ("21:50", "Costantino Mariani"): ("info",
+        "Comunica che per martedì Alexa non ci sarà; cercherà un'altra "
+        "accompagnatrice."),
 }
 
 AUDIO_CURATED = {
@@ -113,6 +133,12 @@ MEDIA_OVERRIDES = {
         "\"COMITATO FESTE - San Benedetto Dei Marsi\", il logo arcade "
         "\"1987\" e il nome \"EMILIO\" (Alessandra: i colori si vedono male "
         "in foto, ne manderà un'altra).",
+    (DATE, "21:24", "Emilio Caniglia", "IMG-20260926-WA0017.jpg"):
+        "Nuovo aggiornamento del foglio \"COPPIE\" per l'incontro di "
+        "martedì 29/9, ora a 24 righe: aggiunta Ermanno-Raffaella (riga 6, "
+        "genitori di Alessandra Simonetti), Mario-Patrizia (riga 9, "
+        "genitori di Costance) ed Elvis-Erika (riga 8); Costantino (riga "
+        "11) resta con l'accompagnatrice ancora da confermare (\"Alexa?\").",
 }
 
 # IMG-20260926-WA0012/13/14.jpg (16:41-16:42): tre schermate Amazon con le
