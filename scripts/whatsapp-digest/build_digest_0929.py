@@ -23,8 +23,16 @@ buffet e Antonio Sabatini elenca cosa c'è (crostata, ferrarelle, dolci
 secchi, torta salata, patatine, bibite varie), con una foto di Antonio
 Aceto della crostata appena sfornata. Due vocali di Emanuele Sciarra
 (17:48) hanno una trascrizione incomprensibile (probabile audio di scarsa
-qualità o scherzoso): scartati come rumore. Nessuna menzione di Giovanni
-Lima in questa finestra.
+qualità o scherzoso): scartati come rumore.
+
+Coda pomeriggio/sera (18:20-20:10, aggiornata con l'export delle 20:14 del
+29/9, che estende il giorno oltre le 17:58): Tina Giarrante chiede se
+servono tovaglioli, vassoi per le patatine e un coltello, Antonio Sabatini
+conferma di avere già tutto. Emilio Caniglia (19:37) posta una foto della
+sala consiliare in allestimento per la serata. Emanuele Sciarra (19:42)
+comunica che domani pomeriggio sentirà la promoter del Bimby e aggiornerà
+il gruppo. Resto rumore (conferme di ritardo, battute). Nessuna menzione di
+Giovanni Lima in questa finestra.
 """
 import os
 import sys
@@ -73,6 +81,13 @@ CURATED = {
         "Risponde a Elvis Ippoliti elencando cosa è già coperto per il "
         "buffet: crostata, ferrarelle, dolci secchi, torta salata, "
         "patatine, bibite varie."),
+    ("18:20", "Tina Giarrante"): ("domanda",
+        "Chiede se servono tovaglioli e vassoi per le patatine, e chiede a "
+        "qualcuno di portare un coltello; Antonio Sabatini conferma di "
+        "avere già tutto."),
+    ("19:42", "Emanuele Sciarra"): ("info",
+        "Comunica che domani pomeriggio sentirà la promoter del Bimby e "
+        "aggiornerà il gruppo."),
 }
 
 AUDIO_CURATED = {
@@ -97,6 +112,10 @@ MEDIA_OVERRIDES = {
     (DATE, "17:55", "Antonio Aceto", "IMG-20260929-WA0011.jpg"):
         "Foto di una crostata con marmellata appena sfornata, per il "
         "buffet della serata.",
+    (DATE, "19:37", "Emilio Caniglia", "IMG-20260929-WA0012.jpg"):
+        "Foto della sala consiliare in allestimento per la serata: sul "
+        "tavolo la valigetta di Imperial-life, sullo sfondo gli stendardi "
+        "del Comune di San Benedetto dei Marsi e un crocifisso.",
 }
 
 if __name__ == "__main__":
