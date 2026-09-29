@@ -24,6 +24,15 @@ propone di delegare la spesa per i prossimi eventi sponsorizzati a 1-2
 persone a rotazione con un fondo cassa. Restano rumore: battute, conferme
 brevi e uno scambio di 18:23 di cui manca il contesto (Antonio Sabatini e
 Barbara). Nessuna menzione di Giovanni Lima in questa finestra.
+
+Coda serale (20:27-21:15, export del 29/9): Emanuele chiede a chi lasciare
+le bevande avanzate dalla dimostrazione scorsa (risponde Antonio Sabatini,
+disponibile nel pomeriggio) e trova una soluzione per il riscaldamento
+tramite un cannone a gas del suocero, da riempire con una bombola piccola
+se qualcuno ne ha una. Una foto di Emanuele (20:38) è lo screenshot di un
+fatto di cronaca locale condiviso su Facebook, non legato al comitato,
+tenuta con didascalia neutra. Resto rumore ("Grande Lepiss"). Nessuna
+menzione di Giovanni Lima.
 """
 import os
 import sys
@@ -65,6 +74,14 @@ CURATED = {
         "Per i prossimi eventi sponsorizzati propone di delegare la spesa, "
         "attraverso un fondo cassa, a 1 o 2 persone a rotazione, così da "
         "evitare confusione e malintesi."),
+    ("20:27", "Emanuele Sciarra"): ("domanda",
+        "Chiede a chi può lasciare domani le bevande avanzate dalla "
+        "dimostrazione scorsa."),
+    ("20:31", "Emanuele Sciarra"): ("info",
+        "Comunica di aver trovato una soluzione per il riscaldamento della "
+        "sede: suo suocero ha un cannone a gas, che si può usare "
+        "tranquillamente riempiendo una bombola piccola se qualcuno ne ha "
+        "una."),
 }
 
 AUDIO_CURATED = {
@@ -88,6 +105,11 @@ MEDIA_OVERRIDES = {
         "Foto degli interni della nuova sede del comitato: sala con pareti "
         "arancioni, banco bar in pietra e legno, botti e tavoli alti, sedie "
         "impilate su un lato e archi in mattoni sul fondo.",
+    (DATE, "20:38", "Emanuele Sciarra", "IMG-20260928-WA0009.jpg"):
+        "Screenshot di un post Facebook della testata locale \"Terre "
+        "Marsicane\" su un fatto di cronaca (un arresto dei Carabinieri), "
+        "condiviso come chiacchiera di fine serata, non legato al "
+        "comitato.",
 }
 
 # IMG-20260925-WA0023.jpg (17:46, Alessandra Simonetti): stessa foto
