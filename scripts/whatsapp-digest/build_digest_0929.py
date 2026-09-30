@@ -31,8 +31,18 @@ servono tovaglioli, vassoi per le patatine e un coltello, Antonio Sabatini
 conferma di avere già tutto. Emilio Caniglia (19:37) posta una foto della
 sala consiliare in allestimento per la serata. Emanuele Sciarra (19:42)
 comunica che domani pomeriggio sentirà la promoter del Bimby e aggiornerà
-il gruppo. Resto rumore (conferme di ritardo, battute). Nessuna menzione di
-Giovanni Lima in questa finestra.
+il gruppo. Resto rumore (conferme di ritardo, battute).
+
+Coda notturna (23:09-23:37, aggiornata con l'export delle 20:42 del 30/9):
+a serata conclusa, il gruppo commenta l'esito: raggiunte 23 coppie (una in
+meno delle 24 richieste), ma il rappresentante (Bonifacio) ha comunque
+staccato l'assegno da 600€ senza fare questioni sulla coppia mancante;
+venduto anche un materasso, che dovrebbe valere 100€ in più da confermare
+alla consegna del prodotto — Emanuele Sciarra sentirà Bonifacio l'indomani
+e aggiornerà. Antonio Aceto (23:37), scusandosi per essere andato via
+presto, chiede a Emilio Caniglia se per la prossima riunione si può fare un
+sondaggio (risposta il giorno dopo). Resto rumore (battute su orari di
+lavoro e sveglie). Nessuna menzione di Giovanni Lima in questa finestra.
 """
 import os
 import sys
@@ -88,6 +98,17 @@ CURATED = {
     ("19:42", "Emanuele Sciarra"): ("info",
         "Comunica che domani pomeriggio sentirà la promoter del Bimby e "
         "aggiornerà il gruppo."),
+    ("23:09", "Emanuele Sciarra"): ("info",
+        "A serata conclusa, il gruppo fa il punto: raggiunte 23 coppie "
+        "(una in meno delle 24 richieste), ma il rappresentante (Bonifacio) "
+        "ha comunque staccato l'assegno da 600€ senza fare questioni sulla "
+        "coppia mancante; venduto anche un materasso, che dovrebbe valere "
+        "100€ in più da confermare alla consegna del prodotto. Emanuele "
+        "sentirà Bonifacio l'indomani e aggiornerà il gruppo."),
+    ("23:37", "Antonio Aceto"): ("domanda",
+        "Scusandosi per essere andato via presto dalla serata, chiede a "
+        "Emilio Caniglia se per la prossima riunione si può fare un "
+        "sondaggio (Emilio risponderà di sì il giorno dopo)."),
 }
 
 AUDIO_CURATED = {
