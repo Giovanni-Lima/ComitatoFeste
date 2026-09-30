@@ -33,12 +33,13 @@ public enum MediaType
 
 /// <summary>
 /// Ruolo di accesso di un <see cref="Member"/> al login "casereccio" (vedi AuthService).
-/// Persistito come stringa minuscola ("lettore" | "amministratore") con CHECK lato DB.
-/// Oggi nessun endpoint distingue i due ruoli: la colonna prepara future funzionalità
-/// riservate agli amministratori.
+/// Persistito come stringa minuscola ("lettore" | "amministratore" | "architetto") con CHECK
+/// lato DB. L'ordine conta: <c>TokenAuth</c> confronta i ruoli con <c>&lt;</c>, quindi ogni
+/// ruolo ha i permessi di quelli che lo precedono.
 /// </summary>
 public enum MemberRole
 {
     Lettore,
-    Amministratore
+    Amministratore,
+    Architetto
 }

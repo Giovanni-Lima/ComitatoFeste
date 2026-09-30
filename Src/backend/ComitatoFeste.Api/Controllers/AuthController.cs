@@ -53,9 +53,9 @@ public sealed class AuthController : ControllerBase
         MemberRole role;
         if (_auth.AdminPasswordOk(req.Password))
         {
-            if (match.Role != MemberRole.Amministratore)
+            if (match.Role < MemberRole.Amministratore)
                 return Unauthorized("Credenziali non valide.");
-            role = MemberRole.Amministratore;
+            role = match.Role;
         }
         else if (_auth.ReaderPasswordOk(req.Password))
         {

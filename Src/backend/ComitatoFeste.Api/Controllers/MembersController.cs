@@ -1,5 +1,7 @@
 using ComitatoFeste.Api.Services;
+using ComitatoFeste.Api.Filters;
 using ComitatoFeste.Data;
+using ComitatoFeste.Domain;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
@@ -13,12 +15,43 @@ public sealed class MembersController : ControllerBase
     private readonly ComitatoFesteDbContext _db;
     private readonly ImageThumbnailer _thumbs;
     private readonly IBlobStore? _store;
+    private readonly AuthService _auth;
 
-    public MembersController(ComitatoFesteDbContext db, ImageThumbnailer thumbs, BlobStoreHolder blobs)
+    public MembersController(ComitatoFesteDbContext db, ImageThumbnailer thumbs, BlobStoreHolder blobs, AuthService auth)
     {
+        _auth = auth;
         _db = db;
         _thumbs = thumbs;
         _store = blobs.Store;
+    }
+
+    public sealed record MemberSeenDto(int MemberId, string DisplayName, DateTimeOffset LastSeenAt);
+
+    /// <summary>
+    /// Membri con <c>LastSeenAt</c> valorizzato, dal più recente, escluso chi sta chiedendo.
+    /// Solo architetto (pagina "Dati").
+    /// </summary>
+    [HttpGet("seen")]
+    [TokenAuth(MemberRole.Architetto)]
+    public async Task<IActionResult> GetSeen(CancellationToken ct)
+    {
+        var header = Request.Headers.Authorization.ToString();
+        var token = header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            ? header["Bearer ".Length..].Trim()
+            : null;
+        var me = _auth.ValidatePrincipal(token)?.Username;
+
+        var rows = await _db.Members
+            .Where(m => m.LastSeenAt != null)
+            .Select(m => new { m.Id, m.DisplayName, LastSeenAt = m.LastSeenAt!.Value })
+            .ToListAsync(ct);
+
+        var list = rows
+            .Where(m => me is null || !string.Equals(AuthService.NormalizeUsername(m.DisplayName), me, StringComparison.Ordinal))
+            .OrderByDescending(m => m.LastSeenAt)
+            .Select(m => new MemberSeenDto(m.Id, m.DisplayName, m.LastSeenAt))
+            .ToList();
+        return Ok(list);
     }
 
     /// <summary>

@@ -11,7 +11,7 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.ToTable("Members", t =>
             t.HasCheckConstraint(
                 "CK_Members_Role",
-                "\"Role\" IN ('lettore', 'amministratore')"));
+                "\"Role\" IN ('lettore', 'amministratore', 'architetto')"));
 
         builder.HasKey(m => m.Id);
 

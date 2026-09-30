@@ -191,6 +191,12 @@ Il backend .NET compila pulito e gira contro Postgres locale.
       `MemberRole` minimo opzionale (es. `[TokenAuth(MemberRole.Amministratore)]`)
       pronto per le prossime funzionalità admin-only. Token HMAC firmato
       (`username|ruolo|scadenza`, 30 gg) rimandato come `Authorization: Bearer`.
+      **Ruolo `Architetto`** (30/9/2026, migration `AddArchitettoRole`, terzo valore dell'enum
+      dopo `Amministratore`, quindi eredita tutti i permessi admin): usa la passphrase admin come
+      gli amministratori (il token prende il ruolo a DB se >= Amministratore). Vede la vista
+      **Dati** al posto di **Info** (`GET /api/members/seen`, `[TokenAuth(MemberRole.Architetto)]`:
+      membri con `LastSeenAt` valorizzato, dal più recente, escluso chi chiede). Il ruolo si
+      assegna a mano a DB (`UPDATE "Members" SET "Role"='architetto'`).
       `[TokenAuth]` protegge **solo** i due endpoint JSON qui sotto; gli
       endpoint binari (foto/media) restano aperti per `<img>/<audio>/<video>`.
     - `GET /api/digestpoints?date=yyyy-MM-dd` (+ filtri `author`, `type`) →

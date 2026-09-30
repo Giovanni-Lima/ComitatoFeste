@@ -53,7 +53,7 @@ public sealed class AssistantController : ControllerBase
         var principal = CurrentPrincipal();
         var user = principal?.Username ?? "anonimo";
         DateTimeOffset? ticket = null;
-        if (principal?.Role != MemberRole.Amministratore)
+        if (principal?.Role < MemberRole.Amministratore)
         {
             ticket = _limiter.TryAcquire(user, out var denial);
             if (ticket is null)
