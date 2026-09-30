@@ -407,6 +407,7 @@
     .dati-row{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:10px 14px}
     .dati-row .me-av{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
     .dati-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+    .dati-bell{width:18px;height:18px;flex:none;color:var(--yellow)}
     .dati-when{color:var(--muted);font-size:13px;text-align:right}
     .dati-empty{color:var(--muted);text-align:center;padding:24px}
     .guide{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -1923,6 +1924,7 @@
         return `<div class="dati-row">` +
           `<div class="me-av ph" data-mid="${r.memberId}" style="background:hsl(${hue(r.displayName)} 42% 55%)">${esc(initials(r.displayName))}</div>` +
           `<span class="dati-name">${esc(r.displayName)}</span>` +
+          (r.hasPush ? `<svg class="dati-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-label="Notifiche attive"><title>Notifiche push attive</title><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>` : "") +
           `<span class="dati-when">${when}</span></div>`;
       }).join("");
       // Foto profilo: l'immagine sostituisce il placeholder a iniziali solo se esiste (onload).

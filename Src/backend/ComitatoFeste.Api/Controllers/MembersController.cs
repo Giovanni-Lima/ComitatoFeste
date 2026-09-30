@@ -25,10 +25,11 @@ public sealed class MembersController : ControllerBase
         _store = blobs.Store;
     }
 
-    public sealed record MemberSeenDto(int MemberId, string DisplayName, DateTimeOffset LastSeenAt);
+    public sealed record MemberSeenDto(int MemberId, string DisplayName, DateTimeOffset LastSeenAt, bool HasPush);
 
     /// <summary>
-    /// Membri con <c>LastSeenAt</c> valorizzato, dal più recente, escluso chi sta chiedendo.
+    /// Membri con <c>LastSeenAt</c> valorizzato, dal più recente, escluso chi sta chiedendo;
+    /// <c>HasPush</c> = ha almeno una subscription push.
     /// Solo architetto (pagina "Dati").
     /// </summary>
     [HttpGet("seen")]
@@ -43,13 +44,14 @@ public sealed class MembersController : ControllerBase
 
         var rows = await _db.Members
             .Where(m => m.LastSeenAt != null)
-            .Select(m => new { m.Id, m.DisplayName, LastSeenAt = m.LastSeenAt!.Value })
+            .Select(m => new { m.Id, m.DisplayName, LastSeenAt = m.LastSeenAt!.Value,
+                HasPush = _db.PushSubscriptions.Any(p => p.MemberId == m.Id) })
             .ToListAsync(ct);
 
         var list = rows
             .Where(m => me is null || !string.Equals(AuthService.NormalizeUsername(m.DisplayName), me, StringComparison.Ordinal))
             .OrderByDescending(m => m.LastSeenAt)
-            .Select(m => new MemberSeenDto(m.Id, m.DisplayName, m.LastSeenAt))
+            .Select(m => new MemberSeenDto(m.Id, m.DisplayName, m.LastSeenAt, m.HasPush))
             .ToList();
         return Ok(list);
     }
