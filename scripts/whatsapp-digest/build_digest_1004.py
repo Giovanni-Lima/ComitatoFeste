@@ -89,6 +89,71 @@ CURATED = {
         "bella ma non è Corinaldo."),
     ("13:50", "Alessandra Simonetti"): ("proposta",
         "Propone di aggiungere la data sulla locandina della gita."),
+    ("14:27", "Alessandra Toracchio"): ("proposta",
+        "Sondaggio per scegliere il badge del comitato, con i voti al momento "
+        "dell'export: opzione 1 (7 voti), opzione 2 (0 voti), opzione 3 (0 "
+        "voti), opzione 4 (3 voti), opzione 5 (14 voti)."),
+    ("14:30", "Alessandra Toracchio"): ("info",
+        "Propone di scegliere il badge così da farli stampare subito, due "
+        "copie a testa per sicurezza; il nome sul badge sarà personalizzabile "
+        "da ognuno (esempi: EMILIO, PRESIDENTE, CANIGLIA), basta scriverlo "
+        "accanto al numero scelto."),
+    ("14:48", "Maria Buttari"): ("domanda",
+        "Chiede se la votazione del badge riguarda solo i comitati partecipanti "
+        "o anche lei."),
+    ("14:49", "Alessandra Toracchio"): ("info",
+        "Risponde che i badge si fanno per tutti e invita a votare."),
+    ("15:16", "Alessandra Toracchio"): ("info",
+        "Chiede di controllare chi manca nell'elenco dei nomi per i badge."),
+    ("16:18", "Giovanni Lima"): ("domanda",
+        "Chiede se esiste un IBAN del comitato su cui versare la quota."),
+    ("16:28", "Antonio Sabatini"): ("info",
+        "Mette a disposizione un proprio conto personale per versare la quota "
+        "a chi è lontano e non può venire di persona; provvederà poi a girare "
+        "le somme ad Alessandro D.B."),
+    ("16:32", "Costance Rossi"): ("domanda",
+        "Chiede se la quota va versata sul conto di Antonio Sabatini o su "
+        "quello di Alessandro, così manda la sua; altrimenti alla prossima "
+        "riunione."),
+    ("16:32", "Maria Buttari"): ("info",
+        "Chiede di ricevere anche lei il codice per la quota, per evitare che "
+        "sua madre debba portarla."),
+    ("16:37", "Raffaele Di Cesare"): ("info",
+        "Si rimette alla maggioranza sulla votazione del badge; per le serate "
+        "conferma che ci sono."),
+    ("16:55", "Elvis Ippoliti"): ("proposta",
+        "Propone di mettere sul badge il nome di battesimo, leggibile, con "
+        "eventualmente il soprannome più piccolo sotto: un nome strano o un "
+        "soprannome non farebbe fidare chi incontra i volontari fuori da San "
+        "Benedetto."),
+    ("16:55", "Gilda Di Iulio"): ("info",
+        "Chiede il codice IBAN per la quota, o di pagarla alla prossima "
+        "riunione."),
+    ("17:14", "Domenico Rossi"): ("domanda",
+        "Chiede l'IBAN e l'importo della quota per poter pagare subito."),
+    ("18:04", "Elvis Ippoliti"): ("domanda",
+        "Fa notare che per legge sul badge dovrebbero esserci nome e cognome, "
+        "visto che si chiedono offerte per conto della parrocchia e ci sono "
+        "soldi di mezzo: meglio informarsi prima per evitare sanzioni."),
+    ("18:48", "Alessandra Toracchio"): ("info",
+        "Concorda con Elvis sul nome e cognome, soprattutto dopo quello che è "
+        "successo quest'anno, quando altre persone hanno chiesto soldi "
+        "spacciandosi per il comitato."),
+    ("18:49", "Emanuele Sciarra"): ("domanda",
+        "Chiede quando si metteranno nome e cognome sul badge."),
+    ("18:49", "Elvis Ippoliti"): ("info",
+        "Dice di aver cercato velocemente e che dovrebbe esserci una legge in "
+        "materia, ma non è il suo campo: meglio chiedere a chi è più esperto."),
+    ("19:27", "Tina Giarrante"): ("info",
+        "Segnala che sulla maglia di Antonella c'era scritto un soprannome "
+        "(\"LELLA\"): probabilmente sul cartellino va come dicono loro."),
+    ("20:07", "Alessandra Toracchio"): ("domanda",
+        "Chiede a chi bisogna rivolgersi per avere informazioni sul badge."),
+    ("20:09", "Emanuele Sciarra"): ("info",
+        "Dice che agli 85 ha visto solo il nome sul badge."),
+    ("20:10", "Emanuele Sciarra"): ("proposta",
+        "Propone di chiedere informazioni al Comune, dove c'è la polizia "
+        "municipale che può rispondere."),
 }
 
 AUDIO_CURATED = {
@@ -105,6 +170,12 @@ AUDIO_CURATED = {
         "Racconta la leggenda di San Martino e propone, per la festa, una "
         "piccola rappresentazione del gesto del mantello diviso con il "
         "mendicante."),
+    (DATE, "15:29", "Antonio Aceto", "PTT-20261004-WA0036.opus"): ("proposta",
+        "Propone di iniziare a pubblicizzare la gita a Corinaldo con una "
+        "locandina con la data dell'8 novembre e la scritta \"seguirai i "
+        "dettagli del viaggio\", da pubblicare su Instagram se va bene a "
+        "tutti, e di completarla con programma e dettagli quando Don Enzo "
+        "confermerà il programma."),
 }
 
 MEDIA_OVERRIDES = {
@@ -135,7 +206,38 @@ MEDIA_OVERRIDES = {
         "Seconda versione della locandina per la gita della Classe 1987 a "
         "Corinaldo, \"presso la casa di Santa Maria Goretti\", con la gita a "
         "novembre e i dettagli in arrivo.",
+    (DATE, "14:28", "Alessandra Toracchio", "IMG-20261004-WA0034.jpg"):
+        "Bozza del badge del comitato (opzione 4 del sondaggio): logo "
+        "\"COMITATO FESTA\" in rosa e bianco su sfondo giallo, logo arcade "
+        "\"1987\", nome \"EMILIO\" in corsivo su riquadro bianco.",
+    (DATE, "14:29", "Alessandra Toracchio", "IMG-20261004-WA0035.jpg"):
+        "Bozza del badge del comitato (opzione 5 del sondaggio, la più votata): "
+        "logo \"COMITATO FESTA\" in nero e rosa su sfondo giallo, logo arcade "
+        "\"1987\", nome \"EMILIO\" in grassetto su riquadro bianco.",
+    (DATE, "15:16", "Alessandra Toracchio", "IMG-20261004-WA0039.jpg"):
+        "Foto di un foglio con l'elenco scritto a mano dei nomi dei membri per "
+        "cui fare il badge, da controllare perché manca qualcuno.",
+    (DATE, "15:28", "Antonio Aceto", "IMG-20261004-WA0038.jpg"):
+        "Terza versione della locandina della gita della Classe 1987 a "
+        "Corinaldo: \"La gita si terrà domenica 8 novembre 2026\", presso la "
+        "casa di Santa Maria Goretti, con la scritta \"seguiranno i dettagli "
+        "del viaggio\".",
 }
 
+# Badge già digeriti alle 12:27-12:33 (stessi file rimandati nel sondaggio delle
+# 14:28): duplicati, scartati per non ripetere lo stesso contenuto.
+_SKIP_MEDIA = {
+    ("14:28", "IMG-20261004-WA0014.jpg"),
+    ("14:28", "IMG-20261004-WA0015.jpg"),
+    ("14:28", "IMG-20261004-WA0017.jpg"),
+}
+
+
+def _extra_skip(time_, fname):
+    return (time_, fname) in _SKIP_MEDIA
+
+
 if __name__ == "__main__":
-    build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED)
+    build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
+                 extra_skip_media=_extra_skip,
+                 extra_skip_label="badge duplicati del sondaggio")
