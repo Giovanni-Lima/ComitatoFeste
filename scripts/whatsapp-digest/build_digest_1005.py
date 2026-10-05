@@ -41,26 +41,6 @@ CURATED = {
     ("08:35", "Emanuele Sciarra"): ("info",
         "Invita tutti a ripubblicare i post che verranno pubblicati su "
         "Facebook e Instagram, per avere più visibilità sugli eventi."),
-    ("08:37", "Elvis Ippoliti"): ("domanda",
-        "Chiede se la visita a Corinaldo non sia al santuario di Santa Maria "
-        "Goretti, visto che la locandina dice \"presso la casa\"."),
-    ("08:44", "Serena Di Stefano"): ("info",
-        "Risponde che a Corinaldo c'è anche la casa natale di Santa Maria "
-        "Goretti e che sicuramente si andrà anche lì."),
-    ("08:46", "Elvis Ippoliti"): ("proposta",
-        "Propone di indicare anche il santuario sulla locandina, perché la "
-        "gita è organizzata con la chiesa."),
-    ("08:47", "Emanuele Sciarra"): ("info",
-        "Dice che il programma sarà specificato nella locandina definitiva."),
-    ("08:47", "Serena Di Stefano"): ("info",
-        "Precisa che \"casa\" indicava il luogo di nascita, e che durante la "
-        "giornata si andrà sia da una parte sia dall'altra; la \"casa\" è la "
-        "struttura, non una casa privata."),
-    ("08:48", "Emanuele Sciarra"): ("proposta",
-        "Propone di contattare subito don Enzo per avere il programma, con "
-        "il punto di partenza e i dettagli."),
-    ("08:51", "Elvis Ippoliti"): ("info",
-        "Concorda e propone di fare presto la locandina definitiva."),
     ("11:14", "Elvis Ippoliti"): ("info",
         "Fa notare che il santuario sta a Nettuno ma c'è anche un santuario a "
         "Corinaldo; basta fare la locandina aggiornata con il programma."),
@@ -101,11 +81,6 @@ AUDIO_CURATED = {
         "Spiega che ha scritto \"casa di Santa Maria Goretti\" perché su Google "
         "il santuario risultava a Nettuno, e lui era sicuro che a Corinaldo ci "
         "sia la casa."),
-    (DATE, "12:55", "Martina Del Gizzi", "PTT-20261005-WA0003.opus"): ("info",
-        "Conferma che il santuario di Santa Maria Goretti sta a Nettuno, perché "
-        "da quelle parti è la patrona di Latina."),
-    (DATE, "13:21", "Costantino Mariani", "PTT-20261005-WA0007.opus"): ("info",
-        "Dice che vicino a Corinaldo ci sono la casa natale e la chiesa."),
     (DATE, "13:52", "Dante Caniglia", "PTT-20261005-WA0014.opus"): ("info",
         "Ribadisce che non è la stessa cosa pubblicare nei gruppi con la pagina "
         "rispetto a farlo con il profilo personale."),
@@ -116,7 +91,44 @@ AUDIO_CURATED = {
         "valutazione."),
 }
 
+TEXT_MERGES = [
+    {
+        "anchor_time": "08:37",
+        "anchor_sender": "Elvis Ippoliti",
+        "type": "info",
+        "text": (
+            "Chiede se la visita a Corinaldo non sia al santuario di Santa Maria "
+            "Goretti, visto che la locandina dice \"presso la casa\". Serena "
+            "Di Stefano risponde che a Corinaldo c'è anche la casa natale e che "
+            "durante la giornata si andrà sia lì sia al santuario (la \"casa\" "
+            "è la struttura, non un'abitazione). Elvis propone di indicare anche "
+            "il santuario sulla locandina, perché la gita è con la chiesa; "
+            "Emanuele Sciarra dice che il programma sarà nella locandina definitiva "
+            "e propone di contattare subito don Enzo per il punto di partenza e "
+            "il programma."
+        ),
+        "members": [
+            ["08:37", "Elvis Ippoliti"],
+            ["08:44", "Serena Di Stefano"],
+            ["08:46", "Elvis Ippoliti"],
+            ["08:47", "Emanuele Sciarra"],
+            ["08:47", "Serena Di Stefano"],
+            ["08:48", "Emanuele Sciarra"],
+            ["08:51", "Elvis Ippoliti"],
+        ],
+    },
+]
+
 AUDIO_MERGES = [
+    {
+        "anchor_time": "12:55",
+        "anchor_sender": "Martina Del Gizzi",
+        "type": "info",
+        "text": "Precisa che il santuario di Santa Maria Goretti sta a Nettuno; "
+                "Costantino Mariani aggiunge che a Corinaldo ci sono la casa natale "
+                "e la chiesa.",
+        "members": ["PTT-20261005-WA0003.opus", "PTT-20261005-WA0007.opus"],
+    },
     {
         "anchor_time": "13:07",
         "anchor_sender": "Emanuele Sciarra",
@@ -164,6 +176,17 @@ MEDIA_OVERRIDES = {
         "con il comune di Corinaldo e la santa nata e vissuta lì.",
 }
 
+# IMG-20261005-WA0009.jpg (13:35, Emanuele): screenshot "contenuto non disponibile",
+# già rimosso dall'app dopo l'import del 5/10 — escluso per non reinserirlo.
+_SKIP_FILES = {"IMG-20261005-WA0009.jpg"}
+
+
+def _extra_skip(time_, fname):
+    return fname in _SKIP_FILES
+
+
 if __name__ == "__main__":
     build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
-                 audio_merges=AUDIO_MERGES)
+                 audio_merges=AUDIO_MERGES, text_merges=TEXT_MERGES,
+                 extra_skip_media=_extra_skip,
+                 extra_skip_label="screenshot rimosso in app")

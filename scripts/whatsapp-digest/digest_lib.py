@@ -120,7 +120,7 @@ def build_digest(date, curated, media_overrides, curated_system=None,
                   extra_skip_media=None, extra_skip_label="esclusioni specifiche del giorno",
                   src=None, export=None, parsed_full_path=None,
                   checkpoint_path=None, audio_curated=None, audio_merges=None,
-                  transcript_cache_path=None):
+                  text_merges=None, transcript_cache_path=None):
     """Genera Export/digest_<date>.json + Export/<date>/ a partire dai messaggi
     già parsati, applicando curatela testo (`curated`/`curated_system`) e
     didascalie media (`media_overrides`).
@@ -148,6 +148,13 @@ def build_digest(date, curated, media_overrides, curated_system=None,
     Un vocale non coperto né da `audio_curated` né da `audio_merges` mantiene
     il comportamento di sempre (placeholder, file tenuto, type "media") — è
     la rete di sicurezza in caso la curatela non arrivi a classificare tutto.
+
+    text_merges: come audio_merges ma per messaggi di testo che parlano dello
+    stesso argomento (es. un thread di chiarimenti): i messaggi indicati da
+    `members` (coppie (time, sender)) non generano entry propria, e al loro
+    posto esce un'unica entry ancorata a (anchor_time, anchor_sender).
+    Regola di curatela: il raggruppamento vale per messaggi entro 30 minuti
+    l'uno dall'altro.
     """
     src = src or SRC
     export = export or EXPORT
@@ -157,9 +164,11 @@ def build_digest(date, curated, media_overrides, curated_system=None,
     curated_system = curated_system or {}
     audio_curated = audio_curated or {}
     audio_merges = audio_merges or []
+    text_merges = text_merges or []
     transcript_cache = _load_transcript_cache(transcript_cache_path or TRANSCRIPT_CACHE_PATH)
 
     merged_filenames = {fn for group in audio_merges for fn in group["members"]}
+    text_merged_keys = {(t, s) for group in text_merges for t, s in group["members"]}
 
     with open(parsed_full_path, encoding="utf-8") as f:
         all_msgs = json.load(f)
@@ -202,6 +211,9 @@ def build_digest(date, curated, media_overrides, curated_system=None,
 
         if kind == "text":
             key = (time_, sender)
+            if key in text_merged_keys:
+                # assorbito in un'entry di sintesi (text_merges), vedi docstring
+                continue
             hit = curated.get(key)
             if hit:
                 if key in used_curated_keys:
@@ -270,6 +282,9 @@ def build_digest(date, curated, media_overrides, curated_system=None,
             continue
 
     for group in audio_merges:
+        entries.append({"date": date, "time": group["anchor_time"], "author": group["anchor_sender"],
+                         "type": group["type"], "text": group["text"], "file": None})
+    for group in text_merges:
         entries.append({"date": date, "time": group["anchor_time"], "author": group["anchor_sender"],
                          "type": group["type"], "text": group["text"], "file": None})
 
