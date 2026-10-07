@@ -23,6 +23,10 @@ cercare (vocali 13:07-14:19). Dante Caniglia (13:52) consiglia di
 pubblicare con la pagina dentro i gruppi e di ricondividere sui profili
 personali per farla crescere. Nessuna menzione di Giovanni Lima da parte di
 altri in questa finestra.
+
+Coda serale (17:30-18:21, export del 7/10): Dante (vocale) ribadisce la regola
+di pubblicare le cose ufficiali con la pagina del comitato; Emanuele condivide
+un video di calcio non legato al comitato.
 """
 import os
 import sys
@@ -89,6 +93,10 @@ AUDIO_CURATED = {
         "di Raffaele; nel gruppo di San Benedetto ha inviato la richiesta sia "
         "dal profilo personale sia da quello della pagina, in attesa di "
         "valutazione."),
+    (DATE, "17:30", "Dante Caniglia", "PTT-20261005-WA0021.opus"): ("proposta",
+        "Ribadisce la regola sulla pubblicazione: le cose ufficiali, nei "
+        "gruppi ufficiali, vanno pubblicate sempre con la pagina del "
+        "comitato, poi tutti ricondividono per la popolarità."),
 }
 
 TEXT_MERGES = [
@@ -174,6 +182,9 @@ MEDIA_OVERRIDES = {
         "Screenshot del post della Classe 1987 di San Benedetto dei Marsi con "
         "la locandina della gita a Corinaldo, dove si ricorda il gemellaggio "
         "con il comune di Corinaldo e la santa nata e vissuta lì.",
+    (DATE, "18:21", "Emanuele Sciarra", "VID-20261005-WA0022.mp4"):
+        "Video di una partita di calcio dell'Under 21 dell'Italia, condiviso "
+        "senza commenti legati al comitato.",
 }
 
 # IMG-20261005-WA0009.jpg (13:35, Emanuele): screenshot "contenuto non disponibile",
