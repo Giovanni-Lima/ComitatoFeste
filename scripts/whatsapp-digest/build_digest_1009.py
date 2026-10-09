@@ -106,19 +106,11 @@ AUDIO_MERGES = [
         "anchor_sender": "Antonio Aceto",
         "type": "info",
         "text": (
-            "Antonio Aceto spiega che il collega di Civitella non può "
-            "dargli le castagne subito (si rovinerebbero): le raccoglie e "
-            "cura, e gliele passerà solo a ridosso dell'evento, intorno a "
-            "5€/kg; una volta scongelate vanno però cotte tutte insieme. "
-            "Alessandra, che le ha già prese da Eurospin (belle grosse, "
-            "10-11 a cartoccio), e Martina propongono — vista la scarsità "
-            "— di congelarle a porzioni già pesate, così si cuociono "
-            "gradualmente senza sprechi; Martina segnala anche un possibile "
-            "contatto in Valle Roveto (su Instagram) e indica un prezzo "
-            "indicativo della roscetta intorno a 15€/kg, più caro delle "
-            "castagne da supermercato. Barbara osserva che la scarsità "
-            "generale potrebbe far salire i prezzi; Alessandra mette a "
-            "disposizione il proprio congelatore."
+            "Antonio Aceto spiega perché il collega di Civitella non può "
+            "dargli subito le castagne: le deve prima raccogliere e "
+            "curare, e gliele consegnerà solo a ridosso dell'evento "
+            "(intorno a 5€/kg) per evitare che si rovinino; precisa anche "
+            "che, una volta scongelate, vanno poi cotte tutte insieme."
         ),
         "members": ["PTT-20261009-WA0013.opus", "PTT-20261009-WA0014.opus",
                     "PTT-20261009-WA0015.opus", "PTT-20261009-WA0016.opus",

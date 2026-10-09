@@ -179,6 +179,19 @@ alla logica comune va fatto **solo** in `digest_lib.py`.
   presente, non corretto, in tutti gli script dei giorni 1-5/9/2026 (vedi
   `CLAUDE.md` per i dettagli su cosa questo implica per i dati già
   importati a DB).
+- **Niente sintesi ridondanti tra entry dello stesso sotto-argomento (regola
+  aggiunta il 9/10/2026)**: quando un sotto-argomento viene discusso sia a
+  voce sia per testo in modo intrecciato nello stesso arco di tempo, non si
+  possono accorpare in un'unica entry mista — `TEXT_MERGES` e `AUDIO_MERGES`
+  restano due entry fisiche distinte (vincolo tecnico di `digest_lib.py`).
+  Vanno però scritte come **due metà dello stesso racconto**, non come due
+  sintesi indipendenti: la prima entry (cronologicamente) porta i fatti
+  condivisi (es. "prendiamo le castagne da Eurospin, si congelano a
+  porzioni, prezzo X"), la seconda **riporta solo l'informazione che
+  aggiunge di nuovo**, senza ripetere nomi/numeri/decisioni già nella prima
+  — altrimenti chi legge trova due card quasi identiche una sotto l'altra.
+  Prima di finalizzare un gruppo di entry sullo stesso sotto-argomento,
+  rileggerle tutte insieme e tagliare i fatti doppioni dalle successive.
 - **Sondaggi WhatsApp (regola aggiunta l'8/9/2026)**: nel `.txt` un
   sondaggio è già un messaggio di testo normale (multi-riga), che inizia
   con `SONDAGGIO:` seguito dal titolo e da una riga `OPZIONE: <testo> (N
