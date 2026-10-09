@@ -82,18 +82,13 @@ AUDIO_MERGES = [
         "text": (
             "Maikel conferma che quest'anno le castagne scarseggiano nella "
             "zona (i castagneti si sono ammalati), è in attesa di un altro "
-            "contatto; Cesare conferma di avere un fornitore (qualità da "
-            "verificare) e chiede a Valentina D'Arcadia disponibilità e "
-            "prezzo. Emanuele propone 50 kg come quantità di partenza, "
-            "pensando anche a una piccola scenografia con cestini di "
-            "vimini, ricci e foglie di castagno, e ricorda che ci sarà "
-            "anche il vin brulè, utile pure per i bambini. Elvis calcola "
-            "che con 8-10 castagne a cartoccio (80-100g l'una) 50 kg danno "
-            "40-50 cartocci; nel gruppo si discute se il numero giusto sia "
-            "invece più vicino a 500 cartocci. Luca chiede un rullo per la "
-            "cottura. Antonio Aceto riferisce di aver già chiesto 25 kg a "
-            "un collega di Civitella, che risponderà entro la settimana "
-            "successiva."
+            "contatto; Cesare conferma di avere già un fornitore, anche se "
+            "la qualità è da verificare. Emanuele, oltre alla quantità, "
+            "pensa anche a una piccola scenografia con cestini di vimini, "
+            "ricci e foglie di castagno, e ricorda che ci sarà pure il vin "
+            "brulè, utile anche per i bambini. Antonio Aceto riferisce di "
+            "aver già chiesto 25 kg a un collega di Civitella, che "
+            "risponderà entro la settimana successiva."
         ),
         "members": ["PTT-20261009-WA0003.opus", "PTT-20261009-WA0004.opus",
                     "PTT-20261009-WA0005.opus", "PTT-20261009-WA0006.opus",
@@ -122,14 +117,9 @@ AUDIO_MERGES = [
         "anchor_sender": "Antonio Aceto",
         "type": "info",
         "text": (
-            "Si discute come preparare i cartocci: Antonio Aceto propone "
-            "di congelare le castagne in blocchi da 4-5 kg invece che in "
-            "bustine singole, Elvis preferisce contare \"a occhio\" il "
-            "numero di castagne per cartoccio (10-12 circa) invece di "
-            "pesare ogni porzione. Luca conferma lo stesso criterio a "
-            "volume. Per i cartocci si opta per il giornale riciclato "
-            "(più economico e d'effetto) invece dei bicchieri di plastica, "
-            "con guantoni da forno pesanti procurati da un contatto di "
+            "Antonio Aceto propone, in alternativa alle porzioni singole "
+            "già pesate, di congelare le castagne in blocchi da 4-5 kg; "
+            "per i guantoni da forno pesanti servirà un contatto di "
             "Alessandra."
         ),
         "members": ["PTT-20261009-WA0021.opus", "PTT-20261009-WA0022.opus",
