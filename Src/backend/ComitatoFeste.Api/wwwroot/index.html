@@ -905,10 +905,16 @@
     const fmtDay = (d) => new Date(d + "T12:00:00")
       .toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "long", year: "numeric" })
       .replace(/\.(?=\s)/, "");
-    // "Dati aggiornati al …" al posto della barra filtri in Agenda (vedi boundsLatest).
-    const renderAgendaUpdated = () => { el("agendaUpdated").textContent = boundsLatest
-      ? `Dati aggiornati al ${new Date(boundsLatest + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}`
-      : ""; };
+    // "Dati aggiornati al dd/MM/yyyy alle HH:mm" al posto della barra filtri in Agenda:
+    // data/ora del punto più recente tra quelli caricati (non solo il giorno di bounds.latest,
+    // che non porta l'orario) — il mese di bounds.latest è sempre quello caricato di default,
+    // quindi il suo punto più recente è anche il più recente in assoluto.
+    const renderAgendaUpdated = () => {
+      const latest = data.reduce((max, p) => (!max || p.occurredAt > max) ? p.occurredAt : max, null);
+      el("agendaUpdated").textContent = latest
+        ? `Dati aggiornati al ${new Date(latest).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Rome" })} alle ${fmtTime(latest)}`
+        : "";
+    };
 
     // `data`: solo l'Agenda, caricata un mese alla volta (vedi load()/loadPreviousMonth()).
     // Media e Importanti hanno ognuna la propria query full-history, indipendente dal mese
@@ -919,7 +925,6 @@
     let importantData = [];
     let agendaFrom = null;      // yyyy-MM-01: inizio del mese più vecchio già caricato in Agenda
     let boundsEarliest = null;  // yyyy-MM-dd: giorno più vecchio con dati in tutta la storia (null = nessuno)
-    let boundsLatest = null;    // yyyy-MM-dd: giorno più recente con dati (vista pulita), mostrato in Agenda al posto dei filtri
     let loadingPrevMonth = false;
     let filterType = null;   // null = mostra tutti i tipi
 
@@ -1613,8 +1618,6 @@
         const bounds = await fetchBounds();
         if (bounds === null) return;   // 401: già gestito da fetchJson
         boundsEarliest = bounds.earliest || null;
-        boundsLatest = bounds.latest || null;
-        renderAgendaUpdated();
 
         // Mese di default: quello dell'ultimo giorno con dati (bounds.latest), non il mese
         // solare corrente — così un mese nuovo ancora senza punti non appare vuoto, si
@@ -1637,6 +1640,7 @@
         data = agendaPts;
         mediaData = mediaPts;
         importantData = importantPts;
+        renderAgendaUpdated();
 
         renderStats();
         mediaDirty = true;
