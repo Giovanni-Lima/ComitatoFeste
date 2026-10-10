@@ -146,6 +146,41 @@ public sealed class PushController : ControllerBase
             : Ok(new PushSendResult(sent, pruned));
     }
 
+    /// <summary>
+    /// Pulsante "AGGIORNA" in Agenda: notifica solo le subscription di Giovanni Lima (operatore
+    /// della pipeline di export/import), chiedendogli di lanciare un nuovo aggiornamento dei
+    /// dati. Il destinatario è hardcoded per nome, come <see cref="PushKeys"/> fa già per il
+    /// subject VAPID — non esiste un ruolo "operatore pipeline" a DB.
+    /// </summary>
+    [HttpPost("request-update")]
+    [TokenAuth]
+    public async Task<IActionResult> RequestUpdate(CancellationToken ct)
+    {
+        if (!_sender.IsConfigured)
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "VAPID non configurato sull'API.");
+
+        var giovanniId = await _db.Members
+            .Where(m => m.DisplayName == "Giovanni Lima")
+            .Select(m => (int?)m.Id)
+            .FirstOrDefaultAsync(ct);
+        if (giovanniId is null)
+            return NotFound("Membro \"Giovanni Lima\" non trovato.");
+
+        var requesterId = await ResolveMemberIdAsync(ct);
+        var requesterName = requesterId is null ? null : await _db.Members
+            .Where(m => m.Id == requesterId)
+            .Select(m => m.DisplayName)
+            .FirstOrDefaultAsync(ct);
+        var body = requesterName is null
+            ? "Qualcuno ha richiesto un aggiornamento dei dati."
+            : $"{requesterName} ha richiesto un aggiornamento dei dati.";
+
+        var (sent, pruned) = await _sender.SendToMemberAsync(
+            giovanniId.Value, BuildPayload("Comitato feste 87", body, "/", "request-update"), ct);
+
+        return Ok(new PushSendResult(sent, pruned));
+    }
+
     private static string BuildPayload(string title, string body, string? url, string? tag) =>
         JsonSerializer.Serialize(new
         {
