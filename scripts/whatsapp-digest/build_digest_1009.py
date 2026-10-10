@@ -19,8 +19,23 @@ diviso in tre blocchi tematici con TEXT_MERGES + AUDIO_MERGES separati per
 tenerlo leggibile senza perdere i dettagli operativi concreti (quantità,
 prezzi, date). Chiude un sotto-thread su chi debba occuparsi della
 pubblicità/locandina di San Martino (Pro Loco o il comitato stesso, visto
-che partecipa con vin brulè e castagne). Nessuna menzione di Giovanni Lima
-da parte di altri in questa finestra.
+che partecipa con vin brulè e castagne).
+
+Pomeriggio/sera (14:43-23:13): prosegue a intermittenza il thread castagne
+(Barbara si offre per i giornali dei cartocci, Costance verifica prima di
+mandare la sua contattata, Costantino aggiorna su un fornitore che aspetta
+che "cadano" le castagne). Serena aggiorna sulle adesioni alla gita (6
+persone, 2 pagate). Lungo scambio serale su come arrostire le castagne:
+Costantino consiglia di procurarsi subito un "girafusto", Emanuele propone
+di farsene saldare uno artigianale, Elvis condivide un tutorial per
+riciclare il cestello di una lavatrice e un bruciatore a brace. In tarda
+serata Emanuele cerca una lavatrice da recuperare per il motore: Antonio
+Aceto ne aveva una appena rottamata, poi se ne trova un'altra in zona
+(Marrocchino, di un certo Domenico) ed Emanuele si offre di fare il giro
+di telefonate e il ritiro. Maria Buttari conferma la propria presenza a
+Corinaldo (3 posti). Escluso come fuori tema un breve scambio su un
+monumento locale (Don Carlo Gnocchi) senza legami con il comitato. Nessuna
+menzione di Giovanni Lima da parte di altri in questa finestra.
 """
 import os
 import sys
@@ -59,6 +74,24 @@ CURATED = {
         "Risponde che se la Pro Loco organizza la pubblicità si può "
         "chiedere di citare la partecipazione del comitato 87 con le "
         "castagne; propone di farla insieme, ma prima bisogna chiedere."),
+    ("15:07", "Barbara Rizio"): ("info",
+        "Si offre di procurare i giornali per i cartocci delle castagne."),
+    ("15:55", "Costance Rossi"): ("domanda",
+        "Chiede conferma se la sua contattata deve andare lunedì a "
+        "verificare la disponibilità delle castagne, altrimenti non la "
+        "manda."),
+    ("17:13", "Serena Di Stefano"): ("info",
+        "Comunica di avere già 6 persone segnate per la gita a Corinaldo, "
+        "di cui due hanno già pagato."),
+    ("19:26", "Emanuele Sciarra"): ("proposta",
+        "Dice che vedrà a lavoro un contatto per valutare la fattibilità "
+        "di un gira-castagne artigianale, proponendo di usare la brace al "
+        "posto di un bruciatore a gas; chiede pareri al gruppo."),
+    ("23:13", "Maria Buttari"): ("info",
+        "Comunica di essersi organizzata per scendere: parteciperà alla "
+        "gita a Corinaldo e chiede di tenerle per ora 3 posti (lei più "
+        "eventualmente i genitori, da confermare), taggando Antonio "
+        "Sabatini per le prenotazioni."),
 }
 
 AUDIO_CURATED = {
@@ -72,6 +105,42 @@ AUDIO_CURATED = {
         "qualcun altro conosce un fornitore con un prezzo migliore, e "
         "quante castagne servano, perché la settimana successiva a "
         "Civitella c'è una festa che rischia di esaurirle."),
+    (DATE, "19:01", "Costantino Mariani", "PTT-20261009-WA0039.opus"): ("info",
+        "Riferisce che un contatto ha due castagneti più uno in prestito, "
+        "ma le castagne non sono ancora cadute: prima della settimana "
+        "successiva non può dire nulla su quantità né prezzo; gli si è "
+        "tenuto largo chiedendogli fino a 100 kg."),
+    (DATE, "19:27", "Elvis Ippoliti", "PTT-20261009-WA0045.opus"): ("info",
+        "Conferma che la brace sembra la soluzione migliore rispetto al "
+        "bruciatore a gas, spiegando che il cestello può essere fatto "
+        "girare a manovella o con un motorino."),
+    (DATE, "22:07", "Emanuele Sciarra", "PTT-20261009-WA0046.opus"): ("domanda",
+        "Chiede se qualcuno ha una lavatrice da buttare, per recuperare "
+        "gratis il motore per il gira-castagne."),
+    (DATE, "22:09", "Antonio Aceto", "PTT-20261009-WA0048.opus"): ("info",
+        "Racconta di aver avuto una lavatrice funzionante nei propri "
+        "magazzini, rottamata però la settimana scorsa per un problema di "
+        "tempismo."),
+    (DATE, "22:16", "Antonio Aceto", "PTT-20261009-WA0052.opus"): ("info",
+        "Precisa che la lavatrice appena buttata è di un certo Domenico, "
+        "sempre in zona Marrocchino."),
+    (DATE, "22:17", "Emanuele Sciarra", "PTT-20261009-WA0053.opus"): ("info",
+        "Dice che farà lui il giro di telefonate per cercare una "
+        "lavatrice da recuperare, occupandosi personalmente del ritiro "
+        "per allestire il gira-castagne."),
+    # Vocali di rumore/battute non legate al comitato (gioco ricorrente
+    # "rotonda", refusi, commenti troppo vaghi per essere utilizzabili).
+    (DATE, "14:51", "Cesare Raglione", "PTT-20261009-WA0033.opus"): ("rumore", ""),
+    (DATE, "15:08", "Dante Caniglia", "PTT-20261009-WA0034.opus"): ("rumore", ""),
+    (DATE, "19:00", "Costantino Mariani", "PTT-20261009-WA0038.opus"): ("rumore", ""),
+    (DATE, "19:03", "Emanuele Sciarra", "PTT-20261009-WA0040.opus"): ("rumore", ""),
+    (DATE, "19:05", "Costantino Mariani", "PTT-20261009-WA0041.opus"): ("rumore", ""),
+    (DATE, "19:05", "Emanuele Sciarra", "PTT-20261009-WA0042.opus"): ("rumore", ""),
+    (DATE, "22:07", "Emanuele Sciarra", "PTT-20261009-WA0047.opus"): ("rumore", ""),
+    (DATE, "22:11", "Emanuele Sciarra", "PTT-20261009-WA0051.opus"): ("rumore", ""),
+    (DATE, "22:55", "Elvis Ippoliti", "PTT-20261009-WA0054.opus"): ("rumore", ""),
+    (DATE, "22:55", "Elvis Ippoliti", "PTT-20261009-WA0055.opus"): ("rumore", ""),
+    (DATE, "22:56", "Elvis Ippoliti", "PTT-20261009-WA0056.opus"): ("rumore", ""),
 }
 
 AUDIO_MERGES = [
@@ -139,6 +208,31 @@ AUDIO_MERGES = [
             "altrimenti bisogna sentirli."
         ),
         "members": ["PTT-20261009-WA0026.opus", "PTT-20261009-WA0027.opus"],
+    },
+    {
+        "anchor_time": "19:09",
+        "anchor_sender": "Costantino Mariani",
+        "type": "proposta",
+        "text": (
+            "Costantino consiglia di procurarsi subito un \"girafusto\" "
+            "per arrostire le castagne, prima che diventi indisponibile; "
+            "Emanuele rilancia chiedendo se qualcuno ha la foto di un "
+            "gira-castagne artigianale di un amico, per farselo saldare su "
+            "misura e averne uno proprio del comitato."
+        ),
+        "members": ["PTT-20261009-WA0043.opus", "PTT-20261009-WA0044.opus"],
+    },
+    {
+        "anchor_time": "22:10",
+        "anchor_sender": "Emanuele Sciarra",
+        "type": "info",
+        "text": (
+            "Riferisce di una lavatrice appena buttata in zona Marrocchino "
+            "a San Benedetto; prova a chiedere al conoscente che gliela "
+            "smonterebbe se può dargli solo cestello e motore "
+            "gratuitamente."
+        ),
+        "members": ["PTT-20261009-WA0049.opus", "PTT-20261009-WA0050.opus"],
     },
 ]
 
@@ -269,8 +363,34 @@ TEXT_MERGES = [
             ["14:23", "Alessandra Toracchio"], ["14:26", "Elvis Ippoliti"],
         ],
     },
+    {
+        "anchor_time": "19:11",
+        "anchor_sender": "Elvis Ippoliti",
+        "type": "info",
+        "text": (
+            "Elvis condivide un video e un link su come costruire un "
+            "gira-castagne riciclando il cestello di una lavatrice."
+        ),
+        "members": [
+            ["19:11", "Elvis Ippoliti"], ["19:13", "Elvis Ippoliti"],
+        ],
+    },
 ]
+
+# IMG-20261010-WA0000.jpg e WA0001.jpg (22:51/22:58, Emanuele): screenshot di
+# un post Facebook sugli Alpini e di una ricerca sul monumento a Don Carlo
+# Gnocchi — curiosità storico-locale innescata dal gioco di parole "rotonda",
+# senza legami con l'organizzazione del comitato: escluse come l'intero
+# sotto-thread (22:51-22:59) che le accompagna.
+_SKIP_FILES = {"IMG-20261010-WA0000.jpg", "IMG-20261010-WA0001.jpg"}
+
+
+def _extra_skip(time_, fname):
+    return fname in _SKIP_FILES
+
 
 if __name__ == "__main__":
     build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
-                 audio_merges=AUDIO_MERGES, text_merges=TEXT_MERGES)
+                 audio_merges=AUDIO_MERGES, text_merges=TEXT_MERGES,
+                 extra_skip_media=_extra_skip,
+                 extra_skip_label="fuori tema (monumento Don Carlo Gnocchi)")
