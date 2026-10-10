@@ -123,6 +123,9 @@
       background:color-mix(in srgb, var(--c) 13%, var(--surface));
       color:color-mix(in srgb, var(--c) 66%, #fff);
       box-shadow:0 0 0 1px var(--c), 0 0 12px -4px var(--c)}
+    /* al posto della barra filtri in Agenda: data dell'ultimo giorno con dati */
+    .updated-note{font-family:var(--font-display);font-size:16px;font-weight:400;
+      letter-spacing:.02em;color:var(--ink-soft)}
 
     .main{flex:1;min-width:0;display:flex;flex-direction:column}
     .topbar{position:sticky;top:0;z-index:10;background:var(--brand);
@@ -662,7 +665,10 @@
       </header>
 
       <section class="view" id="viewAgenda">
-        <div class="typebar"><div class="filters" id="filters"></div></div>
+        <div class="typebar">
+          <div class="filters" id="filters" hidden></div>
+          <div class="updated-note" id="agendaUpdated"></div>
+        </div>
         <div class="content">
           <main class="timeline" id="timeline"></main>
           <aside class="stats" id="stats"></aside>
@@ -899,6 +905,10 @@
     const fmtDay = (d) => new Date(d + "T12:00:00")
       .toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "long", year: "numeric" })
       .replace(/\.(?=\s)/, "");
+    // "Dati aggiornati al …" al posto della barra filtri in Agenda (vedi boundsLatest).
+    const renderAgendaUpdated = () => { el("agendaUpdated").textContent = boundsLatest
+      ? `Dati aggiornati al ${new Date(boundsLatest + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}`
+      : ""; };
 
     // `data`: solo l'Agenda, caricata un mese alla volta (vedi load()/loadPreviousMonth()).
     // Media e Importanti hanno ognuna la propria query full-history, indipendente dal mese
@@ -909,6 +919,7 @@
     let importantData = [];
     let agendaFrom = null;      // yyyy-MM-01: inizio del mese più vecchio già caricato in Agenda
     let boundsEarliest = null;  // yyyy-MM-dd: giorno più vecchio con dati in tutta la storia (null = nessuno)
+    let boundsLatest = null;    // yyyy-MM-dd: giorno più recente con dati (vista pulita), mostrato in Agenda al posto dei filtri
     let loadingPrevMonth = false;
     let filterType = null;   // null = mostra tutti i tipi
 
@@ -1602,6 +1613,8 @@
         const bounds = await fetchBounds();
         if (bounds === null) return;   // 401: già gestito da fetchJson
         boundsEarliest = bounds.earliest || null;
+        boundsLatest = bounds.latest || null;
+        renderAgendaUpdated();
 
         // Mese di default: quello dell'ultimo giorno con dati (bounds.latest), non il mese
         // solare corrente — così un mese nuovo ancora senza punti non appare vuoto, si
