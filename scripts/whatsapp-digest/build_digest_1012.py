@@ -14,8 +14,14 @@ Corinaldo: Emilio spiega la composizione della quota attuale (30€, di cui
 riunione; il gruppo discute se sia sostenibile e converge più su un
 ridotto che su una gratuità totale, senza decisione definitiva in questa
 finestra. Chiude un breve siparietto: Emilio cancella per errore anche un
-messaggio di Ugo insieme al proprio. Nessuna menzione di Giovanni Lima da
-parte di altri in questa finestra.
+messaggio di Ugo insieme al proprio.
+
+Coda serale (19:47, 22:14-22:21): un'ultima adesione per il 16 ottobre, poi
+riprende il thread del gira-castagne — Emanuele ha trovato una lavatrice
+(cestello da 10 kg) e punta a farne saldare i pezzi la settimana
+successiva per i primi test; Maikel conferma la quantità di castagne
+concordata. Nessuna menzione di Giovanni Lima da parte di altri in questa
+finestra.
 """
 import os
 import sys
@@ -95,9 +101,28 @@ CURATED = {
         "cancellato anche un messaggio di Ugo Trinchini, scusandosi; "
         "Alessandro Di Benedetto commenta scherzosamente \"c'è aria di "
         "dittatura\"."),
+    ("19:47", "Alessandra Simonetti"): ("info",
+        "Comunica a Emilio di poter aggiungere altre due persone alla "
+        "lista del 16 ottobre: Cristina e Giampiero."),
+    ("22:20", "Maikel Montano"): ("domanda",
+        "Chiede conferma sulla quantità di castagne concordata (3 "
+        "quintali?)."),
 }
 
-AUDIO_CURATED = {}
+AUDIO_CURATED = {
+    (DATE, "22:14", "Emanuele Sciarra", "PTT-20261012-WA0017.opus"): ("info",
+        "Riferisce di aver trovato la lavatrice per il gira-castagne: la "
+        "settimana prossima proverà a far saldare tutti i pezzi "
+        "necessari e a fare le prime prove di cottura; chiede aggiornamenti "
+        "sulla disponibilità di castagne."),
+    (DATE, "22:20", "Emanuele Sciarra", "PTT-20261012-WA0019.opus"): ("info",
+        "Conferma la quantità di castagne: la cuoceranno anche in "
+        "occasione di Sant'Antonio, il resto lo congeleranno."),
+    (DATE, "22:21", "Emanuele Sciarra", "PTT-20261012-WA0020.opus"): ("info",
+        "Riferisce di aver trovato fortunosamente una lavatrice da 10 kg, "
+        "con un cestello abbastanza grande."),
+    (DATE, "22:15", "Emanuele Sciarra", "PTT-20261012-WA0018.opus"): ("rumore", ""),
+}
 
 MEDIA_OVERRIDES = {
     (DATE, "09:03", "Emilio Caniglia", "IMG-20261012-WA0002.jpg"):
