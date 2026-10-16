@@ -282,10 +282,12 @@ def build_digest(date, curated, media_overrides, curated_system=None,
             continue
 
     for group in audio_merges:
-        entries.append({"date": date, "time": group["anchor_time"], "author": group["anchor_sender"],
+        entries.append({"date": date, "time": group["anchor_time"],
+                         "author": AUTHOR_ALIASES.get(group["anchor_sender"], group["anchor_sender"]),
                          "type": group["type"], "text": group["text"], "file": None})
     for group in text_merges:
-        entries.append({"date": date, "time": group["anchor_time"], "author": group["anchor_sender"],
+        entries.append({"date": date, "time": group["anchor_time"],
+                         "author": AUTHOR_ALIASES.get(group["anchor_sender"], group["anchor_sender"]),
                          "type": group["type"], "text": group["text"], "file": None})
 
     stale = existing_before - kept_filenames
