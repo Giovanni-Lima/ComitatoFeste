@@ -7,8 +7,17 @@ ventesima coppia (Amanda con Mike). Valentina chiede cosa portare e a che
 ora; Antonio Sabatini riepiloga il buffet (dolce di Ilenia, salati di
 Barbara, crostata sua, eventuali pasticcini) e conferma l'appuntamento
 entro le 21 alla sala consiliare; Valentina si offre per le bibite, Luca
-segnala che Claudia sta preparando delle pizzette. Nessuna menzione di
-Giovanni Lima da parte di altri in questa finestra.
+segnala che Claudia sta preparando delle pizzette.
+
+Pomeriggio/sera (16:56-21:03, aggiornata con l'export delle 9:32 del 18/10):
+Emilio Caniglia posta l'elenco definitivo delle coppie (20, foto) e ricorda
+il ritrovo alle 20:45, incontro sponsorizzato alle 21. Tina Giarrante (18:04)
+comunica che stasera non può venire ma al suo posto viene Giusy (di Sakis);
+Alessandra Simonetti (18:47) comunica che al posto di Cristina e Giampiero
+vengono Antonietta e Gigi; Ugo Trinchini (20:12) comunica che al posto di
+Annesa rientra Tina. Due video senza audio (Emanuele 20:20, Elvis 20:23) sono
+GIF di reazione, scartate in automatico. Resto rumore (battute, risate,
+conferme di ritardo). Nessuna menzione di Giovanni Lima in questa finestra.
 """
 import os
 import sys
@@ -22,10 +31,26 @@ CURATED = {
     ("07:38", "Ugo Trinchini"): ("info",
         "Per l'incontro di stasera, comunica di poter aggiungere Amanda "
         "in coppia con Mike."),
+    ("16:58", "Emilio Caniglia"): ("info",
+        "Ricorda l'appuntamento di questa sera, alle 20:45, presso la sala "
+        "consiliare del Comune: l'incontro sponsorizzato comincerà alle "
+        "21."),
+    ("18:04", "Tina Giarrante"): ("info",
+        "Comunica che stasera non può venire, ma al suo posto viene Giusy "
+        "(di Sakis)."),
+    ("18:47", "Alessandra Simonetti"): ("info",
+        "Comunica che al posto di Cristina e Giampiero vengono Antonietta "
+        "e Gigi."),
+    ("20:12", "Ugo Trinchini"): ("info",
+        "Comunica che al posto di Annesa rientra Tina."),
 }
 
 AUDIO_CURATED = {}
-MEDIA_OVERRIDES = {}
+MEDIA_OVERRIDES = {
+    (DATE, "16:56", "Emilio Caniglia", "IMG-20261016-WA0026.jpg"):
+        "Foglio \"COPPIE\" definitivo per l'incontro del 16 ottobre, 20 "
+        "righe complete.",
+}
 
 TEXT_MERGES = [
     {
