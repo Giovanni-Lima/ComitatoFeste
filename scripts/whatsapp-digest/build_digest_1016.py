@@ -74,6 +74,18 @@ TEXT_MERGES = [
     },
 ]
 
+# ffprobe non è installato su questa macchina: is_reaction_gif() non riesce a
+# verificarlo da sola (eccezione silenziosa -> non esclude). Verificato a mano
+# cercando l'handler audio ("soun"/"mp4a") nei box del container mp4: assente
+# in entrambi (solo "vide"), quindi sono GIF di reazione mute, non video veri.
+_SKIP_FILES = {"VID-20261016-WA0047.mp4", "VID-20261016-WA0048.mp4"}
+
+
+def _extra_skip(time_, fname):
+    return fname in _SKIP_FILES
+
+
 if __name__ == "__main__":
     build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
-                 text_merges=TEXT_MERGES)
+                 text_merges=TEXT_MERGES, extra_skip_media=_extra_skip,
+                 extra_skip_label="gif di reazione mp4 (verificata a mano, niente ffprobe)")
