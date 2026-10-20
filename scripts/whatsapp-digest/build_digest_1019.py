@@ -8,8 +8,13 @@ materassi (bonus 50€ per associazione nuova presentata), con Cesare che
 suggerisce Pro Loco Pescina e il circolo anziani di San Benedetto; Alessandra
 intanto chiede già informazioni a Ortucchio. In coda, Barbara chiede se le
 stampe della locandina di Corinaldo bastano: Cesare ne tiene due per i
-negozi, Emilio conferma che le affiggeranno nei prossimi giorni. Nessuna
-menzione di Giovanni Lima in questa finestra.
+negozi, Emilio conferma che le affiggeranno nei prossimi giorni.
+
+Sera (19:22-19:41, aggiornata con l'export delle 00:06 del 21/10): Alessandra
+Toracchio aggiorna sul comitato di Ortucchio, da contattare tramite il
+presidente Ferruccio (lei lo conosce solo appena); chiede a Emanuele Sciarra
+se in fabbrica qualcuno lo conosce meglio. Emanuele risponde di provare a
+prendere contatti. Nessuna menzione di Giovanni Lima in questa finestra.
 """
 import os
 import sys
@@ -26,9 +31,14 @@ CURATED = {
     ("15:19", "Barbara Rizio"): ("domanda",
         "Chiede se le stampe già fatte della locandina di Corinaldo sono "
         "sufficienti, o se conviene farne altre."),
-    ("15:48", "Emilio Caniglia"): ("info",
+    ("15:49", "Emilio Caniglia"): ("info",
         "Risponde che tra oggi e domani vedranno di affiggere le "
         "locandine di Corinaldo."),
+    ("19:22", "Alessandra Toracchio"): ("info",
+        "Aggiorna sul comitato di Ortucchio: va contattato tramite il "
+        "presidente Ferruccio, che lei conosce solo appena; chiede a "
+        "Emanuele Sciarra se in fabbrica qualcuno lo conosce meglio. "
+        "Emanuele risponde di provare a prendere contatti."),
 }
 
 AUDIO_CURATED = {
