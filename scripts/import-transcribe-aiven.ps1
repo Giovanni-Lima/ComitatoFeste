@@ -31,7 +31,8 @@ param(
     [string]$ImporterArgs = "",
     [string]$TranscriberArgs = "",
     [string]$EmbedderArgs = "",
-    [switch]$SkipEmbedder
+    [switch]$SkipEmbedder,
+    [switch]$SkipNotify
 )
 
 $ErrorActionPreference = "Stop"
@@ -50,12 +51,20 @@ $userInfo = $u.UserInfo -split ':', 2
 $env:COMITATOFESTE_CONNECTION = "Host=$($u.Host);Port=$($u.Port);Database=$($u.AbsolutePath.TrimStart('/'));Username=$($userInfo[0]);Password=$($userInfo[1]);SSL Mode=Require;Trust Server Certificate=true"
 
 # --- COMITATOFESTE_HOOK_SECRET da scripts\hook.secret ---
-$hookFile = Join-Path $PSScriptRoot "hook.secret"
-if (-not (Test-Path $hookFile)) { throw "Manca $hookFile (lo stesso COMITATOFESTE_HOOK_SECRET impostato su Render, una riga)." }
-$hookSecret = (Get-Content $hookFile -Raw).Trim()
-if (-not $hookSecret) { throw "$hookFile e' vuoto." }
-$env:COMITATOFESTE_HOOK_SECRET = $hookSecret
-$env:COMITATOFESTE_HOOK_URL = "https://comitatofeste.onrender.com"
+# -SkipNotify (aggiunto per i cicli che importano piu' giorni in sequenza, vedi
+# il "gotcha" di close_past_days in CLAUDE.md): niente env => il Transcriber
+# stampa "notifiche push: ... non impostati - salto" e non invia nulla, cosi'
+# un recupero di piu' giorni arretrati non manda una notifica per ciascuno.
+if ($SkipNotify) {
+    Write-Host "Notifiche push: saltate (-SkipNotify)." -ForegroundColor Yellow
+} else {
+    $hookFile = Join-Path $PSScriptRoot "hook.secret"
+    if (-not (Test-Path $hookFile)) { throw "Manca $hookFile (lo stesso COMITATOFESTE_HOOK_SECRET impostato su Render, una riga)." }
+    $hookSecret = (Get-Content $hookFile -Raw).Trim()
+    if (-not $hookSecret) { throw "$hookFile e' vuoto." }
+    $env:COMITATOFESTE_HOOK_SECRET = $hookSecret
+    $env:COMITATOFESTE_HOOK_URL = "https://comitatofeste.onrender.com"
+}
 
 # --- COMITATOFESTE_R2_* da scripts\r2.env (gitignorato; modello: r2.env.template) ---
 # Byte dei file su Cloudflare R2 invece che in Postgres. Non bloccante: se mancano, Importer e
