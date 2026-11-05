@@ -2,15 +2,19 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-11-04 — solo dati di curatela, logica comune in digest_lib.py.
 
-Finestra 07:47-11:04 (export Dropbox delle 11:35 di oggi). Mattina presto:
-Emilio posta il recap della riunione Pro Loco di ieri sera su San
-Martino (ruoli definiti, dettagli alla riunione del 6/11) e un bilancio
-molto positivo della stagione, con un richiamo motivazionale in vista di
-San Martino. Poi lunga discussione sul Capodanno: aspetti economici
-dell'accordo con Gianvito (percentuale sull'incasso), disponibilità di
-Andrea Di Loreto per l'animazione, nomi alternativi, un sondaggio sulla
-partecipazione dei membri e un confronto sul metodo (prima le
-disponibilità, poi i contatti). Nessuna menzione di Giovanni Lima.
+Finestra 07:47-15:54 (coda aggiunta il 5/11 con l'export Dropbox delle
+15:59). Mattina presto: Emilio posta il recap della riunione Pro Loco di
+ieri sera su San Martino (ruoli definiti, dettagli alla riunione del
+6/11) e un bilancio molto positivo della stagione, con un richiamo
+motivazionale in vista di San Martino. Poi lunga discussione sul
+Capodanno: aspetti economici dell'accordo con Gianvito (percentuale
+sull'incasso), disponibilità di Andrea Di Loreto per l'animazione, nomi
+alternativi, un sondaggio sulla partecipazione dei membri e un confronto
+sul metodo (prima le disponibilità, poi i contatti). Nel primo
+pomeriggio: Emanuele posta come spunto la calza/i biglietti di un altro
+comitato per le prossime calze della Befana; prosegue poi la discussione
+sul Capodanno, con il nodo economico (costo per famiglia) e di metodo
+(sondaggio sì/no) al centro. Nessuna menzione di Giovanni Lima.
 """
 import os
 import sys
@@ -47,6 +51,13 @@ CURATED = {
         "disponibilità dei membri del comitato, prima di contattare "
         "Di Loreto; Ilenia concorda, non avendo sentito quella parte "
         "della discussione."),
+    ("13:19", "Emanuele Sciarra"): ("proposta",
+        "Propone di prendere spunto, per le prossime calze della "
+        "Befana, dalle calze e dai biglietti/tagliandi personalizzati "
+        "realizzati dal comitato \"gli anni 1985\" (foto allegata), e "
+        "di personalizzare allo stesso modo anche i tagliandi rilasciati "
+        "dal comitato (la seconda foto, dei biglietti, non è stata "
+        "inclusa nell'export). Maria e Ilenia si mostrano d'accordo."),
 }
 
 AUDIO_CURATED = {
@@ -62,7 +73,13 @@ AUDIO_CURATED = {
     (DATE, "10:10", "Antonio Aceto", "PTT-20261104-WA0011.opus"): ("rumore", ""),
 }
 
-MEDIA_OVERRIDES = {}
+MEDIA_OVERRIDES = {
+    (DATE, "13:18", "Emanuele Sciarra", "IMG-20261104-WA0019.jpg"):
+        "Foto di una calza della Befana realizzata dal comitato \"gli "
+        "anni 1985\" (etichetta \"Arriva la Befana, 6 gennaio 2025\"), "
+        "piena di dolciumi, gomme da masticare e lecca-lecca: spunto per "
+        "le prossime calze del comitato.",
+}
 
 TEXT_MERGES = [
     {
@@ -162,6 +179,41 @@ AUDIO_MERGES = [
         ),
         "members": [
             "PTT-20261104-WA0008.opus", "PTT-20261104-WA0009.opus",
+        ],
+    },
+    {
+        "anchor_time": "13:41",
+        "anchor_sender": "Ugo Trinchini",
+        "type": "proposta",
+        "text": (
+            "Prosegue la discussione sul Capodanno. Ugo propone: se "
+            "entro oggi non si raggiungono almeno 15-17 persone sicure, "
+            "conviene liberare subito Andrea Di Loreto dall'impegno "
+            "(richiamandolo tramite Mike, che ha il suo numero), per "
+            "lasciargli la possibilità di accettare altri ingaggi. "
+            "Emanuele conferma l'idea del sondaggio per sondare le "
+            "adesioni e fare un minimo di propaganda, sottolineando che "
+            "potrebbe essere l'ultimo veglione organizzato dal \"Ragno\" "
+            "e chiedendo una risposta netta di sì o no da tutti. Antonio "
+            "Aceto solleva un punto economico: a differenza di altri "
+            "eventi del comitato (Corinaldo, San Martino, Sant'Antonio), "
+            "il Capodanno pesa molto di più sul bilancio di una "
+            "famiglia — fa l'esempio della propria, 450€ per quattro "
+            "adulti e un bambino — quindi la scarsa adesione non è "
+            "mancanza di voglia di stare insieme ma una questione di "
+            "spesa concreta; Ilenia e Maria concordano, aggiungendo che "
+            "quella sera molti preferiscono comunque restare in "
+            "famiglia. Emanuele chiarisce di essersi riferito in "
+            "generale alla ripetizione di sondaggi per ogni evento del "
+            "comitato, non all'obbligo di partecipare proprio al "
+            "Capodanno, e conviene che la spesa resta comunque alta; "
+            "Antonio si dice pienamente d'accordo con la precisazione. "
+            "Tina, nel frattempo, resta indecisa e preferisce aspettare "
+            "prima di votare."
+        ),
+        "members": [
+            "PTT-20261104-WA0015.opus", "PTT-20261104-WA0016.opus",
+            "PTT-20261104-WA0017.opus", "PTT-20261104-WA0018.opus",
         ],
     },
 ]
