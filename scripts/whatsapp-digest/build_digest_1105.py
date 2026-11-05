@@ -2,19 +2,25 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-11-05 — solo dati di curatela, logica comune in digest_lib.py.
 
-Finestra 12:44-15:40 (export Dropbox delle 15:59 di oggi). Emanuele conferma
-che le castagne per San Martino stanno asciugando e saranno pronte la
-settimana prossima (foto). Propone poi di far rivivere la vecchia
-tradizione dei barattolini di latta attaccati alle biciclette dei
-bambini (Cesare conferma la fattibilità). Ilenia ed Elvis portano
-concretezza alla discussione sulle calze della Befana aperta ieri da
-Emanuele: foto di esempio, un modello trovato su unigadget.it e un
-confronto sui prezzi in base alla quantità. Costantino interviene sulla
-discussione Capodanno con una proposta di mediazione (chi non partecipa
-aiuta con la pubblicità, chi festeggia di solito altrove fa un piccolo
-sacrificio), trovando consenso. Emanuele si informa sui costi dei
-tagliandini/cartelle della tombola. Infine logistica sui pagamenti della
-gita a Corinaldo. Nessuna menzione di Giovanni Lima.
+Finestra 12:44-17:15 (coda aggiunta il 5/11 stesso con l'export Dropbox delle
+17:31). Emanuele conferma che le castagne per San Martino stanno asciugando e
+saranno pronte la settimana prossima (foto). Propone poi di far rivivere la
+vecchia tradizione dei barattolini di latta attaccati alle biciclette dei
+bambini (Cesare conferma la fattibilità). Ilenia ed Elvis portano concretezza
+alla discussione sulle calze della Befana aperta ieri da Emanuele: foto di
+esempio, un modello trovato su unigadget.it e un confronto sui prezzi in base
+alla quantità. Costantino interviene sulla discussione Capodanno con una
+proposta di mediazione (chi non partecipa aiuta con la pubblicità, chi
+festeggia di solito altrove fa un piccolo sacrificio), trovando consenso.
+Emanuele si informa sui costi dei tagliandini/cartelle della tombola. Segue
+logistica sui pagamenti della gita a Corinaldo. Nel tardo pomeriggio: un
+chiarimento tra Antonio Aceto ed Elvis sul senso della proposta di
+Costantino (risolto con reciproco accordo); l'aggiornamento di Emilio su
+Andrea Di Loreto (ora libero da altri impegni) e sulla scadenza di venerdì
+6/11 per decidere se procedere col Capodanno; la valutazione di fattibilità
+di Emanuele con la voce (non confermata) che la Rupe non faccia il veglione
+quest'anno; infine il confronto economico tra Emilio ed Emanuele sui margini
+in base al numero di partecipanti. Nessuna menzione di Giovanni Lima.
 """
 import os
 import sys
@@ -39,6 +45,23 @@ CURATED = {
         "urgente (va bene anche il giorno dopo in riunione) e che il "
         "pullman Bianchi Tour è già stato pagato. Confermano insieme 3 "
         "posti: Maria, il marito Cesidio e il figlio Gabriele."),
+    ("16:43", "Emilio Caniglia"): ("proposta",
+        "Informa che il giorno prima è stato contattato da Andrea Di "
+        "Loreto, che ha confermato di non avere più altri impegni per "
+        "Capodanno. Sottolinea che venerdì 6/11 bisogna prendere una "
+        "decisione se continuare o meno con l'organizzazione — non tanto "
+        "per il comitato quanto per correttezza verso il Ragno e verso "
+        "Di Loreto — e che, in assenza di sufficiente disponibilità dei "
+        "membri, è meglio valutare bene la situazione prima di "
+        "proseguire."),
+    ("17:09", "Emilio Caniglia"): ("info",
+        "Fa notare che è difficile attirare partecipanti con un costo "
+        "superiore a 100€ a persona, e che il margine di sicurezza "
+        "economico si è avuto solo quando, come l'anno scorso, ha "
+        "partecipato anche la classe (30-40-50 persone del comitato su "
+        "una percentuale di circa 250 partecipanti). Conferma la voce, "
+        "non verificata con certezza, secondo cui la Rupe potrebbe non "
+        "organizzare il proprio veglione quest'anno."),
 }
 
 AUDIO_CURATED = {
@@ -112,6 +135,78 @@ AUDIO_MERGES = [
         ),
         "members": [
             "PTT-20261105-WA0013.opus",
+        ],
+    },
+    {
+        "anchor_time": "16:12",
+        "anchor_sender": "Elvis Ippoliti",
+        "type": "info",
+        "text": (
+            "Prosegue la discussione sul Capodanno: ad alcuni messaggi di "
+            "Antonio Aceto, che ribadisce di non poter \"fare i conti in "
+            "tasca\" a chi non ha la disponibilità economica per il "
+            "veglione e di non condividere la posizione di Costantino, "
+            "Elvis risponde spiegando il senso del messaggio di "
+            "Costantino: chi festeggia comunque altrove farebbe meglio a "
+            "venire al veglione del comitato per stare insieme, non per "
+            "obbligo ma perché la spesa, tanto, la farebbe comunque; "
+            "ritiene inoltre che si sarebbe dovuto chiarire fin "
+            "dall'inizio chi fosse davvero disponibile, prima di "
+            "contattare Di Loreto, ma che con una decina di persone si "
+            "possa comunque procedere. Antonio Aceto si scusa, dicendo "
+            "di aver fraintenso e di essere ora d'accordo col "
+            "ragionamento di Costantino. Elvis ribadisce la stessa "
+            "lettura: è giusto che chi di solito festeggia fuori casa "
+            "faccia un piccolo sacrificio per stare insieme, senza che "
+            "nessuno sia costretto."
+        ),
+        "members": [
+            "PTT-20261105-WA0016.opus", "PTT-20261105-WA0017.opus",
+            "PTT-20261105-WA0018.opus", "PTT-20261105-WA0019.opus",
+        ],
+    },
+    {
+        "anchor_time": "16:45",
+        "anchor_sender": "Emanuele Sciarra",
+        "type": "proposta",
+        "text": (
+            "Dopo l'aggiornamento di Emilio su Di Loreto e sulla scadenza "
+            "di venerdì, Emanuele valuta fattibile organizzare il "
+            "Capodanno con le circa dieci persone attualmente "
+            "disponibili, sottolineando che aiutare il gruppo a portare "
+            "gente e a pubblicizzare l'evento conta indipendentemente "
+            "dalla partecipazione personale di ciascuno; si rimette "
+            "comunque alla volontà della maggioranza. Segnala poi una "
+            "voce di corridoio, non confermata, secondo cui la Rupe "
+            "potrebbe non fare il veglione quest'anno, il che "
+            "aumenterebbe le possibilità di attirare i loro ragazzi; "
+            "Antonio Aceto commenta scherzosamente che, se fosse vero, "
+            "\"sbancherebbero\"."
+        ),
+        "members": [
+            "PTT-20261105-WA0020.opus", "PTT-20261105-WA0021.opus",
+        ],
+    },
+    {
+        "anchor_time": "17:13",
+        "anchor_sender": "Emanuele Sciarra",
+        "type": "proposta",
+        "text": (
+            "Rispondendo al punto economico di Emilio, Emanuele sostiene "
+            "che il margine di guadagno resterebbe simile anche portando "
+            "150-180 persone invece di 250 (stima 1.000-2.000€), e "
+            "propone di chiedere sostegno anche al gruppo \"gli anni "
+            "86\", come già fatto per Corinaldo con alcuni dei suoi "
+            "membri. Conclude con una riflessione più ampia: un veglione "
+            "capace di attirare anche i più giovani (come succedeva "
+            "quando, da ragazzo, al veglione si mescolavano generazioni "
+            "diverse) toglierebbe loro la tentazione di spendere gli "
+            "stessi soldi per una serata a Pescara; ribadisce comunque "
+            "di rimettersi, come sempre, alla volontà della "
+            "maggioranza."
+        ),
+        "members": [
+            "PTT-20261105-WA0022.opus", "PTT-20261105-WA0023.opus",
         ],
     },
 ]
