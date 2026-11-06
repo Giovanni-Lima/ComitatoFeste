@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-11-05 — solo dati di curatela, logica comune in digest_lib.py.
 
-Finestra 12:44-17:15 (coda aggiunta il 5/11 stesso con l'export Dropbox delle
-17:31). Emanuele conferma che le castagne per San Martino stanno asciugando e
+Finestra 12:44-20:35 (coda serale aggiunta il 6/11 con l'export Dropbox delle
+9:01). Emanuele conferma che le castagne per San Martino stanno asciugando e
 saranno pronte la settimana prossima (foto). Propone poi di far rivivere la
 vecchia tradizione dei barattolini di latta attaccati alle biciclette dei
 bambini (Cesare conferma la fattibilità). Ilenia ed Elvis portano concretezza
@@ -19,8 +19,20 @@ Costantino (risolto con reciproco accordo); l'aggiornamento di Emilio su
 Andrea Di Loreto (ora libero da altri impegni) e sulla scadenza di venerdì
 6/11 per decidere se procedere col Capodanno; la valutazione di fattibilità
 di Emanuele con la voce (non confermata) che la Rupe non faccia il veglione
-quest'anno; infine il confronto economico tra Emilio ed Emanuele sui margini
-in base al numero di partecipanti. Nessuna menzione di Giovanni Lima.
+quest'anno; il confronto economico tra Emilio ed Emanuele sui margini in
+base al numero di partecipanti. In serata: Ugo chiarisce il proprio pensiero
+sul "sacrificio"; lunga discussione (Antonio, Elvis, Ugo) sul fatto che il
+Capodanno è anche/soprattutto l'evento di Gianvito ("il Ragno"), con
+l'incoraggiamento a non sottovalutare la sua clientela abituale, il
+vantaggio economico della percentuale, l'arrivo di Pasqualino per i
+cocktail, lo show di Andrea Di Loreto e l'idea di una locandina sullo stile
+di una fatta da "Fregna"; Ugo precisa che nulla è stato deciso formalmente,
+si decide venerdì in riunione. Seguono messaggi di incoraggiamento di
+Emanuele e Maikel. Costantino torna a chiarire il proprio messaggio
+precedente, sostenendo che anche chi non partecipa dovrebbe spingere le
+persone verso l'evento del comitato e non verso la Rupe. Emilio chiarisce il
+meccanismo del moltiplicatore di presenze dell'anno scorso. Nessuna menzione
+di Giovanni Lima.
 """
 import os
 import sys
@@ -62,6 +74,14 @@ CURATED = {
         "una percentuale di circa 250 partecipanti). Conferma la voce, "
         "non verificata con certezza, secondo cui la Rupe potrebbe non "
         "organizzare il proprio veglione quest'anno."),
+    ("19:26", "Emilio Caniglia"): ("info",
+        "Chiarisce il proprio punto di vista precedente: l'anno scorso "
+        "la partecipazione numerosa della classe ha fatto da "
+        "moltiplicatore sulle presenze totali (portando anche parenti e "
+        "amici), garantendo non solo un numero maggiore ma anche più "
+        "margine per trattare col ristoratore con sicurezza. Ammette "
+        "scherzosamente di essersi impegnato con l'organizzazione senza "
+        "ancora averne parlato seriamente con la moglie."),
 }
 
 AUDIO_CURATED = {
@@ -71,6 +91,7 @@ AUDIO_CURATED = {
         "costati: la grafica è di Alessia Costanza, ma non sa ancora "
         "se siano stati stampati dove lavora lei o in tipografia, né "
         "il costo esatto; si aggiorna appena ha notizie."),
+    (DATE, "20:35", "Costantino Mariani", "PTT-20261105-WA0041.opus"): ("rumore", ""),
 }
 
 MEDIA_OVERRIDES = {
@@ -208,6 +229,98 @@ AUDIO_MERGES = [
         "members": [
             "PTT-20261105-WA0022.opus", "PTT-20261105-WA0023.opus",
         ],
+    },
+    {
+        "anchor_time": "17:35",
+        "anchor_sender": "Ugo Trinchini",
+        "type": "info",
+        "text": (
+            "Ugo interviene per chiarire il proprio pensiero sul punto "
+            "economico: non intendeva affatto fare i conti in tasca a "
+            "nessuno, ma solo ribadire quanto già detto da Elvis, cioè "
+            "che chi avrebbe comunque festeggiato altrove potesse fare "
+            "un piccolo sacrificio per stare insieme; nulla di più."
+        ),
+        "members": ["PTT-20261105-WA0025.opus"],
+    },
+    {
+        "anchor_time": "17:43",
+        "anchor_sender": "Antonio Aceto",
+        "type": "proposta",
+        "text": (
+            "Antonio Aceto ricorda che il Capodanno non è solo un "
+            "evento della classe/comitato ma soprattutto l'ultimo "
+            "veglione organizzato da Gianvito (\"il Ragno\"), che avrà "
+            "comunque una propria clientela abituale indipendentemente "
+            "dal contributo del comitato — un aspetto da non "
+            "sottovalutare. Elvis (con l'approvazione di Maria) "
+            "concorda e propone di chiedere consiglio a chi del "
+            "comitato \"gli anni 86\" ha già vissuto un'esperienza "
+            "simile con Gianvito, ritenendo l'operazione comunque "
+            "fattibile; sottolinea inoltre il vantaggio economico della "
+            "percentuale sull'incasso, che arriva quasi senza sforzo, "
+            "ulteriormente arricchita da giochi e lotterie durante il "
+            "cenone. Antonio ribadisce che la percentuale conviene "
+            "indipendentemente dal numero di partecipanti, e segnala "
+            "che con l'arrivo di Pasqualino (che potrebbe occuparsi dei "
+            "cocktail) e lo show di Andrea Di Loreto già confermato la "
+            "serata si preannuncia valida; propone di iniziare già a "
+            "pensare alla locandina, prendendo spunto da quella fatta "
+            "da \"Fregna\" per un precedente Capodanno del Ragno con lo "
+            "stesso Di Loreto. Elvis aggiunge che lo show di Di Loreto "
+            "aiuterà comunque ad attirare gente, vedendo l'operazione "
+            "come una buona opportunità a basso sforzo nonostante la "
+            "concorrenza della Rupe. Ugo chiude precisando che, in "
+            "realtà, non è stato ancora deciso nulla di formale: c'è "
+            "stata solo una chiacchierata su Gianvito, e la decisione "
+            "se procedere spetta alla riunione di venerdì; spiega che "
+            "il contatto già preso con Andrea Di Loreto è stato in "
+            "parte anticipato perché potrebbe fare anche da "
+            "presentatore alla tombolata, e si dice comunque fiducioso "
+            "sull'esito, consapevole dei rischi."
+        ),
+        "members": [
+            "PTT-20261105-WA0026.opus", "PTT-20261105-WA0027.opus",
+            "PTT-20261105-WA0028.opus", "PTT-20261105-WA0029.opus",
+            "PTT-20261105-WA0030.opus", "PTT-20261105-WA0031.opus",
+            "PTT-20261105-WA0032.opus", "PTT-20261105-WA0033.opus",
+        ],
+    },
+    {
+        "anchor_time": "18:06",
+        "anchor_sender": "Emanuele Sciarra",
+        "type": "info",
+        "text": (
+            "Seguono messaggi di incoraggiamento: Emanuele esorta il "
+            "gruppo a mantenere l'ottimismo e ad andare avanti senza "
+            "tirarsi indietro. Maikel si unisce, dicendosi fiducioso "
+            "nella buona riuscita dell'iniziativa purché si sappia in "
+            "anticipo quanti si è e quanto si spende, sottolineando che "
+            "fuori dal comitato c'è comunque molta gente da convincere; "
+            "accoglie con favore la notizia (non confermata) che la "
+            "Rupe non farebbe il proprio veglione quest'anno."
+        ),
+        "members": ["PTT-20261105-WA0034.opus", "PTT-20261105-WA0035.opus"],
+    },
+    {
+        "anchor_time": "19:07",
+        "anchor_sender": "Costantino Mariani",
+        "type": "info",
+        "text": (
+            "Costantino torna sul proprio messaggio precedente per "
+            "chiarire di non voler imporre nulla: ribadisce che "
+            "l'invito a un piccolo sacrificio riguarda solo chi di "
+            "solito festeggia fuori casa, non chi non può "
+            "permetterselo — lui stesso, dice, considera già un impegno "
+            "economico importante partecipare anche solo con tre "
+            "persone. Aggiunge che non ha senso che i soli dieci "
+            "interessati si occupino di portare gente al veglione "
+            "dell'87: anche chi non partecipa dovrebbe comunque "
+            "spingere le persone verso l'evento del comitato (al "
+            "Ragno) piuttosto che pubblicizzare, anche involontariamente, "
+            "un veglione concorrente come quello della Rupe."
+        ),
+        "members": ["PTT-20261105-WA0039.opus", "PTT-20261105-WA0040.opus"],
     },
 ]
 
