@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-11-10 — solo dati di curatela, logica comune in digest_lib.py.
 
-Finestra 07:38-14:41 (coda aggiunta il 10/11 stesso con l'export Dropbox
+Finestra 07:38-22:41 (coda aggiunta l'11/11 con l'export Dropbox
 delle 15:38). Emilio posta la sintesi della riunione del 6 novembre e
 degli sviluppi successivi (squadre San Martino, incontro con Gianvito,
 banda "Leoncini d'Abruzzo", calze della Befana), con prossimo appuntamento
@@ -22,7 +22,9 @@ raccolti dalla Pro Loco. Chiude la giornata un intervento del presidente
 Emilio, che spiega perché il comitato dipenda ancora dalla Pro Loco per
 gli aspetti formali di un evento (mancanza di soggettività giuridica
 propria) pur potendo pubblicare liberamente contenuti social non
-ufficiali, risolvendo i dubbi sollevati da Emanuele. Nessuna menzione di
+ufficiali, risolvendo i dubbi sollevati da Emanuele. In serata arriva
+finalmente la locandina ufficiale fatta da Chiara (Pro Loco): Emanuele
+la pubblica subito sui social del comitato. Nessuna menzione di
 Giovanni Lima.
 """
 import os
@@ -472,6 +474,26 @@ AUDIO_MERGES = [
         ],
     },
 ]
+
+CURATED[("21:58", "Emilio Caniglia")] = ("info",
+    "In serata Emilio condivide la locandina ufficiale dell'evento, "
+    "realizzata da Chiara: sabato 14 novembre dalle 15:00, \"San "
+    "Martino — Castagnata con vin brulé\", finale del contest delle "
+    "zucche, giochi popolari e animazione con truccabimbi, laboratorio "
+    "creativo, zucchero filato e musica; \"evento organizzato dalla Pro "
+    "Loco con la partecipazione della classe 1987\", patrocinato "
+    "dall'Amministrazione Comunale. Maria chiede conferma che sia "
+    "questa, e non quella fatta in autonomia dal comitato, la locandina "
+    "da usare; Emilio conferma. Emanuele pubblica subito sui social del "
+    "comitato, ringraziando Chiara; anche Maria la ricondivide.")
+
+MEDIA_OVERRIDES[(DATE, "21:58", "Emilio Caniglia", "IMG-20261110-WA0092.jpg")] = (
+    "Locandina ufficiale dell'evento \"San Martino — Castagnata con vin "
+    "brulé\", sabato 14 novembre dalle 15:00: finale del contest delle "
+    "zucche, giochi popolari e animazione con truccabimbi, laboratorio "
+    "creativo, zucchero filato e musica; organizzato dalla Pro Loco con "
+    "la partecipazione della classe 1987, patrocinato "
+    "dall'Amministrazione Comunale di San Benedetto dei Marsi.")
 
 if __name__ == "__main__":
     build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
