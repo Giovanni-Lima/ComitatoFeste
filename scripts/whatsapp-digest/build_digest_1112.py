@@ -26,7 +26,11 @@ bando cittadino e propone un sondaggio; Alessandra censisce i vini per
 sabato e mostra le etichette in lavorazione; il gruppo discute il reperire
 un campanaccio o, in alternativa, damigiane/conche per l'allestimento.
 Condiviso anche l'invito del Comune per la firma di un protocollo a tutela
-degli orfani di femminicidio. Nessuna menzione di Giovanni Lima.
+degli orfani di femminicidio. In serata: Ilenia e Maria trovano una conca
+e due damigiane antiche del nonno di Maria per l'allestimento; il
+campanaccio resta introvabile ma Costantino se ne fa carico e mostra in
+video un primo esemplare; discussione su pale per la brace e sulla lista
+dell'utensileria, già pronta. Nessuna menzione di Giovanni Lima.
 """
 import os
 import sys
@@ -112,6 +116,16 @@ MEDIA_OVERRIDES = {
         "Screenshot di un programma di grafica con la bozza delle "
         "etichette per i vini: \"vino rosso\", \"vino bianco\" (due "
         "varianti), \"vin brulè\".",
+    (DATE, "17:42", "Maria Buttari", "IMG-20261112-WA0038.jpg"):
+        "Una delle due damigiane antiche del nonno, in un cestello di "
+        "legno, con il collo chiuso da uno straccio.",
+    (DATE, "17:42", "Maria Buttari", "IMG-20261112-WA0039.jpg"):
+        "La seconda damigiana, in un cestello foderato di paglia; sullo "
+        "sfondo si intravede anche una conca di metallo.",
+    (DATE, "19:07", "Costantino Mariani", "VID-20261112-WA0059.mp4"):
+        "Video (3s) in cui, attraverso una rete, mostra un oggetto "
+        "scuro a forma di campana appeso — il campanaccio che aveva "
+        "promesso poco prima di procurare.",
 }
 
 # Foto-ricordo/scherzo personale (selfie legato alla battuta su Costantino
@@ -156,6 +170,21 @@ AUDIO_CURATED = {
         "Dolciaria Vecchia, vicino alla braceria della Muletta."),
     (DATE, "15:53", "Emanuele Sciarra", "PTT-20261112-WA0029.opus"): ("rumore", ""),
     (DATE, "16:45", "Emanuele Sciarra", "PTT-20261112-WA0030.opus"): ("rumore", ""),
+    (DATE, "19:06", "Elvis Ippoliti", "PTT-20261112-WA0057.opus"): ("domanda",
+        "Dante chiede se Elvis ha un aspirafoglie a batteria che "
+        "faccia anche soffiaggio; Elvis risponde di no, scherzando sul "
+        "fatto di non essere mica un giardiniere. Dante continua a "
+        "scherzare sui \"giardinieri\" e allude a un possibile uso per "
+        "la brace."),
+    (DATE, "18:52", "Elvis Ippoliti", "PTT-20261112-WA0044.opus"): ("rumore", ""),
+    (DATE, "18:52", "Elvis Ippoliti", "PTT-20261112-WA0045.opus"): ("rumore", ""),
+    (DATE, "18:53", "Costantino Mariani", "PTT-20261112-WA0046.opus"): ("rumore", ""),
+    (DATE, "18:55", "Elvis Ippoliti", "PTT-20261112-WA0048.opus"): ("rumore", ""),
+    (DATE, "18:56", "Costantino Mariani", "PTT-20261112-WA0050.opus"): ("rumore", ""),
+    (DATE, "18:58", "Emanuele Sciarra", "PTT-20261112-WA0054.opus"): ("rumore", ""),
+    (DATE, "18:58", "Costantino Mariani", "PTT-20261112-WA0055.opus"): ("rumore", ""),
+    (DATE, "19:18", "Elvis Ippoliti", "PTT-20261112-WA0058.opus"): ("rumore", ""),
+    (DATE, "20:28", "Costantino Mariani", "PTT-20261112-WA0060.opus"): ("rumore", ""),
 }
 
 AUDIO_MERGES = [
@@ -280,6 +309,58 @@ AUDIO_MERGES = [
             "PTT-20261112-WA0033.opus", "PTT-20261112-WA0034.opus",
             "PTT-20261112-WA0035.opus",
         ],
+    },
+    {
+        "anchor_time": "17:49",
+        "anchor_sender": "Emanuele Sciarra",
+        "type": "info",
+        "text": (
+            "Sul campanaccio chiesto da Elvis, Emanuele aggiorna che la "
+            "sua collega non ce l'ha, e che proverà a chiedere al "
+            "suocero; Costantino si fa poi avanti dicendo che delle "
+            "campane ci penserà lui."
+        ),
+        "members": ["PTT-20261112-WA0040.opus", "PTT-20261112-WA0043.opus"],
+    },
+    {
+        "anchor_time": "18:53",
+        "anchor_sender": "Costantino Mariani",
+        "type": "domanda",
+        "text": (
+            "Costantino chiede a che ora ci si troverà insieme domani, "
+            "e fa notare che servirebbe anche un paio di pale per "
+            "spostare la brace. Elvis risponde che \"la classe\" ha "
+            "già pronta la lista dell'utensileria, in mano al "
+            "Presidente; Costantino chiede conto di alcuni oggetti "
+            "(\"i laberoni\") scritti in quella lista, ed Elvis ammette "
+            "che in realtà aveva torto lui."
+        ),
+        "members": [
+            "PTT-20261112-WA0047.opus", "PTT-20261112-WA0049.opus",
+            "PTT-20261112-WA0051.opus", "PTT-20261112-WA0052.opus",
+            "PTT-20261112-WA0053.opus",
+        ],
+    },
+    {
+        "anchor_time": "18:10",
+        "anchor_sender": "Maikel Montano",
+        "type": "info",
+        "text": (
+            "Alle richieste di un campanaccio e di damigiane/conche "
+            "per l'allestimento, Luca suggerisce di sentire anche "
+            "Raffaele Di Cesare se ha qualcosa; Ilenia fa sapere di "
+            "avere lei una conca. Maria condivide (foto) le due "
+            "damigiane di nonno Virgilio, chiedendo dove portarle o se "
+            "qualcuno passa a prenderle, e avvisando che sono un po' "
+            "rovinate. Il gruppo le trova invece perfette: Maikel "
+            "conferma che sono proprio come si cercavano, ed Elvis, "
+            "Luca, Emanuele, Dante e Alessandra concordano. Maria "
+            "conferma che va bene anche se sembravano da buttare, e "
+            "chiede chi debba passare a ritirarle da sua madre; Ilenia "
+            "si offre di passare lei stessa domani mattina, e Maria la "
+            "ringrazia avvisando che lo dirà alla madre."
+        ),
+        "members": ["PTT-20261112-WA0041.opus", "PTT-20261112-WA0056.opus"],
     },
 ]
 
