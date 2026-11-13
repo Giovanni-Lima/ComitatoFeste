@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-11-13 — solo dati di curatela, logica comune in digest_lib.py.
 
-Finestra 06:50-13:31 (export Dropbox delle 13:42, giornata ancora in corso
+Finestra 06:50-18:02 (export Dropbox delle 18:03, giornata ancora in corso
 al momento dell'export, un giorno prima di San Martino, sabato 14/11).
 Alessandra compra i guanti nuovi e organizza il cappello per il costume
 con Elvis e Barbara (che mette a disposizione anche una paglietta per lo
@@ -17,8 +17,15 @@ bottiglia ai bambini (Ilenia è contraria, temendo che tolga vendite al
 vino) e risolve con la stessa formula del vino: offerta libera, senza
 listino esposto. Tina chiede il piano B in caso di pioggia; le previsioni
 confermano cielo nuvoloso ma asciutto. Dante nota che il quartiere
-Cittadella sta già costruendo il proprio albero di Natale. Nessuna
-menzione di Giovanni Lima.
+Cittadella sta già costruendo il proprio albero di Natale. Nel primo
+pomeriggio: le previsioni di weather.com confermano che sabato non piove
+di giorno; Valentina mostra l'acqua acquistata e Barbara un secondo
+cappello trovato. Emanuele propone palline di Natale con le foto dei
+bambini, idea poi accantonata per mancanza di tempo viste le altre cose
+da organizzare. Dubbi sul dispositivo per cuocere le castagne (lo sta
+finendo "Guerino"), con Emilio che intanto conferma due padelle da un
+metro di diametro. Antonio Sabatini rendiconta le spese per gli
+ingredienti del vin brulè. Nessuna menzione di Giovanni Lima.
 """
 import os
 import sys
@@ -55,6 +62,21 @@ MEDIA_OVERRIDES = {
         "Video (3s) in cui, dopo averlo promesso la sera prima, mostra "
         "da vicino il campanaccio di metallo recuperato, tenendolo in "
         "mano.",
+    (DATE, "13:44", "Maria Buttari", "IMG-20261113-WA0022.jpg"):
+        "Screenshot delle previsioni per sabato (giorno di San "
+        "Martino) da weather.com: di giorno 12°, molto nuvoloso, 12% "
+        "di probabilità di pioggia; di notte 8°, con rischio di "
+        "acquazzoni (50%) solo a tarda notte. Commento di Maria: \"Non "
+        "piove...dai\".",
+    (DATE, "15:05", "Valentina D'Arcadia", "IMG-20261113-WA0033.jpg"):
+        "La sua auto carica di fardelli d'acqua (naturale e "
+        "frizzante, marca Santa Croce) appena acquistati per sabato; "
+        "sul retro si intravede anche un cappello di paglia. Commento "
+        "di Valentina: \"Mo basta a piove che di acqua ne abbiamo "
+        "abbastanza\".",
+    (DATE, "15:06", "Barbara Rizio", "IMG-20261113-WA0032.jpg"):
+        "Secondo cappello trovato: un fedora di paglia crema con "
+        "fascia beige.",
 }
 
 AUDIO_CURATED = {
@@ -91,6 +113,53 @@ AUDIO_MERGES = [
             "PTT-20261113-WA0006.opus", "PTT-20261113-WA0007.opus",
             "PTT-20261113-WA0008.opus", "PTT-20261113-WA0009.opus",
             "PTT-20261113-WA0010.opus", "PTT-20261113-WA0011.opus",
+        ],
+    },
+    {
+        "anchor_time": "15:22",
+        "anchor_sender": "Emanuele Sciarra",
+        "type": "proposta",
+        "text": (
+            "Emanuele propone, come idea per l'albero di Natale, delle "
+            "palline da riempire con foto (dei bambini), con tanto di "
+            "aggancio per sigillarle e appenderle; dice di averne a "
+            "casa di simili coi suoi bambini, in polistirolo, ma "
+            "ammette che richiederebbe parecchio tempo e chiede "
+            "pareri, specificando di averla \"buttata lì\" come idea. "
+            "Alessandra risponde che l'idea è bella ma troppo "
+            "dispendiosa di tempo, viste le altre cose già in "
+            "programma (mercatino, Babbo Natale, Tombolata, capodanno, "
+            "calze della Befana), e propone di concentrarsi prima su "
+            "quelle; Emanuele conferma di aver solo buttato lì "
+            "l'idea e si trova d'accordo."
+        ),
+        "members": [
+            "PTT-20261113-WA0023.opus", "PTT-20261113-WA0024.opus",
+            "PTT-20261113-WA0025.opus",
+        ],
+    },
+    {
+        "anchor_time": "16:51",
+        "anchor_sender": "Elvis Ippoliti",
+        "type": "domanda",
+        "text": (
+            "Elvis chiede cosa si abbia per cuocere le castagne "
+            "domani, se solo il \"riflettore\", e se il dispositivo "
+            "(un bruciatore) che doveva servire allo scopo sia stato "
+            "completato. Emanuele risponde che se ne sta occupando "
+            "\"Guerino\", a cui aveva portato un pezzo che gli serviva "
+            "per finirlo di assemblare; gli aveva garantito che "
+            "sarebbe stato pronto per oggi ma c'è stato qualche "
+            "piccolo intoppo (non si sentiva bene), lo richiamerà per "
+            "aggiornamenti. Emilio intanto comunica di avere comunque "
+            "due padelle da un metro di diametro; Elvis conferma che "
+            "la domanda era solo per organizzarsi, e che quelle due "
+            "padelle grandi dovrebbero bastare comunque."
+        ),
+        "members": [
+            "PTT-20261113-WA0026.opus", "PTT-20261113-WA0027.opus",
+            "PTT-20261113-WA0028.opus", "PTT-20261113-WA0029.opus",
+            "PTT-20261113-WA0030.opus",
         ],
     },
 ]
