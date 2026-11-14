@@ -25,7 +25,21 @@ bambini, idea poi accantonata per mancanza di tempo viste le altre cose
 da organizzare. Dubbi sul dispositivo per cuocere le castagne (lo sta
 finendo "Guerino"), con Emilio che intanto conferma due padelle da un
 metro di diametro. Antonio Sabatini rendiconta le spese per gli
-ingredienti del vin brulè. Nessuna menzione di Giovanni Lima.
+ingredienti del vin brulè.
+
+Sera (18:10-22:14, aggiornata con l'export delle 18:26 del 14/11): Antonio
+Aceto mostra le due padelle forate per le castagne; Elvis chiede com'è il
+bicchiere e Sabatini mostra quelli da 0,2 bianchi; Emanuele mostra il
+dispositivo per le castagne, a cui manca ancora la catena (si monta
+domani), e condivide un video Facebook. Alle 21 la riunione; Elvis, che
+non può venire, chiede a voce un secondo termos con rubinetto, un fuocone
+e una bombola di gas per il vin brulè, e Emanuele risponde che Emilio ha
+parlato con la Pro Loco: il contest parte alle 15, forse con qualche
+minuto di ritardo per un funerale alle 14:30. Foto della serata di
+lavorazione delle castagne in sede. Aceto raccomanda il cesto della
+lotteria "indovina quanti chili di castagne". Il resto (battute,
+vocali di scherzo, due GIF mp4) è rumore. Nessuna menzione di Giovanni
+Lima.
 """
 import os
 import sys
@@ -44,6 +58,16 @@ CURATED = {
         "consegnate oggi direttamente a casa."),
     ("12:47", "Serena Di Stefano"): ("domanda",
         "Chiede se questa sera c'è la riunione."),
+    ("19:42", "Emanuele Sciarra"): ("info",
+        "Segnala che al dispositivo per cuocere le castagne manca la "
+        "catena, che domani verrà montata."),
+    ("19:59", "Emanuele Sciarra"): ("info",
+        "Condivide un video Facebook: "
+        "https://www.facebook.com/share/r/19xRmsfiE7/?mibextid=wwXIfr"),
+    ("22:14", "Antonio Aceto"): ("info",
+        "Raccomanda di preparare il cesto per la lotteria con il gioco "
+        "\"indovina quanti chili di castagne ci sono\" (scritto in "
+        "dialetto)."),
 }
 
 MEDIA_OVERRIDES = {
@@ -77,6 +101,24 @@ MEDIA_OVERRIDES = {
     (DATE, "15:06", "Barbara Rizio", "IMG-20261113-WA0032.jpg"):
         "Secondo cappello trovato: un fedora di paglia crema con "
         "fascia beige.",
+    (DATE, "18:10", "Antonio Aceto", "IMG-20261113-WA0034.jpg"):
+        "Le due padelle forate, appoggiate su un tavolino all'aperto, "
+        "per cuocere le castagne.",
+    (DATE, "18:15", "Antonio Sabatini", "IMG-20261113-WA0036.jpg"):
+        "I bicchieri di carta da 0,2 l, nelle confezioni, per servire "
+        "il vino.",
+    (DATE, "19:42", "Emanuele Sciarra", "VID-20261113-WA0048.mp4"):
+        "Video del dispositivo per cuocere le castagne: un tamburo "
+        "metallico con motore, ancora in lavorazione.",
+    (DATE, "21:42", "Tina Giarrante", "IMG-20261114-WA0000.jpg"):
+        "Foto dall'alto di alcuni membri nella sede che lavorano le "
+        "castagne, con le cassette piene sul tavolo.",
+    (DATE, "21:56", "Emanuele Sciarra", "IMG-20261114-WA0001.jpg"):
+        "Foto di gruppo di alcuni membri seduti attorno al tavolo nella "
+        "sede dopo il lavoro sulle castagne; uno mostra un cestello.",
+    (DATE, "21:56", "Emanuele Sciarra", "IMG-20261114-WA0002.jpg"):
+        "Due membri con il pollice alzato nella sede, tra scatole di "
+        "decorazioni e il cartello giallo \"Classe 1987\".",
 }
 
 AUDIO_CURATED = {
@@ -87,6 +129,9 @@ AUDIO_CURATED = {
     (DATE, "13:21", "Emanuele Sciarra", "PTT-20261113-WA0016.opus"): ("rumore", ""),
     (DATE, "13:22", "Emanuele Sciarra", "PTT-20261113-WA0018.opus"): ("rumore", ""),
     (DATE, "13:23", "Emanuele Sciarra", "PTT-20261113-WA0019.opus"): ("rumore", ""),
+    (DATE, "18:45", "Dante Caniglia", "PTT-20261113-WA0037.opus"): ("rumore", ""),
+    (DATE, "19:05", "Costantino Mariani", "PTT-20261113-WA0038.opus"): ("rumore", ""),
+    (DATE, "19:25", "Costantino Mariani", "PTT-20261113-WA0039.opus"): ("rumore", ""),
 }
 
 AUDIO_MERGES = [
@@ -160,6 +205,31 @@ AUDIO_MERGES = [
             "PTT-20261113-WA0026.opus", "PTT-20261113-WA0027.opus",
             "PTT-20261113-WA0028.opus", "PTT-20261113-WA0029.opus",
             "PTT-20261113-WA0030.opus",
+        ],
+    },
+    {
+        "anchor_time": "21:15",
+        "anchor_sender": "Elvis Ippoliti",
+        "type": "info",
+        "text": (
+            "Elvis, che non riesce a venire alla riunione per contrattempi "
+            "a casa, dice di aver già avvisato Mike: per domani servono un "
+            "altro termos da circa 5 litri con rubinetto (per servire il "
+            "vin brulè caldo, prelevandolo dal pentolone), un fuocone e "
+            "una bombola di gas (la fiamma deve restare bassa per tenerlo "
+            "in temperatura); chiede di sapere a che ora saranno "
+            "operativi per regolarsi sull'inizio della preparazione. "
+            "Emanuele risponde che Emilio è andato a parlare con la Pro "
+            "Loco: da quanto ha capito il contest parte alle 15, con "
+            "possibile slittamento di qualche minuto perché alle 14:30 c'è "
+            "un funerale in chiesa; aggiornerà appena torna il presidente. "
+            "Elvis ribadisce di ricordarsi di fuocone, bombola e termos, "
+            "e che per i tempi si aggiornerà dopo."
+        ),
+        "members": [
+            "PTT-20261113-WA0045.opus",
+            "PTT-20261113-WA0049.opus",
+            "PTT-20261113-WA0050.opus",
         ],
     },
 ]
@@ -304,8 +374,44 @@ TEXT_MERGES = [
             ["13:24", "Costantino Mariani"],
         ],
     },
+    {
+        "anchor_time": "18:13",
+        "anchor_sender": "Elvis Ippoliti",
+        "type": "info",
+        "text": (
+            "Elvis chiede com'è il bicchiere; Antonio Sabatini risponde "
+            "che sono da 0,2 l, bianchi (e ne mostra la confezione); "
+            "Elvis approva."
+        ),
+        "members": [
+            ["18:13", "Elvis Ippoliti"], ["18:14", "Antonio Sabatini"],
+            ["18:15", "Elvis Ippoliti"],
+        ],
+    },
+    {
+        "anchor_time": "19:49",
+        "anchor_sender": "Costantino Mariani",
+        "type": "info",
+        "text": (
+            "Costantino chiede a che ora è l'appuntamento di stasera; "
+            "Emanuele risponde alle 21:00."
+        ),
+        "members": [
+            ["19:49", "Costantino Mariani"], ["19:49", "Emanuele Sciarra"],
+        ],
+    },
 ]
+
+# IMG-20261114-WA0003.jpg (21:56, Emanuele): quasi identica a WA0001 (stessa
+# foto di gruppo, secondo scatto), scartata come ridondante.
+_SKIP_FILES = {"IMG-20261114-WA0003.jpg"}
+
+
+def _extra_skip(time_, fname):
+    return fname in _SKIP_FILES
+
 
 if __name__ == "__main__":
     build_digest(DATE, CURATED, MEDIA_OVERRIDES, audio_curated=AUDIO_CURATED,
-                 audio_merges=AUDIO_MERGES, text_merges=TEXT_MERGES)
+                 audio_merges=AUDIO_MERGES, text_merges=TEXT_MERGES,
+                 extra_skip_media=_extra_skip, extra_skip_label="foto ridondante")
