@@ -17,6 +17,14 @@ con il tamburo e dei giochi dei bambini. Il resto (saluti, incoraggiamenti,
 battute, vocali di scherzo, una GIF mp4, uno sticker) è rumore. Nessuna
 menzione di Giovanni Lima da parte di altri (un suo "Grandissimi" alle
 17:44, nessun intervento richiesto).
+
+Sera (18:36-21:20, aggiornata con l'export delle 21:25): Dante mostra in
+video le castagne incise; Valentina posta la foto di gruppo del comitato
+davanti allo stand a fine giornata (4 scatti quasi identici, ne resta uno),
+il riordino con la scopa, un riccio di castagna e il braciere acceso; Tina e
+Maria ringraziano tutti ("siete fantastici"); Elvis posta il selfie di gruppo
+a tavola con le pizze (21:17). Battute e cuori sono rumore. Nessuna menzione
+di Giovanni Lima.
 """
 import os
 import sys
@@ -86,6 +94,18 @@ AUDIO_MERGES = [
 
 TEXT_MERGES = [
     {
+        "anchor_time": "20:34",
+        "anchor_sender": "Tina Giarrante",
+        "type": "info",
+        "text": (
+            "Tina e Maria Buttari ringraziano il gruppo per la giornata di "
+            "San Martino: \"Bravi fortissimi\", \"infinitamente grazie a "
+            "tutti voi per tutto quello che avete fatto, siete "
+            "fantastici\"."
+        ),
+        "members": [["20:34", "Tina Giarrante"], ["20:35", "Maria Buttari"]],
+    },
+    {
         "anchor_time": "08:17",
         "anchor_sender": "Emilio Caniglia",
         "type": "info",
@@ -144,6 +164,26 @@ TEXT_MERGES = [
 ]
 
 MEDIA_OVERRIDES = {
+    (DATE, "18:36", "Dante Caniglia", "VID-20261114-WA0079.mp4"):
+        "Video di una persona che incide le castagne con un coltello su un "
+        "tavolo di legno, accanto al cesto.",
+    (DATE, "18:49", "Valentina D'Arcadia", "IMG-20261114-WA0080.jpg"):
+        "Foto di gruppo del comitato davanti allo stand, in piazza di sera, "
+        "a fine giornata, con il personaggio in costume da pastore al "
+        "centro.",
+    (DATE, "19:55", "Valentina D'Arcadia", "IMG-20261114-WA0084.jpg"):
+        "Una persona con la scopa accanto alle balle di fieno in piazza, "
+        "durante il riordino.",
+    (DATE, "19:56", "Valentina D'Arcadia", "IMG-20261114-WA0085.jpg"):
+        "Un riccio di castagna aperto, con le castagne dentro, tenuto in "
+        "mano.",
+    (DATE, "20:21", "Valentina D'Arcadia", "IMG-20261114-WA0087.jpg"):
+        "Due persone accanto al braciere acceso, di sera in piazza.",
+    (DATE, "20:21", "Valentina D'Arcadia", "IMG-20261114-WA0088.jpg"):
+        "Il braciere con la brace accesa, in piazza di notte.",
+    (DATE, "21:17", "Elvis Ippoliti", "IMG-20261114-WA0089.jpg"):
+        "Selfie di gruppo a tavola in un locale, con le pizze: la cena "
+        "del comitato a fine giornata (data della foto 14/11, 21:17).",
     (DATE, "09:11", "Maria Buttari", "IMG-20261114-WA0013.jpg"):
         "Screenshot delle previsioni meteo per San Benedetto dei Marsi: "
         "9°, nuvoloso, nuvolosità al mattino con schiarite nel "
@@ -201,6 +241,8 @@ MEDIA_OVERRIDES = {
 #   0051, 0067, 0072, 0074, 0075, 0077) e video ripetitivi (0053, 0057,
 #   0062, 0063).
 _SKIP_FILES = {
+    "IMG-20261114-WA0081.jpg", "IMG-20261114-WA0082.jpg",
+    "IMG-20261114-WA0083.jpg",
     "VID-20261114-WA0016.mp4", "IMG-20261114-WA0022.jpg",
     "IMG-20261114-WA0043.jpg", "VID-20261114-WA0044.mp4",
     "VID-20261114-WA0047.mp4",
