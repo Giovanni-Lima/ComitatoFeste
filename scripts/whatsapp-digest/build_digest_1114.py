@@ -25,6 +25,14 @@ il riordino con la scopa, un riccio di castagna e il braciere acceso; Tina e
 Maria ringraziano tutti ("siete fantastici"); Elvis posta il selfie di gruppo
 a tavola con le pizze (21:17). Battute e cuori sono rumore. Nessuna menzione
 di Giovanni Lima.
+
+Notte (22:19-23:23, aggiornata con l'export del 15/11 delle 20:33): Dante
+chiede se si pubblica solo nelle storie; Emanuele ha già pubblicato su
+Facebook e vuole un reel per Facebook e Instagram (link al video condiviso
+alle 22:43). Costantino posta due foto notturne; Elvis considera la giornata
+riuscita e ringrazia tutti; Dante condivide un reel Facebook. Il resto
+(battute sull'orecchino perso, rime) è rumore. Nessuna menzione di Giovanni
+Lima.
 """
 import os
 import sys
@@ -35,6 +43,15 @@ from digest_lib import build_digest
 DATE = "2026-11-14"
 
 CURATED = {
+    ("22:43", "Emanuele Sciarra"): ("info",
+        "Condivide il video di San Martino su Facebook: "
+        "https://www.facebook.com/share/v/1CQkXFkm2B/?mibextid=wwXIfr"),
+    ("23:22", "Elvis Ippoliti"): ("info",
+        "Considera la giornata di San Martino riuscita alla grande "
+        "(\"siamo stati fenomenali\") e ringrazia tutti."),
+    ("23:23", "Dante Caniglia"): ("info",
+        "Condivide un reel Facebook: "
+        "https://www.facebook.com/share/r/1C2XdyzGAV/"),
     ("07:36", "Costance Rossi"): ("domanda",
         "Buongiorno: a Pescina pioviccicava; chiede quale sia il piano B "
         "in caso di pioggia."),
@@ -52,7 +69,7 @@ AUDIO_CURATED = {
     (DATE, "07:37", "Emanuele Sciarra", "PTT-20261114-WA0004.opus"): ("rumore", ""),
     (DATE, "07:45", "Costantino Mariani", "PTT-20261114-WA0005.opus"): ("rumore", ""),
     (DATE, "10:42", "Luca Cicchelli", "PTT-20261114-WA0018.opus"): ("rumore", ""),
-    (DATE, "14:28", "Dante Caniglia", "PTT-20261114-WA0037.opus"): ("rumore", ""),
+    (DATE, "14:27", "Dante Caniglia", "PTT-20261114-WA0037.opus"): ("rumore", ""),
 }
 
 AUDIO_MERGES = [
@@ -93,6 +110,20 @@ AUDIO_MERGES = [
 ]
 
 TEXT_MERGES = [
+    {
+        "anchor_time": "22:19",
+        "anchor_sender": "Dante Caniglia",
+        "type": "info",
+        "text": (
+            "Dante chiede se per i social si pubblicano solo storie. "
+            "Emanuele risponde che su Facebook l'ha già fatto e vuole "
+            "creare un reel da collegare sia a Facebook sia a Instagram, "
+            "invitando a condividerlo anche nei gruppi di San Benedetto."
+        ),
+        "members": [["22:19", "Dante Caniglia"],
+                    ["22:20", "Emanuele Sciarra"],
+                    ["22:21", "Emanuele Sciarra"]],
+    },
     {
         "anchor_time": "20:34",
         "anchor_sender": "Tina Giarrante",
@@ -164,6 +195,13 @@ TEXT_MERGES = [
 ]
 
 MEDIA_OVERRIDES = {
+    (DATE, "23:11", "Costantino Mariani", "IMG-20261114-WA0090.jpg"):
+        "Foto di alcune persone in un locale con luci viola, a fine "
+        "serata; didascalia di Costantino: \"Qua non si molla un...\".",
+    (DATE, "23:22", "Costantino Mariani", "IMG-20261114-WA0091.jpg"):
+        "Foto notturna di una strada con una persona in piedi accanto a "
+        "una panchina; Costantino scrive che c'è ancora gente che si "
+        "scalda al fuoco.",
     (DATE, "18:36", "Dante Caniglia", "VID-20261114-WA0079.mp4"):
         "Video di una persona che incide le castagne con un coltello su un "
         "tavolo di legno, accanto al cesto.",
