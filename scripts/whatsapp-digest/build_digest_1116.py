@@ -12,7 +12,11 @@ lattine e vetro). Emanuele condivide un link Facebook. Serena posta il
 "problema inventato" di sua figlia (540 gite meno 170 annullate) e ne nasce
 una serie di battute (rumore, foto scartata). In serata gli auguri di
 compleanno a Gilda Di Iulio, a cui partecipa anche Giovanni Lima (suo
-messaggio, nessuna menzione da parte di altri).
+messaggio, nessuna menzione da parte di altri); il filone di auguri
+prosegue fino a tarda sera (incluso un videomessaggio, scartato come le
+foto personali) e Gilda ringrazia tutti poco prima di mezzanotte. Cesare
+racconta di essersi imbattuto in un funerale mentre caricavano i braceri
+(aneddoto, rumore).
 """
 import os
 import sys
@@ -81,7 +85,10 @@ MEDIA_OVERRIDES = {}
 # IMG-20261116-WA0011.jpg (14:41 Serena): pagina di quaderno con un "problema
 # inventato" della figlia (il comitato feste 1987 organizza 540 gite, 170
 # annullate, ne rimangono 370): battuta, fuori tema, scartata.
-_SKIP_FILES = {"IMG-20261116-WA0011.jpg"}
+# VID-20261117-WA0013.mp4 (22:48 Chiara, videomessaggio di auguri a Gilda):
+# contenuto personale/festivo senza rilevanza organizzativa, come le altre
+# foto scartate.
+_SKIP_FILES = {"IMG-20261116-WA0011.jpg", "VID-20261117-WA0013.mp4"}
 
 
 def _extra_skip(time_, fname):
