@@ -15,7 +15,12 @@ per le pubblicità: Emanuele la elimina, Dante avrebbe preferito renderla
 privata (pagina di 20 anni) e ne segue un chiarimento a voce. Sera: Emanuele
 ripropone il sondaggio sui badge (cinque proposte) per il banchetto delle
 offerte di Sant'Antonio del mese prossimo. Il resto è rumore (battute, una
-GIF). Nessuna menzione di Giovanni Lima.
+GIF). In tarda serata Alessandra mostra un esempio del badge vincitore
+(opzione 5) con un nome reale, chiedendo conferma; si aspetta la fine del
+sondaggio per preparare la lista nome/cognome. Antonio Aceto solleva il
+dubbio se includere "patronali" nella dicitura (come faceva il comitato
+dell'86); Elvis chiede di informarsi bene prima di procedere — questione
+che si risolverà il giorno dopo. Nessuna menzione di Giovanni Lima.
 """
 import os
 import sys
@@ -82,6 +87,28 @@ AUDIO_MERGES = [
             "PTT-20261119-WA0058.opus", "PTT-20261119-WA0062.opus",
             "PTT-20261119-WA0066.opus",
         ],
+    },
+    {
+        "anchor_time": "22:24",
+        "anchor_sender": "Antonio Aceto",
+        "type": "domanda",
+        "text": (
+            "Alessandra mostra un esempio del badge scelto con un nome "
+            "reale, chiedendo conferma che sia la versione definitiva; "
+            "Emanuele conferma, dicendo che aspetteranno la fine del "
+            "sondaggio per poi fare la lista con nome e cognome di "
+            "tutti e prepararli. Alessandra chiede a Maikel nome e "
+            "cognome per non sbagliare (Maikel lo fornisce). Antonio "
+            "Aceto chiede se non si debba inserire anche la dicitura "
+            "\"patronali\", ricordando che il comitato dell'86 "
+            "scriveva sempre \"Comitato Feste Patronali, San Benedetto "
+            "dei Marsi\", visto che si tratta appunto del comitato "
+            "delle feste patronali e non di un comitato generico per "
+            "qualsiasi evento. Elvis ribadisce che secondo lui bisogna "
+            "prima informarsi bene su cosa vada scritto, prima di "
+            "procedere con i badge."
+        ),
+        "members": ["PTT-20261119-WA0072.opus", "PTT-20261119-WA0073.opus"],
     },
 ]
 
@@ -193,6 +220,12 @@ MEDIA_OVERRIDES = {
         "Badge, opzione 5: versione orizzontale \"Comitato Festa - San "
         "Benedetto dei Marsi\" con scritte rosa, cabinato arcade, "
         "\"1987\" e nome.",
+    (DATE, "21:25", "Alessandra Toracchio", "IMG-20261120-WA0000.jpg"):
+        "Esempio del badge scelto (opzione 5) applicato con un nome "
+        "reale: grafica gialla con cabinato arcade, \"1987\", "
+        "\"Comitato Feste San Benedetto dei Marsi\" ed \"Emilio "
+        "Caniglia\"; Alessandra chiede conferma che sia la versione "
+        "definitiva.",
 }
 
 if __name__ == "__main__":
