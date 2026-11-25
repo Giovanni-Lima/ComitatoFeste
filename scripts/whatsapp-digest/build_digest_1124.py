@@ -14,8 +14,10 @@ o no, prezzo a 5 o 6€ con o senza lotteria, chi ha già venduto cosa;
 Emilio richiama che le decisioni si prendono in riunione, non in chat, e
 conferma quanto già deciso (5€, niente lotteria); si avvia comunque la
 stampa di tagliandini personalizzati tramite Lutech. Accenno finale (poco
-chiaro) a un evento del 4 dicembre da organizzare in coppie. Nessuna
-menzione di Giovanni Lima.
+chiaro) a un evento del 4 dicembre da organizzare in coppie. In serata è
+nato Carlo, figlio di Barbara Rizio: lungo filo di auguri del gruppo, a
+cui partecipa anche Giovanni Lima (suo messaggio, nessuna menzione da
+parte di altri).
 """
 import os
 import sys
@@ -74,6 +76,9 @@ CURATED = {
         "Conferma che il prezzo delle calze (e le relative modalità "
         "di vendita) è stato deciso in riunione, dopo confronto e "
         "scambio di opinioni."),
+    ("18:43", "Barbara Rizio"): ("info",
+        "È nato Carlo, figlio di Barbara Rizio (3,390 kg): il "
+        "gruppo si scambia auguri in chat."),
 }
 
 TEXT_MERGES = [
@@ -151,7 +156,9 @@ AUDIO_MERGES = [
             "tutti i 1000 entro una decina di giorni), lasciando "
             "eventualmente il numero da scrivere a mano per "
             "risparmiare tempo e qualcosa sul costo; chiede un "
-            "parere su dove far fare grafica e stampa."
+            "parere su dove far fare grafica e stampa. Dante si "
+            "offre infine di stampare lui stesso i tagliandini, se "
+            "gli viene fornito il file."
         ),
         "members": [
             "PTT-20261124-WA0010.opus", "PTT-20261124-WA0011.opus",
@@ -188,6 +195,9 @@ MEDIA_OVERRIDES = {
         "Tagliandino di riferimento del comitato dell'86: \"Ritira "
         "la tua calza\", logo \"1986 TOP\", illustrazione di una "
         "Befana su scopa, numero progressivo stampato (122).",
+    (DATE, "18:43", "Barbara Rizio", "IMG-20261124-WA0035.jpg"):
+        "Fiocco nascita azzurro all'uncinetto appeso alla porta, con "
+        "nastro ricamato \"È nato Carlo\".",
 }
 
 if __name__ == "__main__":
