@@ -2,16 +2,18 @@
 # -*- coding: utf-8 -*-
 """Digest del 2026-11-25 — solo dati di curatela, logica comune in digest_lib.py.
 
-Finestra 07:42-16:05 (export Dropbox delle 16:38, giornata ancora in
-corso). La coda di auguri per la nascita di Carlo (figlio di Barbara
-Rizio) prosegue nelle prime ore del mattino: resta rumore individuale, il
-punto riepilogativo è già nel digest del 24/11. Emilio gira l'invito di
-Don Enzo per la Novena dell'Immacolata (turni di Rosario in parrocchia,
-con il Comitato coinvolto in due giornate) e ricorda gli appuntamenti di
-oggi (fuochi d'artificio e, in serata, Capodanno con Andrea Di Loreto) e
-la riunione di venerdì 27. Emanuele condivide il post Facebook con le
-prevendite delle calze della Befana aperte al pubblico. Nessuna menzione
-di Giovanni Lima.
+Finestra 07:42-21:19 (giornata completa). La coda di auguri per la
+nascita di Carlo (figlio di Barbara Rizio) prosegue nelle prime ore del
+mattino: resta rumore individuale, il punto riepilogativo è già nel
+digest del 24/11. Emilio gira l'invito di Don Enzo per la Novena
+dell'Immacolata (turni di Rosario in parrocchia, con il Comitato
+coinvolto in due giornate) e ricorda gli appuntamenti di oggi (fuochi
+d'artificio e, in serata, Capodanno con Andrea Di Loreto) e la riunione
+di venerdì 27. Emanuele condivide il post Facebook con le prevendite
+delle calze della Befana aperte al pubblico. In serata Costantino critica
+una bozza di locandina (colori spenti, logo poco visibile, dicitura da
+togliere); breve scambio con Alessandra. Nessuna menzione di Giovanni
+Lima.
 """
 import os
 import sys
@@ -45,6 +47,12 @@ CURATED = {
         "Ripromemoria degli appuntamenti del giorno: ore 18 in sede "
         "con Amiconi per spari e fuochi d'artificio; ore 21 a "
         "Gianvito (Bar Ragno) con Andrea Di Loreto per Capodanno."),
+    ("20:38", "Costantino Mariani"): ("proposta",
+        "Trova che una bozza di locandina (in lavorazione) non vada "
+        "bene: a suo parere è \"spenta\", poco accattivante nei "
+        "colori, il logo non si vede, e la dicitura \"sostieni il "
+        "comitato\" secondo lui non andrebbe messa. Alessandra "
+        "Toracchio chiede chiarimenti sui colori."),
 }
 
 MEDIA_OVERRIDES = {
